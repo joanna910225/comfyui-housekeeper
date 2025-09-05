@@ -1,0 +1,26 @@
+{
+  "vue-basic": {
+    "title": "Vue基础示例",
+    "pen": "铅笔",
+    "clear-canvas": "清除画布",
+    "brush-size": "笔刷大小"
+  },
+  "alignment": {
+    "title": "节点对齐",
+    "left": "左对齐",
+    "right": "右对齐", 
+    "top": "顶部对齐",
+    "bottom": "底部对齐",
+    "leftTooltip": "将所有选中的节点与最左边对齐",
+    "rightTooltip": "将所有选中的节点与最右边对齐",
+    "topTooltip": "将所有选中的节点与顶部对齐", 
+    "bottomTooltip": "将所有选中的节点与底部对齐",
+    "selectMultiple": "选择多个节点以启用对齐功能",
+    "selectAdditional": "选择更多节点进行对齐",
+    "ready": "已选择 {count} 个节点 - 准备对齐",
+    "needTwoNodes": "请至少选择2个节点进行对齐",
+    "success": "已将 {count} 个节点{direction}对齐",
+    "error": "对齐过程中发生错误",
+    "keyboardHint": "使用 Ctrl+Shift+方向键 快速对齐"
+  }
+}

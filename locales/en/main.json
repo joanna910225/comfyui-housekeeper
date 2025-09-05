@@ -1,0 +1,27 @@
+{
+  "vue-basic": {
+    "title": "Vue Basic Example",
+    "pen": "Pen",
+    "clear-canvas": "Clear Canvas",
+    "brush-size": "Brush Size",
+    "pen-tooltip": "this is a pen"
+  },
+  "alignment": {
+    "title": "Node Alignment",
+    "left": "Left",
+    "right": "Right", 
+    "top": "Top",
+    "bottom": "Bottom",
+    "leftTooltip": "Align all selected nodes to the leftmost edge",
+    "rightTooltip": "Align all selected nodes to the rightmost edge",
+    "topTooltip": "Align all selected nodes to the topmost edge", 
+    "bottomTooltip": "Align all selected nodes to the bottommost edge",
+    "selectMultiple": "Select multiple nodes to enable alignment",
+    "selectAdditional": "Select additional nodes to align",
+    "ready": "{count} nodes selected - ready to align",
+    "needTwoNodes": "Please select at least 2 nodes to align",
+    "success": "Aligned {count} nodes to {direction}",
+    "error": "Error during alignment",
+    "keyboardHint": "Ctrl+Shift+Arrow keys for quick align"
+  }
+}
