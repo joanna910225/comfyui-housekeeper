@@ -384,11 +384,7 @@ function Lt() {
       if (pos && p[index]) {
         const previewEl = document.createElement('div');
         previewEl.style.cssText = `
-          position: absolute;
-          left: ${pos.x}px;
-          top: ${pos.y}px;
-          width: ${pos.width}px;
-          height: ${pos.height}px;
+          position: fixed;
           background: rgba(74, 144, 226, 0.3);
           border: 2px dashed rgba(74, 144, 226, 0.7);
           border-radius: 4px;
@@ -397,17 +393,24 @@ function Lt() {
           transition: all 0.2s ease;
         `;
         
-        // Position relative to canvas
+        // Convert canvas coordinates to screen coordinates - use exact same coordinates as alignment will use
         const canvasRect = canvas.canvas.getBoundingClientRect();
-        previewEl.style.left = (canvasRect.left + pos.x * canvas.ds.scale + canvas.ds.offset[0]) + 'px';
-        previewEl.style.top = (canvasRect.top + pos.y * canvas.ds.scale + canvas.ds.offset[1]) + 'px';
-        previewEl.style.width = (pos.width * canvas.ds.scale) + 'px';
-        previewEl.style.height = (pos.height * canvas.ds.scale) + 'px';
+        const screenX = canvasRect.left + (pos.x + canvas.ds.offset[0]) * canvas.ds.scale;
+        const screenY = canvasRect.top + (pos.y + canvas.ds.offset[1]) * canvas.ds.scale;
+        const screenWidth = pos.width * canvas.ds.scale;
+        const screenHeight = pos.height * canvas.ds.scale;
+        
+        
+        previewEl.style.left = screenX + 'px';
+        previewEl.style.top = screenY + 'px';
+        previewEl.style.width = screenWidth + 'px';
+        previewEl.style.height = screenHeight + 'px';
         
         document.body.appendChild(previewEl);
         previewElements.push(previewEl);
       }
     });
+    
   }
 
   function hidePreview() {
@@ -432,8 +435,25 @@ function Lt() {
         let currentY = sortedByY[0].pos[1];
         
         sortedByY.forEach((node) => {
-          const height = node.size?.[1] || node.height || 100;
-          const width = node.size?.[0] || node.width || 150;
+          // Use exact same height calculation as actual alignment function
+          let height = 100;
+          if (node.size && Array.isArray(node.size) && node.size[1]) {
+            height = node.size[1];
+          } else if (typeof node.height === "number") {
+            height = node.height;
+          } else if (node.properties && typeof node.properties.height === "number") {
+            height = node.properties.height;
+          }
+          
+          let width = 150;
+          if (node.size && Array.isArray(node.size) && node.size[0]) {
+            width = node.size[0];
+          } else if (typeof node.width === "number") {
+            width = node.width;
+          } else if (node.properties && typeof node.properties.width === "number") {
+            width = node.properties.width;
+          }
+          
           positions.push({
             x: calculatedPos,
             y: currentY,
@@ -450,8 +470,19 @@ function Lt() {
         let rightY = rightSorted[0].pos[1];
         
         rightSorted.forEach((node) => {
-          const height = node.size?.[1] || node.height || 100;
-          const width = node.size?.[0] || node.width || 150;
+          let height = 100, width = 150;
+          if (node.size && Array.isArray(node.size)) {
+            if (node.size[1]) height = node.size[1];
+            if (node.size[0]) width = node.size[0];
+          } else {
+            if (typeof node.height === "number") height = node.height;
+            if (typeof node.width === "number") width = node.width;
+            if (node.properties) {
+              if (typeof node.properties.height === "number") height = node.properties.height;
+              if (typeof node.properties.width === "number") width = node.properties.width;
+            }
+          }
+          
           positions.push({
             x: calculatedPos - width,
             y: rightY,
@@ -468,8 +499,24 @@ function Lt() {
         let currentX = topSorted[0].pos[0];
         
         topSorted.forEach((node) => {
-          const width = node.size?.[0] || node.width || 150;
-          const height = node.size?.[1] || node.height || 100;
+          let width = 150;
+          if (node.size && Array.isArray(node.size) && node.size[0]) {
+            width = node.size[0];
+          } else if (typeof node.width === "number") {
+            width = node.width;
+          } else if (node.properties && typeof node.properties.width === "number") {
+            width = node.properties.width;
+          }
+          
+          let height = 100;
+          if (node.size && Array.isArray(node.size) && node.size[1]) {
+            height = node.size[1];
+          } else if (typeof node.height === "number") {
+            height = node.height;
+          } else if (node.properties && typeof node.properties.height === "number") {
+            height = node.properties.height;
+          }
+          
           positions.push({
             x: currentX,
             y: calculatedPos,
@@ -482,12 +529,25 @@ function Lt() {
         
       case "bottom":
         calculatedPos = Math.max(...nodes.map((e) => e.pos[1] + e.size[1]));
+        // For bottom alignment, start from the leftmost X of the selected area
+        const leftmostX = Math.min(...nodes.map((e) => e.pos[0]));
         const bottomSorted = [...nodes].sort((e, y) => e.pos[0] - y.pos[0]);
-        let bottomX = bottomSorted[0].pos[0];
+        let bottomX = leftmostX;
         
         bottomSorted.forEach((node) => {
-          const width = node.size?.[0] || node.width || 150;
-          const height = node.size?.[1] || node.height || 100;
+          let width = 150, height = 100;
+          if (node.size && Array.isArray(node.size)) {
+            if (node.size[0]) width = node.size[0];
+            if (node.size[1]) height = node.size[1];
+          } else {
+            if (typeof node.width === "number") width = node.width;
+            if (typeof node.height === "number") height = node.height;
+            if (node.properties) {
+              if (typeof node.properties.width === "number") width = node.properties.width;
+              if (typeof node.properties.height === "number") height = node.properties.height;
+            }
+          }
+          
           positions.push({
             x: bottomX,
             y: calculatedPos - height,
@@ -502,11 +562,24 @@ function Lt() {
       case "vertical-flow":
         // For flow alignments, use simplified preview (just show current positions with highlight)
         nodes.forEach((node) => {
+          let width = 150, height = 100;
+          if (node.size && Array.isArray(node.size)) {
+            if (node.size[0]) width = node.size[0];
+            if (node.size[1]) height = node.size[1];
+          } else {
+            if (typeof node.width === "number") width = node.width;
+            if (typeof node.height === "number") height = node.height;
+            if (node.properties) {
+              if (typeof node.properties.width === "number") width = node.properties.width;
+              if (typeof node.properties.height === "number") height = node.properties.height;
+            }
+          }
+          
           positions.push({
             x: node.pos[0],
             y: node.pos[1],
-            width: node.size?.[0] || node.width || 150,
-            height: node.size?.[1] || node.height || 100
+            width: width,
+            height: height
           });
         });
         break;
@@ -729,6 +802,8 @@ function Lt() {
       return;
     }
     try {
+      // Calculate all reference positions at the start to avoid drift
+      const originalBottomPos = Math.max(...p.map((e) => e.pos[1] + (e.size?.[1] || 100)));
       let w;
       switch (l) {
         case "left":
@@ -737,7 +812,7 @@ function Lt() {
           let u = _[0].pos[1];
           _.forEach((e, y) => {
             let n = 100;
-            e.size && Array.isArray(e.size) && e.size[1] ? n = e.size[1] : typeof e.height == "number" ? n = e.height : e.properties && typeof e.properties.height == "number" && (n = e.properties.height), console.log(`Left align - Node ${e.id || y}: height=${n}, currentY=${u}`), e.pos[0] = w, e.pos[1] = u, typeof e.x == "number" && (e.x = e.pos[0]), typeof e.y == "number" && (e.y = e.pos[1]), u += n + 30, console.log(`  Next Y will be: ${u}`);
+            e.size && Array.isArray(e.size) && e.size[1] ? n = e.size[1] : typeof e.height == "number" ? n = e.height : e.properties && typeof e.properties.height == "number" && (n = e.properties.height), e.pos[0] = w, e.pos[1] = u, typeof e.x == "number" && (e.x = e.pos[0]), typeof e.y == "number" && (e.y = e.pos[1]), u += n + 30;
           });
           break;
         case "right":
@@ -746,7 +821,7 @@ function Lt() {
           let m = z[0].pos[1];
           z.forEach((e, y) => {
             let n = 100, g = 150;
-            e.size && Array.isArray(e.size) ? (e.size[1] && (n = e.size[1]), e.size[0] && (g = e.size[0])) : (typeof e.height == "number" && (n = e.height), typeof e.width == "number" && (g = e.width), e.properties && (typeof e.properties.height == "number" && (n = e.properties.height), typeof e.properties.width == "number" && (g = e.properties.width))), console.log(`Right align - Node ${e.id || y}: height=${n}, width=${g}, currentY=${m}`), e.pos[0] = w - g, e.pos[1] = m, typeof e.x == "number" && (e.x = e.pos[0]), typeof e.y == "number" && (e.y = e.pos[1]), m += n + 30, console.log(`  Next Y will be: ${m}`);
+            e.size && Array.isArray(e.size) ? (e.size[1] && (n = e.size[1]), e.size[0] && (g = e.size[0])) : (typeof e.height == "number" && (n = e.height), typeof e.width == "number" && (g = e.width), e.properties && (typeof e.properties.height == "number" && (n = e.properties.height), typeof e.properties.width == "number" && (g = e.properties.width))), e.pos[0] = w - g, e.pos[1] = m, typeof e.x == "number" && (e.x = e.pos[0]), typeof e.y == "number" && (e.y = e.pos[1]), m += n + 30;
           });
           break;
         case "top":
@@ -755,16 +830,16 @@ function Lt() {
           let I = d[0].pos[0];
           d.forEach((e, y) => {
             let n = 150;
-            e.size && Array.isArray(e.size) && e.size[0] ? n = e.size[0] : typeof e.width == "number" ? n = e.width : e.properties && typeof e.properties.width == "number" && (n = e.properties.width), console.log(`Top align - Node ${e.id || y}: width=${n}, currentX=${I}`), e.pos[1] = w, e.pos[0] = I, typeof e.x == "number" && (e.x = e.pos[0]), typeof e.y == "number" && (e.y = e.pos[1]), I += n + 30, console.log(`  Next X will be: ${I}`);
+            e.size && Array.isArray(e.size) && e.size[0] ? n = e.size[0] : typeof e.width == "number" ? n = e.width : e.properties && typeof e.properties.width == "number" && (n = e.properties.width), e.pos[1] = w, e.pos[0] = I, typeof e.x == "number" && (e.x = e.pos[0]), typeof e.y == "number" && (e.y = e.pos[1]), I += n + 30;
           });
           break;
         case "bottom":
-          w = Math.max(...p.map((e) => e.pos[1] + e.size[1]));
+          w = originalBottomPos; // Use the stored original bottom position
           const v = [...p].sort((e, y) => e.pos[0] - y.pos[0]);
           let $ = v[0].pos[0];
           v.forEach((e, y) => {
             let n = 150, g = 100;
-            e.size && Array.isArray(e.size) ? (e.size[0] && (n = e.size[0]), e.size[1] && (g = e.size[1])) : (typeof e.width == "number" && (n = e.width), typeof e.height == "number" && (g = e.height), e.properties && (typeof e.properties.width == "number" && (n = e.properties.width), typeof e.properties.height == "number" && (g = e.properties.height))), console.log(`Bottom align - Node ${e.id || y}: height=${g}, width=${n}, currentX=${$}`), e.pos[1] = w - g, e.pos[0] = $, typeof e.x == "number" && (e.x = e.pos[0]), typeof e.y == "number" && (e.y = e.pos[1]), $ += n + 30, console.log(`  Next X will be: ${$}`);
+            e.size && Array.isArray(e.size) ? (e.size[0] && (n = e.size[0]), e.size[1] && (g = e.size[1])) : (typeof e.width == "number" && (n = e.width), typeof e.height == "number" && (g = e.height), e.properties && (typeof e.properties.width == "number" && (n = e.properties.width), typeof e.properties.height == "number" && (g = e.properties.height))), e.pos[1] = w - g, e.pos[0] = $, typeof e.x == "number" && (e.x = e.pos[0]), typeof e.y == "number" && (e.y = e.pos[1]), $ += n + 30;
           });
           break;
         case "horizontal-flow":
