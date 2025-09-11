@@ -368,7 +368,153 @@ ct.registerExtension({
   }
 });
 function Lt() {
-  let c = null, k = !1, p = [];
+  let c = null, k = !1, p = [], previewElements = [];
+
+  function showPreview(alignType) {
+    if (p.length < 2) return;
+    hidePreview(); // Clear any existing previews
+    
+    const canvas = window.app?.canvas;
+    if (!canvas) return;
+    
+    // Calculate preview positions using the same logic as the alignment functions
+    const previewPositions = calculatePreviewPositions(alignType, p);
+    
+    previewPositions.forEach((pos, index) => {
+      if (pos && p[index]) {
+        const previewEl = document.createElement('div');
+        previewEl.style.cssText = `
+          position: absolute;
+          left: ${pos.x}px;
+          top: ${pos.y}px;
+          width: ${pos.width}px;
+          height: ${pos.height}px;
+          background: rgba(74, 144, 226, 0.3);
+          border: 2px dashed rgba(74, 144, 226, 0.7);
+          border-radius: 4px;
+          z-index: 999;
+          pointer-events: none;
+          transition: all 0.2s ease;
+        `;
+        
+        // Position relative to canvas
+        const canvasRect = canvas.canvas.getBoundingClientRect();
+        previewEl.style.left = (canvasRect.left + pos.x * canvas.ds.scale + canvas.ds.offset[0]) + 'px';
+        previewEl.style.top = (canvasRect.top + pos.y * canvas.ds.scale + canvas.ds.offset[1]) + 'px';
+        previewEl.style.width = (pos.width * canvas.ds.scale) + 'px';
+        previewEl.style.height = (pos.height * canvas.ds.scale) + 'px';
+        
+        document.body.appendChild(previewEl);
+        previewElements.push(previewEl);
+      }
+    });
+  }
+
+  function hidePreview() {
+    previewElements.forEach(el => {
+      if (el.parentNode) {
+        el.parentNode.removeChild(el);
+      }
+    });
+    previewElements = [];
+  }
+
+  function calculatePreviewPositions(alignType, nodes) {
+    if (nodes.length < 2) return [];
+    
+    const positions = [];
+    let calculatedPos;
+    
+    switch (alignType) {
+      case "left":
+        calculatedPos = Math.min(...nodes.map((e) => e.pos[0]));
+        const sortedByY = [...nodes].sort((e, y) => e.pos[1] - y.pos[1]);
+        let currentY = sortedByY[0].pos[1];
+        
+        sortedByY.forEach((node) => {
+          const height = node.size?.[1] || node.height || 100;
+          const width = node.size?.[0] || node.width || 150;
+          positions.push({
+            x: calculatedPos,
+            y: currentY,
+            width: width,
+            height: height
+          });
+          currentY += height + 30;
+        });
+        break;
+        
+      case "right":
+        calculatedPos = Math.max(...nodes.map((e) => e.pos[0] + e.size[0]));
+        const rightSorted = [...nodes].sort((e, y) => e.pos[1] - y.pos[1]);
+        let rightY = rightSorted[0].pos[1];
+        
+        rightSorted.forEach((node) => {
+          const height = node.size?.[1] || node.height || 100;
+          const width = node.size?.[0] || node.width || 150;
+          positions.push({
+            x: calculatedPos - width,
+            y: rightY,
+            width: width,
+            height: height
+          });
+          rightY += height + 30;
+        });
+        break;
+        
+      case "top":
+        calculatedPos = Math.min(...nodes.map((e) => e.pos[1]));
+        const topSorted = [...nodes].sort((e, y) => e.pos[0] - y.pos[0]);
+        let currentX = topSorted[0].pos[0];
+        
+        topSorted.forEach((node) => {
+          const width = node.size?.[0] || node.width || 150;
+          const height = node.size?.[1] || node.height || 100;
+          positions.push({
+            x: currentX,
+            y: calculatedPos,
+            width: width,
+            height: height
+          });
+          currentX += width + 30;
+        });
+        break;
+        
+      case "bottom":
+        calculatedPos = Math.max(...nodes.map((e) => e.pos[1] + e.size[1]));
+        const bottomSorted = [...nodes].sort((e, y) => e.pos[0] - y.pos[0]);
+        let bottomX = bottomSorted[0].pos[0];
+        
+        bottomSorted.forEach((node) => {
+          const width = node.size?.[0] || node.width || 150;
+          const height = node.size?.[1] || node.height || 100;
+          positions.push({
+            x: bottomX,
+            y: calculatedPos - height,
+            width: width,
+            height: height
+          });
+          bottomX += width + 30;
+        });
+        break;
+        
+      case "horizontal-flow":
+      case "vertical-flow":
+        // For flow alignments, use simplified preview (just show current positions with highlight)
+        nodes.forEach((node) => {
+          positions.push({
+            x: node.pos[0],
+            y: node.pos[1],
+            width: node.size?.[0] || node.width || 150,
+            height: node.size?.[1] || node.height || 100
+          });
+        });
+        break;
+    }
+    
+    return positions;
+  }
+
   function x(l, i = !1) {
     const r = document.createElement("button");
     r.innerHTML = `
@@ -393,8 +539,10 @@ function Lt() {
             min-height: 44px;
         `, r.addEventListener("mouseenter", () => {
       r.style.background = `linear-gradient(145deg, ${h}, #505050)`, r.style.transform = "translateY(-1px)", r.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.2)";
+      showPreview(l.type);
     }), r.addEventListener("mouseleave", () => {
       r.style.background = `linear-gradient(145deg, ${a}, #404040)`, r.style.transform = "translateY(0)", r.style.boxShadow = "none";
+      hidePreview();
     }), r.addEventListener("click", () => f(l.type)), r;
   }
   function M() {
