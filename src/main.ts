@@ -364,28 +364,198 @@ function initializeAlignmentPanel() {
                 break;
                 
             case 'horizontal-flow':
-            case 'vertical-flow':
-                // For flow alignments, show current positions with highlight
-                nodes.forEach((node: any) => {
-                    let nodeHeight = 100, nodeWidth = 150;
-                    if (node.size && Array.isArray(node.size)) {
-                        if (node.size[1]) nodeHeight = node.size[1];
-                        if (node.size[0]) nodeWidth = node.size[0];
-                    } else {
-                        if (typeof node.height === 'number') nodeHeight = node.height;
-                        if (typeof node.width === 'number') nodeWidth = node.width;
-                        if (node.properties) {
-                            if (typeof node.properties.height === 'number') nodeHeight = node.properties.height;
-                            if (typeof node.properties.width === 'number') nodeWidth = node.properties.width;
-                        }
+                // EXACT HORIZONTAL FLOW ALGORITHM from alignHorizontalFlow()
+                const hFlowValidNodes = nodes.filter(node => {
+                    if (!node) return false;
+                    const hasPosition = node.pos || node.position || (typeof node.x === 'number' && typeof node.y === 'number');
+                    const hasSize = node.size || node.width || node.height ||
+                                  (typeof node.width === 'number' && typeof node.height === 'number');
+                    return !!hasPosition && !!hasSize;
+                });
+
+                if (hFlowValidNodes.length < 2) break;
+
+                // Calculate starting position - same as actual algorithm
+                const hFlowStartX = Math.min(...hFlowValidNodes.map(node => {
+                    if (node.pos && (Array.isArray(node.pos) || node.pos.length !== undefined)) return node.pos[0];
+                    if (node.position && (Array.isArray(node.position) || node.position.length !== undefined)) return node.position[0];
+                    if (typeof node.x === 'number') return node.x;
+                    return 0;
+                }));
+                const hFlowStartY = Math.min(...hFlowValidNodes.map(node => {
+                    if (node.pos && (Array.isArray(node.pos) || node.pos.length !== undefined)) return node.pos[1];
+                    if (node.position && (Array.isArray(node.position) || node.position.length !== undefined)) return node.position[1];
+                    if (typeof node.y === 'number') return node.y;
+                    return 0;
+                }));
+
+                // Create copies for calculation (don't modify originals)
+                const hFlowNodeCopies = hFlowValidNodes.map(node => ({
+                    ...node,
+                    pos: node.pos ? [...node.pos] : [node.x || 0, node.y || 0],
+                    _calculatedSize: node.size && Array.isArray(node.size) ?
+                        [node.size[0], node.size[1]] :
+                        [node.width || 150, node.height || 100]
+                }));
+
+                // Use exact connection analysis
+                const hFlowConnections = analyzeNodeConnections(hFlowNodeCopies);
+                const hFlowNodeGraph = buildNodeGraph(hFlowNodeCopies, hFlowConnections);
+
+                // Exact spacing constants from H-Flow
+                const H_COLUMN_SPACING = 40;
+                const H_NODE_SPACING_Y = 15;
+                const H_LEVEL_PADDING = 5;
+
+                // Group by levels exactly like H-Flow
+                const hFlowLevels: {[level: number]: any[]} = {};
+                hFlowNodeCopies.forEach(node => {
+                    if (node && node.id) {
+                        const level = hFlowNodeGraph[node.id]?.level ?? 0;
+                        if (!hFlowLevels[level]) hFlowLevels[level] = [];
+                        hFlowLevels[level].push(node);
                     }
-                    
-                    positions.push({
-                        x: node.pos[0],
-                        y: node.pos[1],
-                        width: nodeWidth,
-                        height: nodeHeight
-                    });
+                });
+
+                // Position nodes exactly like H-Flow
+                const hFlowNodePositions = new Map();
+                Object.entries(hFlowLevels).forEach(([levelStr, levelNodes]) => {
+                    const level = parseInt(levelStr);
+                    if (levelNodes && levelNodes.length > 0) {
+                        levelNodes.sort((a, b) => {
+                            const aOrder = a && a.id && hFlowNodeGraph[a.id] ? hFlowNodeGraph[a.id].order : 0;
+                            const bOrder = b && b.id && hFlowNodeGraph[b.id] ? hFlowNodeGraph[b.id].order : 0;
+                            return aOrder - bOrder;
+                        });
+
+                        // Calculate X position for this level
+                        let currentX = hFlowStartX;
+                        if (level > 0) {
+                            for (let prevLevel = 0; prevLevel < level; prevLevel++) {
+                                const prevLevelNodes = hFlowLevels[prevLevel] || [];
+                                const prevMaxWidth = Math.max(...prevLevelNodes.map(node =>
+                                    node && node._calculatedSize && node._calculatedSize[0] ? node._calculatedSize[0] : 150
+                                ));
+                                currentX += prevMaxWidth + H_COLUMN_SPACING + H_LEVEL_PADDING;
+                            }
+                        }
+
+                        let currentY = hFlowStartY;
+                        levelNodes.forEach((node) => {
+                            if (node && node._calculatedSize) {
+                                hFlowNodePositions.set(node.id, {
+                                    x: currentX,
+                                    y: currentY,
+                                    width: node._calculatedSize[0],
+                                    height: node._calculatedSize[1]
+                                });
+                                currentY += node._calculatedSize[1] + H_NODE_SPACING_Y;
+                            }
+                        });
+                    }
+                });
+
+                nodes.forEach((node: any) => {
+                    const pos = hFlowNodePositions.get(node.id);
+                    if (pos) positions.push(pos);
+                });
+                break;
+
+            case 'vertical-flow':
+                // EXACT VERTICAL FLOW ALGORITHM from alignVerticalFlow()
+                const vFlowValidNodes = nodes.filter(node => {
+                    if (!node) return false;
+                    const hasPosition = node.pos || node.position || (typeof node.x === 'number' && typeof node.y === 'number');
+                    const hasSize = node.size || node.width || node.height ||
+                                  (typeof node.width === 'number' && typeof node.height === 'number');
+                    return !!hasPosition && !!hasSize;
+                });
+
+                if (vFlowValidNodes.length < 2) break;
+
+                // Calculate starting position - same as actual algorithm
+                const vFlowStartX = Math.min(...vFlowValidNodes.map(node => {
+                    if (node.pos && (Array.isArray(node.pos) || node.pos.length !== undefined)) return node.pos[0];
+                    if (node.position && (Array.isArray(node.position) || node.position.length !== undefined)) return node.position[0];
+                    if (typeof node.x === 'number') return node.x;
+                    return 0;
+                }));
+                const vFlowStartY = Math.min(...vFlowValidNodes.map(node => {
+                    if (node.pos && (Array.isArray(node.pos) || node.pos.length !== undefined)) return node.pos[1];
+                    if (node.position && (Array.isArray(node.position) || node.position.length !== undefined)) return node.position[1];
+                    if (typeof node.y === 'number') return node.y;
+                    return 0;
+                }));
+
+                // Create copies for calculation (don't modify originals)
+                const vFlowNodeCopies = vFlowValidNodes.map(node => ({
+                    ...node,
+                    pos: node.pos ? [...node.pos] : [node.x || 0, node.y || 0],
+                    _calculatedSize: node.size && Array.isArray(node.size) ?
+                        [node.size[0], node.size[1]] :
+                        [node.width || 150, node.height || 100]
+                }));
+
+                // Use exact connection analysis
+                const vFlowConnections = analyzeNodeConnections(vFlowNodeCopies);
+                const vFlowNodeGraph = buildNodeGraph(vFlowNodeCopies, vFlowConnections);
+
+                // Exact spacing constants from V-Flow
+                const V_ROW_SPACING = 50;
+                const V_NODE_SPACING_X = 30;
+                const V_LEVEL_PADDING = 15;
+
+                // Group by levels exactly like V-Flow
+                const vFlowLevels: {[level: number]: any[]} = {};
+                vFlowNodeCopies.forEach(node => {
+                    if (node && node.id) {
+                        const level = vFlowNodeGraph[node.id]?.level ?? 0;
+                        if (!vFlowLevels[level]) vFlowLevels[level] = [];
+                        vFlowLevels[level].push(node);
+                    }
+                });
+
+                // Position nodes exactly like V-Flow
+                const vFlowNodePositions = new Map();
+                Object.entries(vFlowLevels).forEach(([levelStr, levelNodes]) => {
+                    const level = parseInt(levelStr);
+                    if (levelNodes && levelNodes.length > 0) {
+                        levelNodes.sort((a, b) => {
+                            const aOrder = a && a.id && vFlowNodeGraph[a.id] ? vFlowNodeGraph[a.id].order : 0;
+                            const bOrder = b && b.id && vFlowNodeGraph[b.id] ? vFlowNodeGraph[b.id].order : 0;
+                            return aOrder - bOrder;
+                        });
+
+                        // Calculate Y position for this level
+                        let currentY = vFlowStartY;
+                        if (level > 0) {
+                            for (let prevLevel = 0; prevLevel < level; prevLevel++) {
+                                const prevLevelNodes = vFlowLevels[prevLevel] || [];
+                                const prevMaxHeight = Math.max(...prevLevelNodes.map(node =>
+                                    node && node._calculatedSize && node._calculatedSize[1] ? node._calculatedSize[1] : 100
+                                ));
+                                currentY += prevMaxHeight + V_ROW_SPACING + V_LEVEL_PADDING;
+                            }
+                        }
+
+                        let currentX = vFlowStartX;
+                        levelNodes.forEach((node) => {
+                            if (node && node._calculatedSize) {
+                                vFlowNodePositions.set(node.id, {
+                                    x: currentX,
+                                    y: currentY,
+                                    width: node._calculatedSize[0],
+                                    height: node._calculatedSize[1]
+                                });
+                                currentX += node._calculatedSize[0] + V_NODE_SPACING_X;
+                            }
+                        });
+                    }
+                });
+
+                nodes.forEach((node: any) => {
+                    const pos = vFlowNodePositions.get(node.id);
+                    if (pos) positions.push(pos);
                 });
                 break;
         }
