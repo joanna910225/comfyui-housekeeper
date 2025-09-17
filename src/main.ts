@@ -51,19 +51,16 @@ comfyApp.registerExtension({
     name: 'housekeeper-alignment',
     
     async setup() {
-        console.log("Housekeeper: Setting up node alignment panel");
         
         // Create the alignment panel immediately without waiting for a specific node
         if (!alignmentPanel) {
             try {
                 // Import the alignment panel as a plain JavaScript implementation
                 // instead of trying to mount a Vue component globally
-                console.log("Housekeeper: Creating alignment panel...");
                 
                 // Initialize the alignment panel
                 initializeAlignmentPanel();
                 
-                console.log("Housekeeper: Node alignment panel initialized successfully");
             } catch (error) {
                 console.error("Housekeeper: Error setting up alignment panel:", error);
             }
@@ -90,6 +87,311 @@ function initializeAlignmentPanel() {
     let panel: HTMLElement | null = null;
     let isVisible = false;
     let selectedNodes: any[] = [];
+    let previewElements: HTMLElement[] = [];
+
+    // Preview functionality
+    function showPreview(alignmentType: string) {
+        if (selectedNodes.length < 2) return;
+        hidePreview(); // Clear any existing previews
+
+        const canvas = (window as any).app?.canvas;
+        if (!canvas) return;
+
+        console.log('📍 ORIGINAL NODE POSITIONS BEFORE PREVIEW:', selectedNodes.map((node, index) => ({
+            index: index,
+            nodeId: node.id,
+            currentPos: { x: node.pos[0], y: node.pos[1] }
+        })));
+
+        console.log('🎛️ Canvas state:', {
+            canvasOffset: canvas.ds.offset,
+            canvasScale: canvas.ds.scale
+        });
+
+        // Calculate preview positions using the same logic as the alignment functions
+        const previewPositions = calculatePreviewPositions(alignmentType, selectedNodes);
+        console.log('📍 Preview positions:', previewPositions.map((pos, index) => ({
+            index: index,
+            nodeId: selectedNodes[index].id,
+            previewPos: { x: pos.x, y: pos.y }
+        })));
+        
+        previewPositions.forEach((pos, index) => {
+            if (pos && selectedNodes[index]) {
+                const previewEl = document.createElement('div');
+                previewEl.style.cssText = `
+                    position: fixed;
+                    background: rgba(74, 144, 226, 0.3);
+                    border: 2px dashed rgba(74, 144, 226, 0.7);
+                    border-radius: 4px;
+                    z-index: 999;
+                    pointer-events: none;
+                    transition: all 0.2s ease;
+                `;
+
+                // Convert node canvas coordinates to screen coordinates using canvas transform
+                // Account for high-DPI displays and container offsets
+                const dpr = window.devicePixelRatio || 1;
+                const baseScreenX = (pos.x + canvas.ds.offset[0]) * canvas.ds.scale;
+                const baseScreenY = (pos.y + canvas.ds.offset[1]) * canvas.ds.scale;
+
+                // Check if we need to account for container offset
+                const canvasContainer = canvas.canvas.parentElement;
+                const canvasRect = canvas.canvas.getBoundingClientRect();
+                const containerRect = canvasContainer ? canvasContainer.getBoundingClientRect() : null;
+                const containerOffsetY = containerRect ? canvasRect.top - containerRect.top : 0;
+
+                // Calculate any offset from top of viewport to canvas
+                // This accounts for toolbars, headers, or other UI elements above the canvas
+                const viewportToCanvasOffset = canvasRect.top;
+
+                // Use nav element height as base offset
+                const navElement = document.querySelector('nav');
+                let BASE_OFFSET = 31; // Fallback if nav not found
+
+                if (navElement) {
+                    const navRect = navElement.getBoundingClientRect();
+                    BASE_OFFSET = navRect.height;
+                }
+
+                const scaledOffset = BASE_OFFSET * canvas.ds.scale;
+                const screenX = canvasRect.left + baseScreenX;
+                const screenY = canvasRect.top + baseScreenY - scaledOffset;
+
+                console.log(`🔧 Nav-based offset method:`, {
+                    navHeight: navElement ? navElement.getBoundingClientRect().height : 'not found',
+                    baseOffset: BASE_OFFSET,
+                    canvasScale: canvas.ds.scale,
+                    scaledOffset: scaledOffset,
+                    calculation: `${canvasRect.top} + ${baseScreenY} - ${scaledOffset} = ${screenY}`,
+                    result: { x: screenX, y: screenY }
+                });
+                const screenWidth = pos.width * canvas.ds.scale;
+                const screenHeight = pos.height * canvas.ds.scale;
+
+                // Position preview element using calculated coordinates
+
+                
+                previewEl.style.left = screenX + 'px';
+                previewEl.style.top = screenY + 'px';
+                previewEl.style.width = screenWidth + 'px';
+                previewEl.style.height = screenHeight + 'px';
+
+                // Use fixed positioning relative to viewport
+                document.body.appendChild(previewEl);
+                previewElements.push(previewEl);
+            }
+        });
+    }
+
+    function hidePreview() {
+        previewElements.forEach(el => {
+            if (el.parentNode) {
+                el.parentNode.removeChild(el);
+            }
+        });
+        previewElements = [];
+    }
+
+    function calculatePreviewPositions(alignmentType: string, nodes: any[]) {
+        if (nodes.length < 2) return [];
+
+        const positions: any[] = [];
+
+        // Calculate reference positions using same logic as alignment functions
+        const originalLeftPos = Math.min(...nodes.map((node: any) => node.pos[0]));
+        const originalRightPos = Math.max(...nodes.map((node: any) => {
+            let nodeWidth = 150;
+            if (node.size && Array.isArray(node.size) && node.size[0]) {
+                nodeWidth = node.size[0];
+            } else if (typeof node.width === 'number') {
+                nodeWidth = node.width;
+            } else if (node.properties && typeof node.properties.width === 'number') {
+                nodeWidth = node.properties.width;
+            }
+            return node.pos[0] + nodeWidth;
+        }));
+        const originalTopPos = Math.min(...nodes.map((node: any) => node.pos[1]));
+        const originalBottomPos = Math.max(...nodes.map((node: any) => {
+            let nodeHeight = 100;
+            if (node.size && Array.isArray(node.size) && node.size[1]) {
+                nodeHeight = node.size[1];
+            } else if (typeof node.height === 'number') {
+                nodeHeight = node.height;
+            } else if (node.properties && typeof node.properties.height === 'number') {
+                nodeHeight = node.properties.height;
+            }
+            return node.pos[1] + nodeHeight;
+        }));
+
+        switch (alignmentType) {
+            case 'left':
+                const leftSortedNodes = [...nodes].sort((a: any, b: any) => a.pos[1] - b.pos[1]);
+                let currentY = leftSortedNodes[0].pos[1];
+
+                // Create a map to store positions for each node ID
+                const nodePositions = new Map();
+
+                leftSortedNodes.forEach((node: any) => {
+                    let nodeHeight = 100, nodeWidth = 150;
+                    if (node.size && Array.isArray(node.size)) {
+                        if (node.size[1]) nodeHeight = node.size[1];
+                        if (node.size[0]) nodeWidth = node.size[0];
+                    } else {
+                        if (typeof node.height === 'number') nodeHeight = node.height;
+                        if (typeof node.width === 'number') nodeWidth = node.width;
+                        if (node.properties) {
+                            if (typeof node.properties.height === 'number') nodeHeight = node.properties.height;
+                            if (typeof node.properties.width === 'number') nodeWidth = node.properties.width;
+                        }
+                    }
+
+                    nodePositions.set(node.id, {
+                        x: originalLeftPos,
+                        y: currentY,
+                        width: nodeWidth,
+                        height: nodeHeight
+                    });
+                    currentY += nodeHeight + 30;
+                });
+
+                // Push positions in the original node order
+                nodes.forEach((node: any) => {
+                    positions.push(nodePositions.get(node.id));
+                });
+                break;
+                
+            case 'right':
+                const rightSortedNodes = [...nodes].sort((a: any, b: any) => a.pos[1] - b.pos[1]);
+                let currentYRight = rightSortedNodes[0].pos[1];
+
+                const rightNodePositions = new Map();
+
+                rightSortedNodes.forEach((node: any) => {
+                    let nodeHeight = 100, nodeWidth = 150;
+                    if (node.size && Array.isArray(node.size)) {
+                        if (node.size[1]) nodeHeight = node.size[1];
+                        if (node.size[0]) nodeWidth = node.size[0];
+                    } else {
+                        if (typeof node.height === 'number') nodeHeight = node.height;
+                        if (typeof node.width === 'number') nodeWidth = node.width;
+                        if (node.properties) {
+                            if (typeof node.properties.height === 'number') nodeHeight = node.properties.height;
+                            if (typeof node.properties.width === 'number') nodeWidth = node.properties.width;
+                        }
+                    }
+
+                    rightNodePositions.set(node.id, {
+                        x: originalRightPos - nodeWidth,
+                        y: currentYRight,
+                        width: nodeWidth,
+                        height: nodeHeight
+                    });
+                    currentYRight += nodeHeight + 30;
+                });
+
+                nodes.forEach((node: any) => {
+                    positions.push(rightNodePositions.get(node.id));
+                });
+                break;
+                
+            case 'top':
+                const topSortedNodes = [...nodes].sort((a: any, b: any) => a.pos[0] - b.pos[0]);
+                let currentX = topSortedNodes[0].pos[0];
+
+                const topNodePositions = new Map();
+
+                topSortedNodes.forEach((node: any) => {
+                    let nodeHeight = 100, nodeWidth = 150;
+                    if (node.size && Array.isArray(node.size)) {
+                        if (node.size[1]) nodeHeight = node.size[1];
+                        if (node.size[0]) nodeWidth = node.size[0];
+                    } else {
+                        if (typeof node.height === 'number') nodeHeight = node.height;
+                        if (typeof node.width === 'number') nodeWidth = node.width;
+                        if (node.properties) {
+                            if (typeof node.properties.height === 'number') nodeHeight = node.properties.height;
+                            if (typeof node.properties.width === 'number') nodeWidth = node.properties.width;
+                        }
+                    }
+
+                    topNodePositions.set(node.id, {
+                        x: currentX,
+                        y: originalTopPos,
+                        width: nodeWidth,
+                        height: nodeHeight
+                    });
+                    currentX += nodeWidth + 30;
+                });
+
+                nodes.forEach((node: any) => {
+                    positions.push(topNodePositions.get(node.id));
+                });
+                break;
+                
+            case 'bottom':
+                const bottomSortedNodes = [...nodes].sort((a: any, b: any) => a.pos[0] - b.pos[0]);
+                let currentXBottom = originalLeftPos;
+
+                const bottomNodePositions = new Map();
+
+                bottomSortedNodes.forEach((node: any) => {
+                    let nodeHeight = 100, nodeWidth = 150;
+                    if (node.size && Array.isArray(node.size)) {
+                        if (node.size[1]) nodeHeight = node.size[1];
+                        if (node.size[0]) nodeWidth = node.size[0];
+                    } else {
+                        if (typeof node.height === 'number') nodeHeight = node.height;
+                        if (typeof node.width === 'number') nodeWidth = node.width;
+                        if (node.properties) {
+                            if (typeof node.properties.height === 'number') nodeHeight = node.properties.height;
+                            if (typeof node.properties.width === 'number') nodeWidth = node.properties.width;
+                        }
+                    }
+
+                    bottomNodePositions.set(node.id, {
+                        x: currentXBottom,
+                        y: originalBottomPos - nodeHeight,
+                        width: nodeWidth,
+                        height: nodeHeight
+                    });
+                    currentXBottom += nodeWidth + 30;
+                });
+
+                nodes.forEach((node: any) => {
+                    positions.push(bottomNodePositions.get(node.id));
+                });
+                break;
+                
+            case 'horizontal-flow':
+            case 'vertical-flow':
+                // For flow alignments, show current positions with highlight
+                nodes.forEach((node: any) => {
+                    let nodeHeight = 100, nodeWidth = 150;
+                    if (node.size && Array.isArray(node.size)) {
+                        if (node.size[1]) nodeHeight = node.size[1];
+                        if (node.size[0]) nodeWidth = node.size[0];
+                    } else {
+                        if (typeof node.height === 'number') nodeHeight = node.height;
+                        if (typeof node.width === 'number') nodeWidth = node.width;
+                        if (node.properties) {
+                            if (typeof node.properties.height === 'number') nodeHeight = node.properties.height;
+                            if (typeof node.properties.width === 'number') nodeWidth = node.properties.width;
+                        }
+                    }
+                    
+                    positions.push({
+                        x: node.pos[0],
+                        y: node.pos[1],
+                        width: nodeWidth,
+                        height: nodeHeight
+                    });
+                });
+                break;
+        }
+        
+        return positions;
+    }
 
     // Create alignment button helper function
     function createAlignmentButton(alignment: {type: string, icon: string, label: string}, isAdvanced: boolean = false) {
@@ -123,12 +425,14 @@ function initializeAlignmentPanel() {
             button.style.background = `linear-gradient(145deg, ${hoverColor}, #505050)`;
             button.style.transform = 'translateY(-1px)';
             button.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+            showPreview(alignment.type);
         });
 
         button.addEventListener('mouseleave', () => {
             button.style.background = `linear-gradient(145deg, ${baseColor}, #404040)`;
             button.style.transform = 'translateY(0)';
             button.style.boxShadow = 'none';
+            hidePreview();
         });
 
         button.addEventListener('click', () => alignNodes(alignment.type));
@@ -478,13 +782,48 @@ function initializeAlignmentPanel() {
             return;
         }
 
+        console.log('📍 ORIGINAL NODE POSITIONS BEFORE CLICKED ALIGNMENT:', selectedNodes.map((node, index) => ({
+            index: index,
+            nodeId: node.id,
+            currentPos: { x: node.pos[0], y: node.pos[1] }
+        })));
+
         try {
+            // Calculate all reference positions at the start to avoid drift on consecutive clicks
+            const originalLeftPos = Math.min(...selectedNodes.map((node: any) => node.pos[0]));
+            const originalRightPos = Math.max(...selectedNodes.map((node: any) => {
+                // Get actual node width, same logic as in positioning
+                let nodeWidth = 150; // Default fallback
+                if (node.size && Array.isArray(node.size) && node.size[0]) {
+                    nodeWidth = node.size[0];
+                } else if (typeof node.width === 'number') {
+                    nodeWidth = node.width;
+                } else if (node.properties && typeof node.properties.width === 'number') {
+                    nodeWidth = node.properties.width;
+                }
+                return node.pos[0] + nodeWidth;
+            }));
+            const originalTopPos = Math.min(...selectedNodes.map((node: any) => node.pos[1]));
+            const originalBottomPos = Math.max(...selectedNodes.map((node: any) => {
+                // Get actual node height, same logic as in positioning
+                let nodeHeight = 100; // Default fallback
+                if (node.size && Array.isArray(node.size) && node.size[1]) {
+                    nodeHeight = node.size[1];
+                } else if (typeof node.height === 'number') {
+                    nodeHeight = node.height;
+                } else if (node.properties && typeof node.properties.height === 'number') {
+                    nodeHeight = node.properties.height;
+                }
+                return node.pos[1] + nodeHeight;
+            }));
+
+
             let referenceValue: number;
 
             switch (alignmentType) {
                 case 'left':
                     // Align all nodes to the leftmost edge, but maintain vertical spacing
-                    referenceValue = Math.min(...selectedNodes.map((node: any) => node.pos[0]));
+                    referenceValue = originalLeftPos;
                     
                     // Sort nodes by vertical position to maintain order
                     const leftSortedNodes = [...selectedNodes].sort((a: any, b: any) => a.pos[1] - b.pos[1]);
@@ -504,11 +843,12 @@ function initializeAlignmentPanel() {
                             nodeHeight = node.properties.height;
                         }
                         
-                        console.log(`Left align - Node ${node.id || index}: height=${nodeHeight}, currentY=${currentY}`);
                         
                         // Set position
                         node.pos[0] = referenceValue; // Align to left edge
                         node.pos[1] = currentY;
+
+                        // Position updated successfully
                         
                         // Update x,y properties if they exist
                         if (typeof node.x === 'number') node.x = node.pos[0];
@@ -516,13 +856,12 @@ function initializeAlignmentPanel() {
                         
                         // Calculate next Y position: current Y + this node's height + spacing
                         currentY += nodeHeight + nodeSpacing;
-                        console.log(`  Next Y will be: ${currentY}`);
                     });
                     break;
                     
                 case 'right':
                     // Align all nodes to the rightmost edge, but maintain vertical spacing
-                    referenceValue = Math.max(...selectedNodes.map((node: any) => node.pos[0] + node.size[0]));
+                    referenceValue = originalRightPos;
                     
                     // Sort nodes by vertical position to maintain order
                     const rightSortedNodes = [...selectedNodes].sort((a: any, b: any) => a.pos[1] - b.pos[1]);
@@ -548,7 +887,6 @@ function initializeAlignmentPanel() {
                             }
                         }
                         
-                        console.log(`Right align - Node ${node.id || index}: height=${nodeHeight}, width=${nodeWidth}, currentY=${currentYRight}`);
                         
                         // Set position
                         node.pos[0] = referenceValue - nodeWidth; // Align to right edge
@@ -560,13 +898,12 @@ function initializeAlignmentPanel() {
                         
                         // Calculate next Y position: current Y + this node's height + spacing
                         currentYRight += nodeHeight + nodeSpacing;
-                        console.log(`  Next Y will be: ${currentYRight}`);
                     });
                     break;
                     
                 case 'top':
                     // Align all nodes to the topmost edge, but maintain horizontal spacing
-                    referenceValue = Math.min(...selectedNodes.map((node: any) => node.pos[1]));
+                    referenceValue = originalTopPos;
                     
                     // Sort nodes by horizontal position to maintain order
                     const topSortedNodes = [...selectedNodes].sort((a: any, b: any) => a.pos[0] - b.pos[0]);
@@ -586,7 +923,6 @@ function initializeAlignmentPanel() {
                             nodeWidth = node.properties.width;
                         }
                         
-                        console.log(`Top align - Node ${node.id || index}: width=${nodeWidth}, currentX=${currentX}`);
                         
                         // Set position
                         node.pos[1] = referenceValue; // Align to top edge
@@ -598,19 +934,21 @@ function initializeAlignmentPanel() {
                         
                         // Calculate next X position: current X + this node's width + spacing
                         currentX += nodeWidth + nodeSpacing;
-                        console.log(`  Next X will be: ${currentX}`);
                     });
                     break;
                     
                 case 'bottom':
                     // Align all nodes to the bottommost edge, but maintain horizontal spacing
-                    referenceValue = Math.max(...selectedNodes.map((node: any) => node.pos[1] + node.size[1]));
+                    referenceValue = originalBottomPos;
+                    
                     
                     // Sort nodes by horizontal position to maintain order
                     const bottomSortedNodes = [...selectedNodes].sort((a: any, b: any) => a.pos[0] - b.pos[0]);
                     
-                    // Calculate positions to ensure no overlapping
-                    let currentXBottom = bottomSortedNodes[0].pos[0]; // Start from the leftmost node's position
+                    // Calculate positions to ensure no overlapping  
+                    let currentXBottom = originalLeftPos; // Start from the leftmost edge of selected area
+                    
+                    
                     bottomSortedNodes.forEach((node: any, index: number) => {
                         const nodeSpacing = 30; // Extra spacing for safety
                         
@@ -630,19 +968,23 @@ function initializeAlignmentPanel() {
                             }
                         }
                         
-                        console.log(`Bottom align - Node ${node.id || index}: height=${nodeHeight}, width=${nodeWidth}, currentX=${currentXBottom}`);
+                        
+                        // Calculate new position
+                        const newY = referenceValue - nodeHeight; // Align to bottom edge
+                        const newX = currentXBottom;
+                        
                         
                         // Set position
-                        node.pos[1] = referenceValue - nodeHeight; // Align to bottom edge
-                        node.pos[0] = currentXBottom;
+                        node.pos[1] = newY;
+                        node.pos[0] = newX;
                         
                         // Update x,y properties if they exist
                         if (typeof node.x === 'number') node.x = node.pos[0];
                         if (typeof node.y === 'number') node.y = node.pos[1];
                         
+                        
                         // Calculate next X position: current X + this node's width + spacing
                         currentXBottom += nodeWidth + nodeSpacing;
-                        console.log(`  Next X will be: ${currentXBottom}`);
                     });
                     break;
                     
@@ -670,6 +1012,7 @@ function initializeAlignmentPanel() {
                 // Continue without redraw - the changes are still applied
             }
             
+
             // Only show success message for basic alignment (not flow alignment)
             showMessage(`Aligned ${selectedNodes.length} nodes to ${alignmentType}`, 'success');
             
@@ -681,32 +1024,11 @@ function initializeAlignmentPanel() {
     
     // Debug function to understand node structure
     function debugNodeStructure(nodes: any[]) {
-        console.log('🔍 Debug: Node structure analysis');
-        console.log('Total selected nodes:', nodes.length);
-        
-        nodes.forEach((node, index) => {
-            console.log(`Node ${index}:`, {
-                hasNode: !!node,
-                id: node?.id,
-                hasPos: !!node?.pos,
-                posType: Array.isArray(node?.pos) ? 'array' : typeof node?.pos,
-                posValue: node?.pos,
-                hasSize: !!node?.size,
-                sizeType: Array.isArray(node?.size) ? 'array' : typeof node?.size,
-                sizeValue: node?.size,
-                keys: node ? Object.keys(node) : 'null'
-            });
-        });
     }
 
     // Advanced alignment functions
     function alignHorizontalFlow() {
         try {
-            console.log('🎯 Starting horizontal flow alignment');
-            console.log('🔍 Selected nodes positions BEFORE processing:');
-            selectedNodes.forEach((node, i) => {
-                console.log(`  Node ${i}: pos=[${node?.pos?.[0]}, ${node?.pos?.[1]}]`);
-            });
             debugNodeStructure(selectedNodes);
             
             // More lenient validation - check for essential properties
@@ -723,20 +1045,11 @@ function initializeAlignmentPanel() {
                 const isValid = !!hasPosition && !!hasSize;
                 
                 if (!isValid) {
-                    console.log('❌ Invalid node:', {
-                        id: node.id,
-                        hasPos: !!node.pos,
-                        hasPosition: !!node.position,
-                        hasXY: typeof node.x === 'number' && typeof node.y === 'number',
-                        hasSize: !!node.size,
-                        hasWH: typeof node.width === 'number' && typeof node.height === 'number'
-                    });
                 }
                 
                 return isValid;
             });
             
-            console.log(`✅ Valid nodes: ${validNodes.length} out of ${selectedNodes.length}`);
             
             if (validNodes.length < 2) {
                 showMessage(`Not enough valid nodes: ${validNodes.length}/${selectedNodes.length} nodes are valid`, 'warning');
@@ -764,19 +1077,6 @@ function initializeAlignmentPanel() {
             const startX = selectedLeftmostX;
             const startY = selectedTopmostY;
             
-            console.log(`🔍 DEBUG H-FLOW: All selected node X positions:`, validNodes.map(node => {
-                if (node.pos && (Array.isArray(node.pos) || node.pos.length !== undefined)) return node.pos[0];
-                if (node.position && (Array.isArray(node.position) || node.position.length !== undefined)) return node.position[0];
-                if (typeof node.x === 'number') return node.x;
-                return 0;
-            }));
-            console.log(`🔍 DEBUG H-FLOW: All selected node Y positions:`, validNodes.map(node => {
-                if (node.pos && (Array.isArray(node.pos) || node.pos.length !== undefined)) return node.pos[1];
-                if (node.position && (Array.isArray(node.position) || node.position.length !== undefined)) return node.position[1];
-                if (typeof node.y === 'number') return node.y;
-                return 0;
-            }));
-            console.log(`📍 H-FLOW Starting position - Top-left corner: X=${startX}, Y=${startY}`);
             
             // Normalize node properties for consistent access
             validNodes.forEach(node => {
@@ -829,7 +1129,6 @@ function initializeAlignmentPanel() {
                     levels[level].push(node);
                 }
             });
-            console.log(`📊 Levels:`, Object.keys(levels).map(l => `Level ${l}: ${levels[parseInt(l)].length} nodes`));
             
             // Position nodes horizontally with proper spacing
             Object.entries(levels).forEach(([levelStr, levelNodes]) => {
@@ -868,7 +1167,6 @@ function initializeAlignmentPanel() {
                     // Position vertically (Y-axis) - start from top edge, no centering
                     let currentY = startY;
                     
-                    console.log(`📐 Level ${level}: Positioning ${levelNodes.length} nodes at X=${currentX}, starting Y=${currentY}`);
                     
                     levelNodes.forEach((node, index) => {
                         if (node && node.pos && node._calculatedSize) {
@@ -881,7 +1179,6 @@ function initializeAlignmentPanel() {
                             // Set vertical position with proper spacing
                             node.pos[1] = currentY;
                             
-                            console.log(`  ↻ Node ${node.id || index}: ${oldPos} → [${node.pos[0]}, ${node.pos[1]}] (size: ${calculatedSize})`);
                             
                             // CRITICAL: NEVER modify node.size, node.width, node.height properties!
                             // All original size properties remain completely unchanged
@@ -921,12 +1218,6 @@ function initializeAlignmentPanel() {
     
     function alignVerticalFlow() {
         try {
-            console.log('🎯 Starting vertical flow alignment');
-            console.log('🔍 Selected nodes positions BEFORE processing:');
-            selectedNodes.forEach((node, i) => {
-                console.log(`  Node ${i}: pos=[${node?.pos?.[0]}, ${node?.pos?.[1]}]`);
-            });
-            debugNodeStructure(selectedNodes);
             
             // More lenient validation - check for essential properties
             const validNodes = selectedNodes.filter(node => {
@@ -942,7 +1233,6 @@ function initializeAlignmentPanel() {
                 return !!hasPosition && !!hasSize;
             });
             
-            console.log(`✅ Valid nodes: ${validNodes.length} out of ${selectedNodes.length}`);
             
             if (validNodes.length < 2) {
                 showMessage(`Not enough valid nodes: ${validNodes.length}/${selectedNodes.length} nodes are valid`, 'warning');
@@ -970,19 +1260,6 @@ function initializeAlignmentPanel() {
             const startX = selectedLeftmostX;
             const startY = selectedTopmostY;
             
-            console.log(`🔍 DEBUG V-FLOW: All selected node X positions:`, validNodes.map(node => {
-                if (node.pos && (Array.isArray(node.pos) || node.pos.length !== undefined)) return node.pos[0];
-                if (node.position && (Array.isArray(node.position) || node.position.length !== undefined)) return node.position[0];
-                if (typeof node.x === 'number') return node.x;
-                return 0;
-            }));
-            console.log(`🔍 DEBUG V-FLOW: All selected node Y positions:`, validNodes.map(node => {
-                if (node.pos && (Array.isArray(node.pos) || node.pos.length !== undefined)) return node.pos[1];
-                if (node.position && (Array.isArray(node.position) || node.position.length !== undefined)) return node.position[1];
-                if (typeof node.y === 'number') return node.y;
-                return 0;
-            }));
-            console.log(`📍 V-FLOW Starting position - Top-left corner: X=${startX}, Y=${startY}`);
             
             // Normalize node properties for consistent access
             validNodes.forEach(node => {
@@ -1036,7 +1313,6 @@ function initializeAlignmentPanel() {
                 }
             });
             
-            console.log(`📊 Levels:`, Object.keys(levels).map(l => `Level ${l}: ${levels[parseInt(l)].length} nodes`));
             
             // Position nodes vertically with proper spacing
             Object.entries(levels).forEach(([levelStr, levelNodes]) => {
@@ -1076,7 +1352,6 @@ function initializeAlignmentPanel() {
                     // Position horizontally (X-axis) - start from left edge and space nodes properly
                     let currentX = startX;
                     
-                    console.log(`📐 Level ${level}: Positioning ${levelNodes.length} nodes at Y=${currentY}, starting X=${currentX}, total width: ${totalWidth}`);
                     
                     levelNodes.forEach((node, index) => {
                         if (node && node.pos && node._calculatedSize) {
@@ -1089,7 +1364,6 @@ function initializeAlignmentPanel() {
                             // Set vertical position (row based on level)
                             node.pos[1] = currentY;
                             
-                            console.log(`  ↻ Node ${node.id || index}: ${oldPos} → [${node.pos[0]}, ${node.pos[1]}] (size: ${calculatedSize})`);
                             
                             // CRITICAL: NEVER modify node.size, node.width, node.height properties!
                             // All original size properties remain completely unchanged
@@ -1240,5 +1514,4 @@ function initializeAlignmentPanel() {
     setupCanvasMonitoring();
     document.addEventListener('keydown', handleKeyboard);
     
-    console.log('Housekeeper: Alignment panel initialized');
 }
