@@ -1013,8 +1013,7 @@ function initializeAlignmentPanel() {
             }
             
 
-            // Only show success message for basic alignment (not flow alignment)
-            showMessage(`Aligned ${selectedNodes.length} nodes to ${alignmentType}`, 'success');
+            // Success message removed - clean prompt window
             
         } catch (error) {
             console.error('Alignment error:', error);
@@ -1209,7 +1208,7 @@ function initializeAlignmentPanel() {
                 console.warn('Could not trigger canvas redraw:', redrawError);
             }
             
-            showMessage(`Arranged ${validNodes.length} nodes in horizontal flow`, 'success');
+            // Success message removed - clean prompt window
         } catch (error) {
             console.error('Horizontal flow alignment error:', error);
             showMessage('Error in horizontal flow alignment', 'error');
@@ -1394,7 +1393,7 @@ function initializeAlignmentPanel() {
                 console.warn('Could not trigger canvas redraw:', redrawError);
             }
             
-            showMessage(`Arranged ${validNodes.length} nodes in vertical flow`, 'success');
+            // Success message removed - clean prompt window
         } catch (error) {
             console.error('Vertical flow alignment error:', error);
             showMessage('Error in vertical flow alignment', 'error');

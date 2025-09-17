@@ -13,7 +13,7 @@ const Ct = { class: "toolbar" }, St = { class: "color-picker" }, _t = { class: "
   },
   emits: ["tool-change", "color-change", "canvas-clear", "brush-size-change"],
   setup(g, { emit: N }) {
-    const { t: m } = ht(), C = g, L = N, G = C.colors || ["#000000", "#ff0000", "#0000ff", "#69a869", "#ffff00", "#ff00ff", "#00ffff"], I = H(C.initialColor || "#000000"), O = H(C.initialBrushSize || 5), k = H(C.initialTool || "pen");
+    const { t: m } = ht(), C = g, L = N, F = C.colors || ["#000000", "#ff0000", "#0000ff", "#69a869", "#ffff00", "#ff00ff", "#00ffff"], I = H(C.initialColor || "#000000"), O = H(C.initialBrushSize || 5), k = H(C.initialTool || "pen");
     function S(B) {
       k.value = B, L("tool-change", B);
     }
@@ -50,7 +50,7 @@ const Ct = { class: "toolbar" }, St = { class: "color-picker" }, _t = { class: "
           })
         ]),
         j("div", St, [
-          (Z(!0), it(lt, null, bt(M(G), (E, R) => (Z(), ct(M(ot), {
+          (Z(!0), it(lt, null, bt(M(F), (E, R) => (Z(), ct(M(ot), {
             key: R,
             class: pt({ "color-button": !0, active: I.value === E }),
             onClick: (tt) => T(E),
@@ -94,19 +94,19 @@ const Ct = { class: "toolbar" }, St = { class: "color-picker" }, _t = { class: "
   },
   emits: ["mounted", "drawing-start", "drawing", "drawing-end", "state-save", "canvas-clear"],
   setup(g, { expose: N, emit: m }) {
-    const C = g, L = C.width || 800, G = C.height || 500, I = C.initialColor || "#000000", O = C.initialBrushSize || 5, k = m, S = H(!1), T = H(0), X = H(0), v = H(null), B = H(!1), $ = H(O), q = H(I), E = H(null), R = H(null);
+    const C = g, L = C.width || 800, F = C.height || 500, I = C.initialColor || "#000000", O = C.initialBrushSize || 5, k = m, S = H(!1), T = H(0), X = H(0), v = H(null), B = H(!1), $ = H(O), q = H(I), E = H(null), R = H(null);
     ft(() => {
       R.value && (v.value = R.value.getContext("2d"), tt(), xt(() => {
         R.value && k("mounted", R.value);
       }));
     });
     function tt() {
-      v.value && (v.value.fillStyle = "#ffffff", v.value.fillRect(0, 0, L, G), J(), c());
+      v.value && (v.value.fillStyle = "#ffffff", v.value.fillRect(0, 0, L, F), J(), c());
     }
     function J() {
       v.value && (B.value ? (v.value.globalCompositeOperation = "destination-out", v.value.strokeStyle = "rgba(0,0,0,1)") : (v.value.globalCompositeOperation = "source-over", v.value.strokeStyle = q.value), v.value.lineWidth = $.value, v.value.lineJoin = "round", v.value.lineCap = "round");
     }
-    function W(h) {
+    function U(h) {
       S.value = !0;
       const { offsetX: l, offsetY: s } = o(h);
       T.value = l, X.value = s, v.value && (v.value.beginPath(), v.value.moveTo(T.value, X.value), v.value.arc(T.value, X.value, $.value / 2, 0, Math.PI * 2), v.value.fill(), k("drawing-start", {
@@ -143,7 +143,7 @@ const Ct = { class: "toolbar" }, St = { class: "color-picker" }, _t = { class: "
       const s = {
         touches: [h.touches[0]]
       };
-      W(s);
+      U(s);
     }
     function i(h) {
       if (h.preventDefault(), !S.value) return;
@@ -162,7 +162,7 @@ const Ct = { class: "toolbar" }, St = { class: "color-picker" }, _t = { class: "
       $.value = h, J();
     }
     function d() {
-      v.value && (v.value.fillStyle = "#ffffff", v.value.fillRect(0, 0, L, G), J(), c(), k("canvas-clear"));
+      v.value && (v.value.fillStyle = "#ffffff", v.value.fillRect(0, 0, L, F), J(), c(), k("canvas-clear"));
     }
     function c() {
       R.value && (E.value = R.value.toDataURL("image/png"), E.value && k("state-save", E.value));
@@ -184,8 +184,8 @@ const Ct = { class: "toolbar" }, St = { class: "color-picker" }, _t = { class: "
           ref_key: "canvas",
           ref: R,
           width: M(L),
-          height: M(G),
-          onMousedown: W,
+          height: M(F),
+          onMousedown: U,
           onMousemove: Q,
           onMouseup: z,
           onMouseleave: z,
@@ -207,7 +207,7 @@ const Ct = { class: "toolbar" }, St = { class: "color-picker" }, _t = { class: "
   },
   emits: ["tool-change", "color-change", "brush-size-change", "drawing-start", "drawing", "drawing-end", "state-save", "mounted"],
   setup(g, { expose: N, emit: m }) {
-    const C = g, L = C.width || 800, G = C.height || 500, I = C.initialColor || "#000000", O = C.initialBrushSize || 5, k = C.availableColors || ["#000000", "#ff0000", "#0000ff", "#00ff00", "#ffff00", "#ff00ff", "#00ffff"], S = m, T = H(null), X = H(null);
+    const C = g, L = C.width || 800, F = C.height || 500, I = C.initialColor || "#000000", O = C.initialBrushSize || 5, k = C.availableColors || ["#000000", "#ff0000", "#0000ff", "#00ff00", "#ffff00", "#ff00ff", "#00ffff"], S = m, T = H(null), X = H(null);
     function v(z) {
       var o;
       (o = T.value) == null || o.setTool(z), S("tool-change", z);
@@ -236,7 +236,7 @@ const Ct = { class: "toolbar" }, St = { class: "color-picker" }, _t = { class: "
     function J(z) {
       X.value = z, S("state-save", z);
     }
-    function W(z) {
+    function U(z) {
       S("mounted", z);
     }
     async function Q() {
@@ -266,14 +266,14 @@ const Ct = { class: "toolbar" }, St = { class: "color-picker" }, _t = { class: "
         ref_key: "drawingBoard",
         ref: T,
         width: M(L),
-        height: M(G),
+        height: M(F),
         initialColor: M(I),
         initialBrushSize: M(O),
         onDrawingStart: E,
         onDrawing: R,
         onDrawingEnd: tt,
         onStateSave: J,
-        onMounted: W
+        onMounted: U
       }, null, 8, ["width", "height", "initialColor", "initialBrushSize"])
     ]));
   }
@@ -288,7 +288,7 @@ const Ct = { class: "toolbar" }, St = { class: "color-picker" }, _t = { class: "
     function L(I) {
       C.value = I, console.log("canvas state saved:", I.substring(0, 50) + "...");
     }
-    async function G(I, O) {
+    async function F(I, O) {
       var k;
       try {
         if (!((k = window.app) != null && k.api))
@@ -308,7 +308,7 @@ const Ct = { class: "toolbar" }, St = { class: "color-picker" }, _t = { class: "
           console.log("Vue Component: inside vue serializeValue"), console.log("node", I), console.log("index", O);
           const k = C.value;
           return k ? {
-            image: `threed/${(await G(k, "test_vue_basic")).name} [temp]`
+            image: `threed/${(await F(k, "test_vue_basic")).name} [temp]`
           } : (console.warn("Vue Component: No canvas data available"), { image: null });
         } catch (k) {
           return console.error("Vue Component: Error in serializeValue:", k), { image: null };
@@ -371,7 +371,7 @@ function $t() {
   function L(o) {
     var u;
     if (m.length < 2) return;
-    G();
+    F();
     const r = (u = window.app) == null ? void 0 : u.canvas;
     if (!r) return;
     console.log("📍 ORIGINAL NODE POSITIONS BEFORE PREVIEW:", m.map((y, n) => ({
@@ -404,21 +404,21 @@ function $t() {
         const x = document.querySelector("nav");
         let Y = 31;
         x && (Y = x.getBoundingClientRect().height);
-        const F = Y * r.ds.scale, K = l.left + c, D = l.top + p - F;
+        const W = Y * r.ds.scale, G = l.left + c, D = l.top + p - W;
         console.log("🔧 Nav-based offset method:", {
           navHeight: x ? x.getBoundingClientRect().height : "not found",
           baseOffset: Y,
           canvasScale: r.ds.scale,
-          scaledOffset: F,
-          calculation: `${l.top} + ${p} - ${F} = ${D}`,
-          result: { x: K, y: D }
+          scaledOffset: W,
+          calculation: `${l.top} + ${p} - ${W} = ${D}`,
+          result: { x: G, y: D }
         });
         const e = y.width * r.ds.scale, b = y.height * r.ds.scale;
-        d.style.left = K + "px", d.style.top = D + "px", d.style.width = e + "px", d.style.height = b + "px", document.body.appendChild(d), C.push(d);
+        d.style.left = G + "px", d.style.top = D + "px", d.style.width = e + "px", d.style.height = b + "px", document.body.appendChild(d), C.push(d);
       }
     });
   }
-  function G() {
+  function F() {
     C.forEach((o) => {
       o.parentNode && o.parentNode.removeChild(o);
     }), C = [];
@@ -467,18 +467,18 @@ function $t() {
         break;
       case "top":
         const Y = [...r].sort((t, f) => t.pos[0] - f.pos[0]);
-        let F = Y[0].pos[0];
-        const K = /* @__PURE__ */ new Map();
+        let W = Y[0].pos[0];
+        const G = /* @__PURE__ */ new Map();
         Y.forEach((t) => {
           let f = 100, w = 150;
-          t.size && Array.isArray(t.size) ? (t.size[1] && (f = t.size[1]), t.size[0] && (w = t.size[0])) : (typeof t.height == "number" && (f = t.height), typeof t.width == "number" && (w = t.width), t.properties && (typeof t.properties.height == "number" && (f = t.properties.height), typeof t.properties.width == "number" && (w = t.properties.width))), K.set(t.id, {
-            x: F,
+          t.size && Array.isArray(t.size) ? (t.size[1] && (f = t.size[1]), t.size[0] && (w = t.size[0])) : (typeof t.height == "number" && (f = t.height), typeof t.width == "number" && (w = t.width), t.properties && (typeof t.properties.height == "number" && (f = t.properties.height), typeof t.properties.width == "number" && (w = t.properties.width))), G.set(t.id, {
+            x: W,
             y: n,
             width: w,
             height: f
-          }), F += w + 30;
+          }), W += w + 30;
         }), r.forEach((t) => {
-          i.push(K.get(t.id));
+          i.push(G.get(t.id));
         });
         break;
       case "bottom":
@@ -537,7 +537,7 @@ function $t() {
         `, i.addEventListener("mouseenter", () => {
       i.style.background = `linear-gradient(145deg, ${y}, #505050)`, i.style.transform = "translateY(-1px)", i.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.2)", L(o.type);
     }), i.addEventListener("mouseleave", () => {
-      i.style.background = `linear-gradient(145deg, ${u}, #404040)`, i.style.transform = "translateY(0)", i.style.boxShadow = "none", G();
+      i.style.background = `linear-gradient(145deg, ${u}, #404040)`, i.style.transform = "translateY(0)", i.style.boxShadow = "none", F();
     }), i.addEventListener("click", () => E(o.type)), i;
   }
   function k() {
@@ -720,7 +720,7 @@ function $t() {
   function E(o) {
     var r, i, u, y, n;
     if (m.length < 2) {
-      W("Please select at least 2 nodes to align", "warning");
+      U("Please select at least 2 nodes to align", "warning");
       return;
     }
     console.log("📍 ORIGINAL NODE POSITIONS BEFORE CLICKED ALIGNMENT:", m.map((d, c) => ({
@@ -750,17 +750,17 @@ function $t() {
         case "right":
           l = c;
           const Y = [...m].sort((t, f) => t.pos[1] - f.pos[1]);
-          let F = Y[0].pos[1];
+          let W = Y[0].pos[1];
           Y.forEach((t, f) => {
             let A = 100, V = 150;
-            t.size && Array.isArray(t.size) ? (t.size[1] && (A = t.size[1]), t.size[0] && (V = t.size[0])) : (typeof t.height == "number" && (A = t.height), typeof t.width == "number" && (V = t.width), t.properties && (typeof t.properties.height == "number" && (A = t.properties.height), typeof t.properties.width == "number" && (V = t.properties.width))), t.pos[0] = l - V, t.pos[1] = F, typeof t.x == "number" && (t.x = t.pos[0]), typeof t.y == "number" && (t.y = t.pos[1]), F += A + 30;
+            t.size && Array.isArray(t.size) ? (t.size[1] && (A = t.size[1]), t.size[0] && (V = t.size[0])) : (typeof t.height == "number" && (A = t.height), typeof t.width == "number" && (V = t.width), t.properties && (typeof t.properties.height == "number" && (A = t.properties.height), typeof t.properties.width == "number" && (V = t.properties.width))), t.pos[0] = l - V, t.pos[1] = W, typeof t.x == "number" && (t.x = t.pos[0]), typeof t.y == "number" && (t.y = t.pos[1]), W += A + 30;
           });
           break;
         case "top":
           l = p;
-          const K = [...m].sort((t, f) => t.pos[0] - f.pos[0]);
-          let D = K[0].pos[0];
-          K.forEach((t, f) => {
+          const G = [...m].sort((t, f) => t.pos[0] - f.pos[0]);
+          let D = G[0].pos[0];
+          G.forEach((t, f) => {
             let A = 150;
             t.size && Array.isArray(t.size) && t.size[0] ? A = t.size[0] : typeof t.width == "number" ? A = t.width : t.properties && typeof t.properties.width == "number" && (A = t.properties.width), t.pos[1] = l, t.pos[0] = D, typeof t.x == "number" && (t.x = t.pos[0]), typeof t.y == "number" && (t.y = t.pos[1]), D += A + 30;
           });
@@ -789,9 +789,8 @@ function $t() {
       } catch (s) {
         console.warn("Could not trigger canvas redraw:", s);
       }
-      W(`Aligned ${m.length} nodes to ${o}`, "success");
     } catch (d) {
-      console.error("Alignment error:", d), W("Error during alignment", "error");
+      console.error("Alignment error:", d), U("Error during alignment", "error");
     }
   }
   function R(o) {
@@ -805,14 +804,14 @@ function $t() {
         return f;
       });
       if (n.length < 2) {
-        W(`Not enough valid nodes: ${n.length}/${m.length} nodes are valid`, "warning");
+        U(`Not enough valid nodes: ${n.length}/${m.length} nodes are valid`, "warning");
         return;
       }
       const d = Math.min(...n.map((e) => e.pos && (Array.isArray(e.pos) || e.pos.length !== void 0) ? e.pos[0] : e.position && (Array.isArray(e.position) || e.position.length !== void 0) ? e.position[0] : typeof e.x == "number" ? e.x : 0)), c = Math.min(...n.map((e) => e.pos && (Array.isArray(e.pos) || e.pos.length !== void 0) ? e.pos[1] : e.position && (Array.isArray(e.position) || e.position.length !== void 0) ? e.position[1] : typeof e.y == "number" ? e.y : 0)), p = d, h = c;
       n.forEach((e) => {
         e.pos || (e.position && Array.isArray(e.position) ? e.pos = e.position : typeof e.x == "number" && typeof e.y == "number" ? e.pos = [e.x, e.y] : e.pos = [0, 0]), e._calculatedSize || (e.size && Array.isArray(e.size) ? e._calculatedSize = [e.size[0], e.size[1]] : typeof e.width == "number" && typeof e.height == "number" ? e._calculatedSize = [e.width, e.height] : e._calculatedSize = [150, 100]), Array.isArray(e.pos) || (e.pos = [0, 0]);
       });
-      const l = v(n), s = q(n, l), x = 40, Y = 20, F = 15, K = 5, D = {};
+      const l = v(n), s = q(n, l), x = 40, Y = 20, W = 15, G = 5, D = {};
       n.forEach((e) => {
         var b;
         if (e && e.id) {
@@ -823,28 +822,28 @@ function $t() {
         const t = parseInt(e);
         if (b && b.length > 0) {
           b.sort((a, _) => {
-            const U = a && a.id && s[a.id] ? s[a.id].order : 0, P = _ && _.id && s[_.id] ? s[_.id].order : 0;
-            return U - P;
+            const K = a && a.id && s[a.id] ? s[a.id].order : 0, P = _ && _.id && s[_.id] ? s[_.id].order : 0;
+            return K - P;
           });
-          const f = b.reduce((a, _, U) => {
+          const f = b.reduce((a, _, K) => {
             const P = _ && _._calculatedSize && _._calculatedSize[1] ? _._calculatedSize[1] : 100;
-            return a + P + (U < b.length - 1 ? F : 0);
+            return a + P + (K < b.length - 1 ? W : 0);
           }, 0), w = Math.max(...b.map(
             (a) => a && a._calculatedSize && a._calculatedSize[0] ? a._calculatedSize[0] : 150
           ));
           let A = p;
           if (t > 0)
             for (let a = 0; a < t; a++) {
-              const _ = D[a] || [], U = Math.max(..._.map(
+              const _ = D[a] || [], K = Math.max(..._.map(
                 (P) => P && P._calculatedSize && P._calculatedSize[0] ? P._calculatedSize[0] : 150
               ));
-              A += U + x + K;
+              A += K + x + G;
             }
           let V = h;
           b.forEach((a, _) => {
             if (a && a.pos && a._calculatedSize) {
-              const U = [a.pos[0], a.pos[1]], P = [a._calculatedSize[0], a._calculatedSize[1]];
-              a.pos[0] = A, a.pos[1] = V, V += a._calculatedSize[1] + F, typeof a.x == "number" && (a.x = a.pos[0]), typeof a.y == "number" && (a.y = a.pos[1]);
+              const K = [a.pos[0], a.pos[1]], P = [a._calculatedSize[0], a._calculatedSize[1]];
+              a.pos[0] = A, a.pos[1] = V, V += a._calculatedSize[1] + W, typeof a.x == "number" && (a.x = a.pos[0]), typeof a.y == "number" && (a.y = a.pos[1]);
             }
           });
         }
@@ -854,9 +853,8 @@ function $t() {
       } catch (e) {
         console.warn("Could not trigger canvas redraw:", e);
       }
-      W(`Arranged ${n.length} nodes in horizontal flow`, "success");
     } catch (n) {
-      console.error("Horizontal flow alignment error:", n), W("Error in horizontal flow alignment", "error");
+      console.error("Horizontal flow alignment error:", n), U("Error in horizontal flow alignment", "error");
     }
   }
   function J() {
@@ -868,14 +866,14 @@ function $t() {
         return !!b && !!t;
       });
       if (n.length < 2) {
-        W(`Not enough valid nodes: ${n.length}/${m.length} nodes are valid`, "warning");
+        U(`Not enough valid nodes: ${n.length}/${m.length} nodes are valid`, "warning");
         return;
       }
       const d = Math.min(...n.map((e) => e.pos && (Array.isArray(e.pos) || e.pos.length !== void 0) ? e.pos[0] : e.position && (Array.isArray(e.position) || e.position.length !== void 0) ? e.position[0] : typeof e.x == "number" ? e.x : 0)), c = Math.min(...n.map((e) => e.pos && (Array.isArray(e.pos) || e.pos.length !== void 0) ? e.pos[1] : e.position && (Array.isArray(e.position) || e.position.length !== void 0) ? e.position[1] : typeof e.y == "number" ? e.y : 0)), p = d, h = c;
       n.forEach((e) => {
         e.pos || (e.position && Array.isArray(e.position) ? e.pos = e.position : typeof e.x == "number" && typeof e.y == "number" ? e.pos = [e.x, e.y] : e.pos = [0, 0]), e._calculatedSize || (e.size && Array.isArray(e.size) ? e._calculatedSize = [e.size[0], e.size[1]] : typeof e.width == "number" && typeof e.height == "number" ? e._calculatedSize = [e.width, e.height] : e._calculatedSize = [150, 100]), Array.isArray(e.pos) || (e.pos = [0, 0]);
       });
-      const l = v(n), s = q(n, l), x = 50, Y = 30, F = 25, K = 15, D = {};
+      const l = v(n), s = q(n, l), x = 50, Y = 30, W = 25, G = 15, D = {};
       n.forEach((e) => {
         var b;
         if (e && e.id) {
@@ -886,10 +884,10 @@ function $t() {
         const t = parseInt(e);
         if (b && b.length > 0) {
           b.sort((a, _) => {
-            const U = a && a.id && s[a.id] ? s[a.id].order : 0, P = _ && _.id && s[_.id] ? s[_.id].order : 0;
-            return U - P;
+            const K = a && a.id && s[a.id] ? s[a.id].order : 0, P = _ && _.id && s[_.id] ? s[_.id].order : 0;
+            return K - P;
           });
-          const f = b.reduce((a, _, U) => {
+          const f = b.reduce((a, _, K) => {
             const P = _ && _._calculatedSize && _._calculatedSize[0] ? _._calculatedSize[0] : 150;
             return a + P + Y;
           }, 0), w = Math.max(...b.map(
@@ -898,15 +896,15 @@ function $t() {
           let A = h;
           if (t > 0)
             for (let a = 0; a < t; a++) {
-              const _ = D[a] || [], U = Math.max(..._.map(
+              const _ = D[a] || [], K = Math.max(..._.map(
                 (P) => P && P._calculatedSize && P._calculatedSize[1] ? P._calculatedSize[1] : 100
               ));
-              A += U + x + K;
+              A += K + x + G;
             }
           let V = p;
           b.forEach((a, _) => {
             if (a && a.pos && a._calculatedSize) {
-              const U = [a.pos[0], a.pos[1]], P = [a._calculatedSize[0], a._calculatedSize[1]];
+              const K = [a.pos[0], a.pos[1]], P = [a._calculatedSize[0], a._calculatedSize[1]];
               a.pos[0] = V, a.pos[1] = A, V += a._calculatedSize[0] + Y, typeof a.x == "number" && (a.x = a.pos[0]), typeof a.y == "number" && (a.y = a.pos[1]);
             }
           });
@@ -917,12 +915,11 @@ function $t() {
       } catch (e) {
         console.warn("Could not trigger canvas redraw:", e);
       }
-      W(`Arranged ${n.length} nodes in vertical flow`, "success");
     } catch (n) {
-      console.error("Vertical flow alignment error:", n), W("Error in vertical flow alignment", "error");
+      console.error("Vertical flow alignment error:", n), U("Error in vertical flow alignment", "error");
     }
   }
-  function W(o, r = "info") {
+  function U(o, r = "info") {
     const i = document.createElement("div");
     i.textContent = o, i.style.cssText = `
             position: fixed;
