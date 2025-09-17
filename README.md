@@ -16,9 +16,6 @@ Navigate to your ComfyUI custom nodes directory and clone:
 ```bash
 cd ComfyUI/custom_nodes/
 git clone https://github.com/joanna910225/comfyui-housekeeper.git
-cd comfyui-housekeeper
-npm install
-npm run build
 ```
 
 Restart ComfyUI to load the new nodes.
