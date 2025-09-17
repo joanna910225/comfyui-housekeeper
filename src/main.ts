@@ -87,6 +87,311 @@ function initializeAlignmentPanel() {
     let panel: HTMLElement | null = null;
     let isVisible = false;
     let selectedNodes: any[] = [];
+    let previewElements: HTMLElement[] = [];
+
+    // Preview functionality
+    function showPreview(alignmentType: string) {
+        if (selectedNodes.length < 2) return;
+        hidePreview(); // Clear any existing previews
+
+        const canvas = (window as any).app?.canvas;
+        if (!canvas) return;
+
+        console.log('📍 ORIGINAL NODE POSITIONS BEFORE PREVIEW:', selectedNodes.map((node, index) => ({
+            index: index,
+            nodeId: node.id,
+            currentPos: { x: node.pos[0], y: node.pos[1] }
+        })));
+
+        console.log('🎛️ Canvas state:', {
+            canvasOffset: canvas.ds.offset,
+            canvasScale: canvas.ds.scale
+        });
+
+        // Calculate preview positions using the same logic as the alignment functions
+        const previewPositions = calculatePreviewPositions(alignmentType, selectedNodes);
+        console.log('📍 Preview positions:', previewPositions.map((pos, index) => ({
+            index: index,
+            nodeId: selectedNodes[index].id,
+            previewPos: { x: pos.x, y: pos.y }
+        })));
+        
+        previewPositions.forEach((pos, index) => {
+            if (pos && selectedNodes[index]) {
+                const previewEl = document.createElement('div');
+                previewEl.style.cssText = `
+                    position: fixed;
+                    background: rgba(74, 144, 226, 0.3);
+                    border: 2px dashed rgba(74, 144, 226, 0.7);
+                    border-radius: 4px;
+                    z-index: 999;
+                    pointer-events: none;
+                    transition: all 0.2s ease;
+                `;
+
+                // Convert node canvas coordinates to screen coordinates using canvas transform
+                // Account for high-DPI displays and container offsets
+                const dpr = window.devicePixelRatio || 1;
+                const baseScreenX = (pos.x + canvas.ds.offset[0]) * canvas.ds.scale;
+                const baseScreenY = (pos.y + canvas.ds.offset[1]) * canvas.ds.scale;
+
+                // Check if we need to account for container offset
+                const canvasContainer = canvas.canvas.parentElement;
+                const canvasRect = canvas.canvas.getBoundingClientRect();
+                const containerRect = canvasContainer ? canvasContainer.getBoundingClientRect() : null;
+                const containerOffsetY = containerRect ? canvasRect.top - containerRect.top : 0;
+
+                // Calculate any offset from top of viewport to canvas
+                // This accounts for toolbars, headers, or other UI elements above the canvas
+                const viewportToCanvasOffset = canvasRect.top;
+
+                // Use nav element height as base offset
+                const navElement = document.querySelector('nav');
+                let BASE_OFFSET = 31; // Fallback if nav not found
+
+                if (navElement) {
+                    const navRect = navElement.getBoundingClientRect();
+                    BASE_OFFSET = navRect.height;
+                }
+
+                const scaledOffset = BASE_OFFSET * canvas.ds.scale;
+                const screenX = canvasRect.left + baseScreenX;
+                const screenY = canvasRect.top + baseScreenY - scaledOffset;
+
+                console.log(`🔧 Nav-based offset method:`, {
+                    navHeight: navElement ? navElement.getBoundingClientRect().height : 'not found',
+                    baseOffset: BASE_OFFSET,
+                    canvasScale: canvas.ds.scale,
+                    scaledOffset: scaledOffset,
+                    calculation: `${canvasRect.top} + ${baseScreenY} - ${scaledOffset} = ${screenY}`,
+                    result: { x: screenX, y: screenY }
+                });
+                const screenWidth = pos.width * canvas.ds.scale;
+                const screenHeight = pos.height * canvas.ds.scale;
+
+                // Position preview element using calculated coordinates
+
+                
+                previewEl.style.left = screenX + 'px';
+                previewEl.style.top = screenY + 'px';
+                previewEl.style.width = screenWidth + 'px';
+                previewEl.style.height = screenHeight + 'px';
+
+                // Use fixed positioning relative to viewport
+                document.body.appendChild(previewEl);
+                previewElements.push(previewEl);
+            }
+        });
+    }
+
+    function hidePreview() {
+        previewElements.forEach(el => {
+            if (el.parentNode) {
+                el.parentNode.removeChild(el);
+            }
+        });
+        previewElements = [];
+    }
+
+    function calculatePreviewPositions(alignmentType: string, nodes: any[]) {
+        if (nodes.length < 2) return [];
+
+        const positions: any[] = [];
+
+        // Calculate reference positions using same logic as alignment functions
+        const originalLeftPos = Math.min(...nodes.map((node: any) => node.pos[0]));
+        const originalRightPos = Math.max(...nodes.map((node: any) => {
+            let nodeWidth = 150;
+            if (node.size && Array.isArray(node.size) && node.size[0]) {
+                nodeWidth = node.size[0];
+            } else if (typeof node.width === 'number') {
+                nodeWidth = node.width;
+            } else if (node.properties && typeof node.properties.width === 'number') {
+                nodeWidth = node.properties.width;
+            }
+            return node.pos[0] + nodeWidth;
+        }));
+        const originalTopPos = Math.min(...nodes.map((node: any) => node.pos[1]));
+        const originalBottomPos = Math.max(...nodes.map((node: any) => {
+            let nodeHeight = 100;
+            if (node.size && Array.isArray(node.size) && node.size[1]) {
+                nodeHeight = node.size[1];
+            } else if (typeof node.height === 'number') {
+                nodeHeight = node.height;
+            } else if (node.properties && typeof node.properties.height === 'number') {
+                nodeHeight = node.properties.height;
+            }
+            return node.pos[1] + nodeHeight;
+        }));
+
+        switch (alignmentType) {
+            case 'left':
+                const leftSortedNodes = [...nodes].sort((a: any, b: any) => a.pos[1] - b.pos[1]);
+                let currentY = leftSortedNodes[0].pos[1];
+
+                // Create a map to store positions for each node ID
+                const nodePositions = new Map();
+
+                leftSortedNodes.forEach((node: any) => {
+                    let nodeHeight = 100, nodeWidth = 150;
+                    if (node.size && Array.isArray(node.size)) {
+                        if (node.size[1]) nodeHeight = node.size[1];
+                        if (node.size[0]) nodeWidth = node.size[0];
+                    } else {
+                        if (typeof node.height === 'number') nodeHeight = node.height;
+                        if (typeof node.width === 'number') nodeWidth = node.width;
+                        if (node.properties) {
+                            if (typeof node.properties.height === 'number') nodeHeight = node.properties.height;
+                            if (typeof node.properties.width === 'number') nodeWidth = node.properties.width;
+                        }
+                    }
+
+                    nodePositions.set(node.id, {
+                        x: originalLeftPos,
+                        y: currentY,
+                        width: nodeWidth,
+                        height: nodeHeight
+                    });
+                    currentY += nodeHeight + 30;
+                });
+
+                // Push positions in the original node order
+                nodes.forEach((node: any) => {
+                    positions.push(nodePositions.get(node.id));
+                });
+                break;
+                
+            case 'right':
+                const rightSortedNodes = [...nodes].sort((a: any, b: any) => a.pos[1] - b.pos[1]);
+                let currentYRight = rightSortedNodes[0].pos[1];
+
+                const rightNodePositions = new Map();
+
+                rightSortedNodes.forEach((node: any) => {
+                    let nodeHeight = 100, nodeWidth = 150;
+                    if (node.size && Array.isArray(node.size)) {
+                        if (node.size[1]) nodeHeight = node.size[1];
+                        if (node.size[0]) nodeWidth = node.size[0];
+                    } else {
+                        if (typeof node.height === 'number') nodeHeight = node.height;
+                        if (typeof node.width === 'number') nodeWidth = node.width;
+                        if (node.properties) {
+                            if (typeof node.properties.height === 'number') nodeHeight = node.properties.height;
+                            if (typeof node.properties.width === 'number') nodeWidth = node.properties.width;
+                        }
+                    }
+
+                    rightNodePositions.set(node.id, {
+                        x: originalRightPos - nodeWidth,
+                        y: currentYRight,
+                        width: nodeWidth,
+                        height: nodeHeight
+                    });
+                    currentYRight += nodeHeight + 30;
+                });
+
+                nodes.forEach((node: any) => {
+                    positions.push(rightNodePositions.get(node.id));
+                });
+                break;
+                
+            case 'top':
+                const topSortedNodes = [...nodes].sort((a: any, b: any) => a.pos[0] - b.pos[0]);
+                let currentX = topSortedNodes[0].pos[0];
+
+                const topNodePositions = new Map();
+
+                topSortedNodes.forEach((node: any) => {
+                    let nodeHeight = 100, nodeWidth = 150;
+                    if (node.size && Array.isArray(node.size)) {
+                        if (node.size[1]) nodeHeight = node.size[1];
+                        if (node.size[0]) nodeWidth = node.size[0];
+                    } else {
+                        if (typeof node.height === 'number') nodeHeight = node.height;
+                        if (typeof node.width === 'number') nodeWidth = node.width;
+                        if (node.properties) {
+                            if (typeof node.properties.height === 'number') nodeHeight = node.properties.height;
+                            if (typeof node.properties.width === 'number') nodeWidth = node.properties.width;
+                        }
+                    }
+
+                    topNodePositions.set(node.id, {
+                        x: currentX,
+                        y: originalTopPos,
+                        width: nodeWidth,
+                        height: nodeHeight
+                    });
+                    currentX += nodeWidth + 30;
+                });
+
+                nodes.forEach((node: any) => {
+                    positions.push(topNodePositions.get(node.id));
+                });
+                break;
+                
+            case 'bottom':
+                const bottomSortedNodes = [...nodes].sort((a: any, b: any) => a.pos[0] - b.pos[0]);
+                let currentXBottom = originalLeftPos;
+
+                const bottomNodePositions = new Map();
+
+                bottomSortedNodes.forEach((node: any) => {
+                    let nodeHeight = 100, nodeWidth = 150;
+                    if (node.size && Array.isArray(node.size)) {
+                        if (node.size[1]) nodeHeight = node.size[1];
+                        if (node.size[0]) nodeWidth = node.size[0];
+                    } else {
+                        if (typeof node.height === 'number') nodeHeight = node.height;
+                        if (typeof node.width === 'number') nodeWidth = node.width;
+                        if (node.properties) {
+                            if (typeof node.properties.height === 'number') nodeHeight = node.properties.height;
+                            if (typeof node.properties.width === 'number') nodeWidth = node.properties.width;
+                        }
+                    }
+
+                    bottomNodePositions.set(node.id, {
+                        x: currentXBottom,
+                        y: originalBottomPos - nodeHeight,
+                        width: nodeWidth,
+                        height: nodeHeight
+                    });
+                    currentXBottom += nodeWidth + 30;
+                });
+
+                nodes.forEach((node: any) => {
+                    positions.push(bottomNodePositions.get(node.id));
+                });
+                break;
+                
+            case 'horizontal-flow':
+            case 'vertical-flow':
+                // For flow alignments, show current positions with highlight
+                nodes.forEach((node: any) => {
+                    let nodeHeight = 100, nodeWidth = 150;
+                    if (node.size && Array.isArray(node.size)) {
+                        if (node.size[1]) nodeHeight = node.size[1];
+                        if (node.size[0]) nodeWidth = node.size[0];
+                    } else {
+                        if (typeof node.height === 'number') nodeHeight = node.height;
+                        if (typeof node.width === 'number') nodeWidth = node.width;
+                        if (node.properties) {
+                            if (typeof node.properties.height === 'number') nodeHeight = node.properties.height;
+                            if (typeof node.properties.width === 'number') nodeWidth = node.properties.width;
+                        }
+                    }
+                    
+                    positions.push({
+                        x: node.pos[0],
+                        y: node.pos[1],
+                        width: nodeWidth,
+                        height: nodeHeight
+                    });
+                });
+                break;
+        }
+        
+        return positions;
+    }
 
     // Create alignment button helper function
     function createAlignmentButton(alignment: {type: string, icon: string, label: string}, isAdvanced: boolean = false) {
@@ -120,12 +425,14 @@ function initializeAlignmentPanel() {
             button.style.background = `linear-gradient(145deg, ${hoverColor}, #505050)`;
             button.style.transform = 'translateY(-1px)';
             button.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+            showPreview(alignment.type);
         });
 
         button.addEventListener('mouseleave', () => {
             button.style.background = `linear-gradient(145deg, ${baseColor}, #404040)`;
             button.style.transform = 'translateY(0)';
             button.style.boxShadow = 'none';
+            hidePreview();
         });
 
         button.addEventListener('click', () => alignNodes(alignment.type));
@@ -475,6 +782,12 @@ function initializeAlignmentPanel() {
             return;
         }
 
+        console.log('📍 ORIGINAL NODE POSITIONS BEFORE CLICKED ALIGNMENT:', selectedNodes.map((node, index) => ({
+            index: index,
+            nodeId: node.id,
+            currentPos: { x: node.pos[0], y: node.pos[1] }
+        })));
+
         try {
             // Calculate all reference positions at the start to avoid drift on consecutive clicks
             const originalLeftPos = Math.min(...selectedNodes.map((node: any) => node.pos[0]));
@@ -503,7 +816,6 @@ function initializeAlignmentPanel() {
                 }
                 return node.pos[1] + nodeHeight;
             }));
-
 
 
             let referenceValue: number;
@@ -535,6 +847,8 @@ function initializeAlignmentPanel() {
                         // Set position
                         node.pos[0] = referenceValue; // Align to left edge
                         node.pos[1] = currentY;
+
+                        // Position updated successfully
                         
                         // Update x,y properties if they exist
                         if (typeof node.x === 'number') node.x = node.pos[0];
@@ -698,6 +1012,7 @@ function initializeAlignmentPanel() {
                 // Continue without redraw - the changes are still applied
             }
             
+
             // Only show success message for basic alignment (not flow alignment)
             showMessage(`Aligned ${selectedNodes.length} nodes to ${alignmentType}`, 'success');
             
