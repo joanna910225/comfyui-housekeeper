@@ -44,3 +44,6 @@ Restart ComfyUI to load the new nodes.
 - **H-Flow**: Analyzes node connections and arranges them left-to-right in columns based on their workflow dependencies
 - **V-Flow**: Analyzes node connections and arranges them top-to-bottom in rows based on their workflow dependencies
 - Flow alignment respects the selected nodes' bounding box and positions relative to existing connections
+
+### Preview Functionality
+Visual preview overlays show where nodes will be positioned before applying alignment.
