@@ -62,7 +62,6 @@ comfyApp.registerExtension({
                 initializeAlignmentPanel();
                 
             } catch (error) {
-                console.error("Housekeeper: Error setting up alignment panel:", error);
             }
         }
     },
@@ -97,24 +96,10 @@ function initializeAlignmentPanel() {
         const canvas = (window as any).app?.canvas;
         if (!canvas) return;
 
-        console.log('📍 ORIGINAL NODE POSITIONS BEFORE PREVIEW:', selectedNodes.map((node, index) => ({
-            index: index,
-            nodeId: node.id,
-            currentPos: { x: node.pos[0], y: node.pos[1] }
-        })));
 
-        console.log('🎛️ Canvas state:', {
-            canvasOffset: canvas.ds.offset,
-            canvasScale: canvas.ds.scale
-        });
 
         // Calculate preview positions using the same logic as the alignment functions
         const previewPositions = calculatePreviewPositions(alignmentType, selectedNodes);
-        console.log('📍 Preview positions:', previewPositions.map((pos, index) => ({
-            index: index,
-            nodeId: selectedNodes[index].id,
-            previewPos: { x: pos.x, y: pos.y }
-        })));
         
         previewPositions.forEach((pos, index) => {
             if (pos && selectedNodes[index]) {
@@ -158,14 +143,6 @@ function initializeAlignmentPanel() {
                 const screenX = canvasRect.left + baseScreenX;
                 const screenY = canvasRect.top + baseScreenY - scaledOffset;
 
-                console.log(`🔧 Nav-based offset method:`, {
-                    navHeight: navElement ? navElement.getBoundingClientRect().height : 'not found',
-                    baseOffset: BASE_OFFSET,
-                    canvasScale: canvas.ds.scale,
-                    scaledOffset: scaledOffset,
-                    calculation: `${canvasRect.top} + ${baseScreenY} - ${scaledOffset} = ${screenY}`,
-                    result: { x: screenX, y: screenY }
-                });
                 const screenWidth = pos.width * canvas.ds.scale;
                 const screenHeight = pos.height * canvas.ds.scale;
 
@@ -952,11 +929,6 @@ function initializeAlignmentPanel() {
             return;
         }
 
-        console.log('📍 ORIGINAL NODE POSITIONS BEFORE CLICKED ALIGNMENT:', selectedNodes.map((node, index) => ({
-            index: index,
-            nodeId: node.id,
-            currentPos: { x: node.pos[0], y: node.pos[1] }
-        })));
 
         try {
             // Calculate all reference positions at the start to avoid drift on consecutive clicks
@@ -1178,7 +1150,6 @@ function initializeAlignmentPanel() {
                     window.app.canvas.draw(true, true);
                 }
             } catch (redrawError) {
-                console.warn('Could not trigger canvas redraw:', redrawError);
                 // Continue without redraw - the changes are still applied
             }
             
@@ -1186,7 +1157,6 @@ function initializeAlignmentPanel() {
             // Success message removed - clean prompt window
             
         } catch (error) {
-            console.error('Alignment error:', error);
             showMessage('Error during alignment', 'error');
         }
     }
@@ -1213,8 +1183,6 @@ function initializeAlignmentPanel() {
                 
                 const isValid = !!hasPosition && !!hasSize;
                 
-                if (!isValid) {
-                }
                 
                 return isValid;
             });
@@ -1375,12 +1343,10 @@ function initializeAlignmentPanel() {
                     window.app.canvas.draw(true, true);
                 }
             } catch (redrawError) {
-                console.warn('Could not trigger canvas redraw:', redrawError);
             }
             
             // Success message removed - clean prompt window
         } catch (error) {
-            console.error('Horizontal flow alignment error:', error);
             showMessage('Error in horizontal flow alignment', 'error');
         }
     }
@@ -1560,12 +1526,10 @@ function initializeAlignmentPanel() {
                     window.app.canvas.draw(true, true);
                 }
             } catch (redrawError) {
-                console.warn('Could not trigger canvas redraw:', redrawError);
             }
             
             // Success message removed - clean prompt window
         } catch (error) {
-            console.error('Vertical flow alignment error:', error);
             showMessage('Error in vertical flow alignment', 'error');
         }
     }
