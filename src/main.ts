@@ -380,8 +380,8 @@ function initializeAlignmentPanel() {
                 const hFlowNodeGraph = buildNodeGraph(hFlowNodeCopies, hFlowConnections);
 
                 // Exact spacing constants from H-Flow
-                const H_COLUMN_SPACING = 40;
-                const H_NODE_SPACING_Y = 15;
+                const H_COLUMN_SPACING = 30;
+                const H_NODE_SPACING_Y = 30;
                 const H_LEVEL_PADDING = 5;
 
                 // Group by levels exactly like H-Flow
@@ -478,9 +478,9 @@ function initializeAlignmentPanel() {
                 const vFlowNodeGraph = buildNodeGraph(vFlowNodeCopies, vFlowConnections);
 
                 // Exact spacing constants from V-Flow
-                const V_ROW_SPACING = 50;
+                const V_ROW_SPACING = 30;
                 const V_NODE_SPACING_X = 30;
-                const V_LEVEL_PADDING = 15;
+                const V_LEVEL_PADDING = 5;
 
                 // Group by levels exactly like V-Flow
                 const vFlowLevels: {[level: number]: any[]} = {};
@@ -1252,9 +1252,9 @@ function initializeAlignmentPanel() {
             const nodeGraph = buildNodeGraph(validNodes, connections);
             
             // Configuration for horizontal flow - OPTIMIZED for staying near original location
-            const COLUMN_SPACING = 40;      // Reduced spacing between columns to stay closer
-            const NODE_SPACING_X = 20;      // Horizontal space between node edges
-            const NODE_SPACING_Y = 15;      // Vertical space between node edges
+            const COLUMN_SPACING = 30;      // Spacing between columns
+            const NODE_SPACING_X = 30;      // Horizontal space between node edges
+            const NODE_SPACING_Y = 30;      // Vertical space between node edges
             const LEVEL_PADDING = 5;        // Minimal padding between levels
             
             // Group nodes by level
@@ -1433,10 +1433,10 @@ function initializeAlignmentPanel() {
             const nodeGraph = buildNodeGraph(validNodes, connections);
             
             // Configuration for vertical flow - ENHANCED spacing to prevent overlapping
-            const ROW_SPACING = 50;         // Increased spacing between rows to prevent overlap
+            const ROW_SPACING = 30;         // Spacing between rows
             const NODE_SPACING_X = 30;      // Horizontal space between node edges
-            const NODE_SPACING_Y = 25;      // Vertical space between node edges
-            const LEVEL_PADDING = 15;       // Extra padding between levels for clarity
+            const NODE_SPACING_Y = 30;      // Vertical space between node edges
+            const LEVEL_PADDING = 5;        // Minimal padding between levels
             
             // Group nodes by level
             const levels: {[level: number]: any[]} = {};

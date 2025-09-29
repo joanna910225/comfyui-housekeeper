@@ -485,7 +485,7 @@ function oe() {
           ...t,
           pos: t.pos ? [...t.pos] : [t.x || 0, t.y || 0],
           _calculatedSize: t.size && Array.isArray(t.size) ? [t.size[0], t.size[1]] : [t.width || 150, t.height || 100]
-        })), I = w(_), a = J(_, I), C = 40, j = 15, M = 5, lt = {};
+        })), I = w(_), a = J(_, I), C = 30, j = 30, M = 5, lt = {};
         _.forEach((t) => {
           var l;
           if (t && t.id) {
@@ -535,7 +535,7 @@ function oe() {
           ...t,
           pos: t.pos ? [...t.pos] : [t.x || 0, t.y || 0],
           _calculatedSize: t.size && Array.isArray(t.size) ? [t.size[0], t.size[1]] : [t.width || 150, t.height || 100]
-        })), Pt = w(wt), ct = J(wt, Pt), Bt = 50, Lt = 30, Ot = 15, pt = {};
+        })), Pt = w(wt), ct = J(wt, Pt), Bt = 30, Lt = 30, Ot = 5, pt = {};
         wt.forEach((t) => {
           var l;
           if (t && t.id) {
@@ -870,7 +870,7 @@ function oe() {
       p.forEach((e) => {
         e.pos || (e.position && Array.isArray(e.position) ? e.pos = e.position : typeof e.x == "number" && typeof e.y == "number" ? e.pos = [e.x, e.y] : e.pos = [0, 0]), e._calculatedSize || (e.size && Array.isArray(e.size) ? e._calculatedSize = [e.size[0], e.size[1]] : typeof e.width == "number" && typeof e.height == "number" ? e._calculatedSize = [e.width, e.height] : e._calculatedSize = [150, 100]), Array.isArray(e.pos) || (e.pos = [0, 0]);
       });
-      const c = w(p), o = J(p, c), k = 40, G = 20, Z = 15, tt = 5, L = {};
+      const c = w(p), o = J(p, c), k = 30, G = 30, Z = 30, tt = 5, L = {};
       p.forEach((e) => {
         var z;
         if (e && e.id) {
@@ -931,7 +931,7 @@ function oe() {
       p.forEach((e) => {
         e.pos || (e.position && Array.isArray(e.position) ? e.pos = e.position : typeof e.x == "number" && typeof e.y == "number" ? e.pos = [e.x, e.y] : e.pos = [0, 0]), e._calculatedSize || (e.size && Array.isArray(e.size) ? e._calculatedSize = [e.size[0], e.size[1]] : typeof e.width == "number" && typeof e.height == "number" ? e._calculatedSize = [e.width, e.height] : e._calculatedSize = [150, 100]), Array.isArray(e.pos) || (e.pos = [0, 0]);
       });
-      const c = w(p), o = J(p, c), k = 50, G = 30, Z = 25, tt = 15, L = {};
+      const c = w(p), o = J(p, c), k = 30, G = 30, Z = 30, tt = 5, L = {};
       p.forEach((e) => {
         var z;
         if (e && e.id) {
