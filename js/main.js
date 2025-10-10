@@ -935,13 +935,21 @@ function oe() {
             let k = 100;
             return o.size && Array.isArray(o.size) && o.size[1] ? k = o.size[1] : typeof o.height == "number" ? k = o.height : o.properties && typeof o.properties.height == "number" && (k = o.properties.height), k;
           }));
+          console.log("Min height found:", minHeight);
           m.forEach((o) => {
             if (o.size) {
               const oldWidth = o.size[0];
+              const oldHeight = o.size[1];
+              console.log("Node before height-min:", o.title, "size:", [oldWidth, oldHeight]);
               if (typeof o.setSize === "function") {
                 o.setSize([oldWidth, minHeight]);
               } else {
                 o.size[1] = minHeight;
+              }
+              console.log("Node after height-min:", o.title, "size:", [o.size[0], o.size[1]]);
+              // Check if setSize changed the height unexpectedly
+              if (o.size[1] !== minHeight) {
+                console.warn("setSize adjusted height from", minHeight, "to", o.size[1], "for node", o.title);
               }
             }
           });
