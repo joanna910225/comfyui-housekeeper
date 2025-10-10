@@ -871,8 +871,19 @@ function oe() {
           }));
           console.log("Max width found:", maxWidth);
           m.forEach((o) => {
+            console.log("Before - Node size:", o.size, "Node:", o);
             if (o.size && Array.isArray(o.size)) {
+              const oldWidth = o.size[0];
               o.size[0] = maxWidth;
+              console.log("After - Changed size from", oldWidth, "to", o.size[0]);
+              if (o.setSize) {
+                console.log("Calling node.setSize()");
+                o.setSize([maxWidth, o.size[1]]);
+              }
+              if (o.onResize) {
+                console.log("Calling node.onResize()");
+                o.onResize(o.size);
+              }
             }
           });
           console.log("Width-max completed successfully");
