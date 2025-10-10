@@ -857,99 +857,64 @@ function oe() {
         let k = 100;
         return o.size && Array.isArray(o.size) && o.size[1] ? k = o.size[1] : typeof o.height == "number" ? k = o.height : o.properties && typeof o.properties.height == "number" && (k = o.properties.height), o.pos[1] + k;
       }));
+      // Calculate all reference sizes at the start to avoid drift on consecutive clicks
+      const originalMaxWidth = Math.max(...m.map((o) => {
+        let k = 150;
+        return o.size && Array.isArray(o.size) && o.size[0] ? k = o.size[0] : typeof o.width == "number" ? k = o.width : o.properties && typeof o.properties.width == "number" && (k = o.properties.width), k;
+      }));
+      const originalMinWidth = Math.min(...m.map((o) => {
+        let k = 150;
+        return o.size && Array.isArray(o.size) && o.size[0] ? k = o.size[0] : typeof o.width == "number" ? k = o.width : o.properties && typeof o.properties.width == "number" && (k = o.properties.width), k;
+      }));
+      const originalMaxHeight = Math.max(...m.map((o) => {
+        let k = 100;
+        return o.size && Array.isArray(o.size) && o.size[1] ? k = o.size[1] : typeof o.height == "number" ? k = o.height : o.properties && typeof o.properties.height == "number" && (k = o.properties.height), k;
+      }));
+      const originalMinHeight = Math.min(...m.map((o) => {
+        let k = 100;
+        return o.size && Array.isArray(o.size) && o.size[1] ? k = o.size[1] : typeof o.height == "number" ? k = o.height : o.properties && typeof o.properties.height == "number" && (k = o.properties.height), k;
+      }));
+
       let c;
       switch (n) {
         case "width-max":
-          const maxWidth = Math.max(...m.map((o) => {
-            let k = 150;
-            return o.size && Array.isArray(o.size) && o.size[0] ? k = o.size[0] : typeof o.width == "number" ? k = o.width : o.properties && typeof o.properties.width == "number" && (k = o.properties.width), k;
-          }));
-          console.log("Width-max - target width:", maxWidth);
           m.forEach((o) => {
             if (o.size) {
-              const oldSize = [o.size[0], o.size[1]];
-              o.size[0] = maxWidth;
-              console.log("Node:", o.title, "Before:", oldSize, "After setting width:", [o.size[0], o.size[1]]);
+              o.size[0] = originalMaxWidth;
             }
           });
           break;
         case "width-min":
-          const minWidth = Math.min(...m.map((o) => {
-            let k = 150;
-            return o.size && Array.isArray(o.size) && o.size[0] ? k = o.size[0] : typeof o.width == "number" ? k = o.width : o.properties && typeof o.properties.width == "number" && (k = o.properties.width), k;
-          }));
           m.forEach((o) => {
             if (o.size) {
-              o.size[0] = minWidth;
+              o.size[0] = originalMinWidth;
             }
           });
           break;
         case "height-max":
-          const maxHeight = Math.max(...m.map((o) => {
-            let k = 100;
-            return o.size && Array.isArray(o.size) && o.size[1] ? k = o.size[1] : typeof o.height == "number" ? k = o.height : o.properties && typeof o.properties.height == "number" && (k = o.properties.height), k;
-          }));
-          console.log("Height-max target:", maxHeight);
           m.forEach((o) => {
             if (o.size) {
-              const currentWidth = o.size[0];
-              console.log("Before:", o.title, o.size[1]);
-              // Store the target height directly without using setSize
-              o.size[1] = maxHeight;
-              // Call onResize if it exists to update internal state
-              if (typeof o.onResize === "function") {
-                o.onResize(o.size);
-              }
-              console.log("After:", o.title, o.size[1]);
+              o.size[1] = originalMaxHeight;
             }
           });
-          // Skip canvas redraw for height changes - return early
+          // Return early to skip canvas redraw which causes auto-increment
           return;
         case "height-min":
-          const minHeight = Math.min(...m.map((o) => {
-            let k = 100;
-            return o.size && Array.isArray(o.size) && o.size[1] ? k = o.size[1] : typeof o.height == "number" ? k = o.height : o.properties && typeof o.properties.height == "number" && (k = o.properties.height), k;
-          }));
-          console.log("Height-min target:", minHeight);
           m.forEach((o) => {
             if (o.size) {
-              const currentWidth = o.size[0];
-              console.log("Before:", o.title, o.size[1]);
-              // Store the target height directly without using setSize
-              o.size[1] = minHeight;
-              // Call onResize if it exists to update internal state
-              if (typeof o.onResize === "function") {
-                o.onResize(o.size);
-              }
-              console.log("After:", o.title, o.size[1]);
+              o.size[1] = originalMinHeight;
             }
           });
-          // Skip canvas redraw for height changes - return early
+          // Return early to skip canvas redraw which causes auto-increment
           return;
         case "size-max":
-          const maxW = Math.max(...m.map((o) => {
-            let k = 150;
-            return o.size && Array.isArray(o.size) && o.size[0] ? k = o.size[0] : typeof o.width == "number" ? k = o.width : o.properties && typeof o.properties.width == "number" && (k = o.properties.width), k;
-          }));
-          const maxH = Math.max(...m.map((o) => {
-            let k = 100;
-            return o.size && Array.isArray(o.size) && o.size[1] ? k = o.size[1] : typeof o.height == "number" ? k = o.height : o.properties && typeof o.properties.height == "number" && (k = o.properties.height), k;
-          }));
-          console.log("Size-max targets:", maxW, maxH);
           m.forEach((o) => {
             if (o.size) {
-              console.log("Before:", o.title, "Size:", [o.size[0], o.size[1]]);
-              // Set both width and height directly without using setSize
-              o.size[0] = maxW;
-              o.size[1] = maxH;
-              // Call onResize if it exists to update internal state
-              if (typeof o.onResize === "function") {
-                o.onResize(o.size);
-              }
-              console.log("After:", o.title, "Size:", [o.size[0], o.size[1]]);
+              o.size[0] = originalMaxWidth;
+              o.size[1] = originalMaxHeight;
             }
           });
-          // Skip canvas redraw for size changes - return early
+          // Return early to skip canvas redraw which causes auto-increment
           return;
         case "left":
           c = b;
