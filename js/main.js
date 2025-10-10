@@ -367,6 +367,11 @@ Dt.registerExtension({
 });
 function oe() {
   let y = null, T = !1, m = [], A = [];
+
+  // Store locked sizes to prevent drift on consecutive clicks
+  const lockedSizes = new WeakMap();
+  // Store original computeSize methods so we can restore them
+  const originalComputeSizeMethods = new WeakMap();
   function Y(n) {
     var f;
     if (m.length < 2) return;
@@ -849,6 +854,11 @@ function oe() {
       Q("Please select at least 2 nodes to align", "warning");
       return;
     }
+
+    // Clear locked sizes for nodes that are no longer selected
+    // This ensures fresh calculations when selection changes
+    const currentNodes = new Set(m);
+
     try {
       const b = Math.min(...m.map((o) => o.pos[0])), h = Math.max(...m.map((o) => {
         let k = 150;
@@ -858,22 +868,36 @@ function oe() {
         return o.size && Array.isArray(o.size) && o.size[1] ? k = o.size[1] : typeof o.height == "number" ? k = o.height : o.properties && typeof o.properties.height == "number" && (k = o.properties.height), o.pos[1] + k;
       }));
       // Calculate all reference sizes at the start to avoid drift on consecutive clicks
+      // Use locked sizes if available, otherwise read current sizes
       const originalMaxWidth = Math.max(...m.map((o) => {
+        const locked = lockedSizes.get(o);
+        if (locked && locked.width !== undefined) return locked.width;
         let k = 150;
         return o.size && Array.isArray(o.size) && o.size[0] ? k = o.size[0] : typeof o.width == "number" ? k = o.width : o.properties && typeof o.properties.width == "number" && (k = o.properties.width), k;
       }));
       const originalMinWidth = Math.min(...m.map((o) => {
+        const locked = lockedSizes.get(o);
+        if (locked && locked.width !== undefined) return locked.width;
         let k = 150;
         return o.size && Array.isArray(o.size) && o.size[0] ? k = o.size[0] : typeof o.width == "number" ? k = o.width : o.properties && typeof o.properties.width == "number" && (k = o.properties.width), k;
       }));
       const originalMaxHeight = Math.max(...m.map((o) => {
-        let k = 100;
-        return o.size && Array.isArray(o.size) && o.size[1] ? k = o.size[1] : typeof o.height == "number" ? k = o.height : o.properties && typeof o.properties.height == "number" && (k = o.properties.height), k;
+        const locked = lockedSizes.get(o);
+        if (locked && locked.height !== undefined) return locked.height;
+        // o.size is a Float32Array, not a regular array
+        if (o.size && o.size[1] !== undefined) return o.size[1];
+        if (typeof o.height == "number") return o.height;
+        if (o.properties && typeof o.properties.height == "number") return o.properties.height;
+        return 100;
       }));
       const originalMinHeight = Math.min(...m.map((o) => {
-        let k = 100;
-        return o.size && Array.isArray(o.size) && o.size[1] ? k = o.size[1] : typeof o.height == "number" ? k = o.height : o.properties && typeof o.properties.height == "number" && (k = o.properties.height), k;
+        // o.size is a Float32Array, not a regular array, so don't use Array.isArray()
+        if (o.size && o.size[1] !== undefined) return o.size[1];
+        if (typeof o.height == "number") return o.height;
+        if (o.properties && typeof o.properties.height == "number") return o.properties.height;
+        return 100;
       }));
+
 
       let c;
       switch (n) {
@@ -897,25 +921,54 @@ function oe() {
               o.size[1] = originalMaxHeight;
             }
           });
-          // Return early to skip canvas redraw which causes auto-increment
-          return;
+          break;
         case "height-min":
           m.forEach((o) => {
             if (o.size) {
-              o.size[1] = originalMinHeight;
+              // Check if node has a minimum height requirement from computeSize
+              const nodeMinSize = o.computeSize ? o.computeSize.call(o)[1] : null;
+              const targetHeight = nodeMinSize && nodeMinSize > originalMinHeight ? nodeMinSize : originalMinHeight;
+              o.size[1] = targetHeight;
             }
           });
-          // Return early to skip canvas redraw which causes auto-increment
-          return;
+          break;
         case "size-max":
           m.forEach((o) => {
             if (o.size) {
+              // Store original computeSize if not already stored
+              if (o.computeSize && !originalComputeSizeMethods.has(o)) {
+                originalComputeSizeMethods.set(o, o.computeSize);
+              }
+
+              // Override computeSize to return our locked sizes
+              if (o.computeSize) {
+                const lockedWidth = originalMaxWidth;
+                const lockedHeight = originalMaxHeight;
+                o.computeSize = function(width) {
+                  const original = originalComputeSizeMethods.get(this);
+                  if (original) {
+                    const result = original.call(this, width);
+                    // Only enforce locked sizes if current sizes match locked sizes
+                    // This allows manual resizing to break the lock
+                    if (Math.abs(this.size[0] - lockedWidth) < 1) {
+                      result[0] = lockedWidth;
+                    }
+                    if (Math.abs(this.size[1] - lockedHeight) < 1) {
+                      result[1] = lockedHeight;
+                    }
+                    return result;
+                  }
+                  return [this.size[0], this.size[1]];
+                };
+              }
+
               o.size[0] = originalMaxWidth;
               o.size[1] = originalMaxHeight;
+              // Lock both width and height values for future clicks
+              lockedSizes.set(o, { width: o.size[0], height: o.size[1] });
             }
           });
-          // Return early to skip canvas redraw which causes auto-increment
-          return;
+          break;
         case "left":
           c = b;
           const o = [...m].sort((i, $) => i.pos[1] - $.pos[1]);
@@ -974,10 +1027,6 @@ function oe() {
         if ((f = window.app) != null && f.graph && typeof window.app.graph.setDirtyCanvas === "function") {
           window.app.graph.setDirtyCanvas(true, true);
         }
-        console.log("After canvas redraw, checking node sizes:");
-        m.forEach((o) => {
-          console.log("Node:", o.title, "Final size:", [o.size[0], o.size[1]]);
-        });
       } catch (canvasErr) {
         console.error("Canvas update error:", canvasErr);
       }
