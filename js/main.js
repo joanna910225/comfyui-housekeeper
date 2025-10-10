@@ -896,8 +896,13 @@ function oe() {
             return o.size && Array.isArray(o.size) && o.size[0] ? k = o.size[0] : typeof o.width == "number" ? k = o.width : o.properties && typeof o.properties.width == "number" && (k = o.properties.width), k;
           }));
           m.forEach((o) => {
-            if (o.size && Array.isArray(o.size)) {
-              o.size[0] = minWidth;
+            if (o.size) {
+              const oldHeight = o.size[1];
+              if (typeof o.setSize === "function") {
+                o.setSize([minWidth, oldHeight]);
+              } else {
+                o.size[0] = minWidth;
+              }
             }
           });
           break;
@@ -907,8 +912,13 @@ function oe() {
             return o.size && Array.isArray(o.size) && o.size[1] ? k = o.size[1] : typeof o.height == "number" ? k = o.height : o.properties && typeof o.properties.height == "number" && (k = o.properties.height), k;
           }));
           m.forEach((o) => {
-            if (o.size && Array.isArray(o.size)) {
-              o.size[1] = maxHeight;
+            if (o.size) {
+              const oldWidth = o.size[0];
+              if (typeof o.setSize === "function") {
+                o.setSize([oldWidth, maxHeight]);
+              } else {
+                o.size[1] = maxHeight;
+              }
             }
           });
           break;
@@ -918,8 +928,13 @@ function oe() {
             return o.size && Array.isArray(o.size) && o.size[1] ? k = o.size[1] : typeof o.height == "number" ? k = o.height : o.properties && typeof o.properties.height == "number" && (k = o.properties.height), k;
           }));
           m.forEach((o) => {
-            if (o.size && Array.isArray(o.size)) {
-              o.size[1] = minHeight;
+            if (o.size) {
+              const oldWidth = o.size[0];
+              if (typeof o.setSize === "function") {
+                o.setSize([oldWidth, minHeight]);
+              } else {
+                o.size[1] = minHeight;
+              }
             }
           });
           break;
@@ -933,9 +948,13 @@ function oe() {
             return o.size && Array.isArray(o.size) && o.size[1] ? k = o.size[1] : typeof o.height == "number" ? k = o.height : o.properties && typeof o.properties.height == "number" && (k = o.properties.height), k;
           }));
           m.forEach((o) => {
-            if (o.size && Array.isArray(o.size)) {
-              o.size[0] = maxW;
-              o.size[1] = maxH;
+            if (o.size) {
+              if (typeof o.setSize === "function") {
+                o.setSize([maxW, maxH]);
+              } else {
+                o.size[0] = maxW;
+                o.size[1] = maxH;
+              }
             }
           });
           break;
@@ -987,7 +1006,18 @@ function oe() {
       }
       console.log("About to update canvas");
       try {
-        (r = (s = window.app) == null ? void 0 : s.canvas) != null && r.setDirtyCanvas ? window.app.canvas.setDirtyCanvas(!0, !0) : (d = (f = window.app) == null ? void 0 : f.graph) != null && d.setDirtyCanvas ? window.app.graph.setDirtyCanvas(!0, !0) : (p = window.app) != null && p.canvas && window.app.canvas.draw(!0, !0);
+        // Force canvas redraw
+        if ((s = window.app) != null && s.canvas) {
+          if (typeof window.app.canvas.setDirtyCanvas === "function") {
+            window.app.canvas.setDirtyCanvas(true, true);
+          }
+          if (typeof window.app.canvas.draw === "function") {
+            window.app.canvas.draw(true, true);
+          }
+        }
+        if ((f = window.app) != null && f.graph && typeof window.app.graph.setDirtyCanvas === "function") {
+          window.app.graph.setDirtyCanvas(true, true);
+        }
         console.log("Canvas updated successfully");
       } catch (canvasErr) {
         console.error("Canvas update error:", canvasErr);
