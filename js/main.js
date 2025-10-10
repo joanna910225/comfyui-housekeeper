@@ -367,6 +367,11 @@ Dt.registerExtension({
 });
 function oe() {
   let y = null, T = !1, m = [], A = [];
+
+  // Store locked sizes to prevent drift on consecutive clicks
+  const lockedSizes = new WeakMap();
+  // Store original computeSize methods so we can restore them
+  const originalComputeSizeMethods = new WeakMap();
   function Y(n) {
     var f;
     if (m.length < 2) return;
@@ -410,6 +415,48 @@ function oe() {
       return h.size && Array.isArray(h.size) && h.size[1] ? u = h.size[1] : typeof h.height == "number" ? u = h.height : h.properties && typeof h.properties.height == "number" && (u = h.properties.height), h.pos[1] + u;
     }));
     switch (n) {
+      case "width-max":
+      case "width-min":
+      case "height-max":
+      case "height-min":
+      case "size-max":
+        s.forEach((t) => {
+          let l = 100, v = 150;
+          t.size && Array.isArray(t.size) ? (t.size[1] && (l = t.size[1]), t.size[0] && (v = t.size[0])) : (typeof t.height == "number" && (l = t.height), typeof t.width == "number" && (v = t.width), t.properties && (typeof t.properties.height == "number" && (l = t.properties.height), typeof t.properties.width == "number" && (v = t.properties.width)));
+
+          let previewWidth = v, previewHeight = l;
+          if (n === "width-max" || n === "size-max") {
+            previewWidth = Math.max(...s.map((node) => {
+              let w = 150;
+              return node.size && Array.isArray(node.size) && node.size[0] ? w = node.size[0] : typeof node.width == "number" ? w = node.width : node.properties && typeof node.properties.width == "number" && (w = node.properties.width), w;
+            }));
+          } else if (n === "width-min") {
+            previewWidth = Math.min(...s.map((node) => {
+              let w = 150;
+              return node.size && Array.isArray(node.size) && node.size[0] ? w = node.size[0] : typeof node.width == "number" ? w = node.width : node.properties && typeof node.properties.width == "number" && (w = node.properties.width), w;
+            }));
+          }
+
+          if (n === "height-max" || n === "size-max") {
+            previewHeight = Math.max(...s.map((node) => {
+              let h = 100;
+              return node.size && Array.isArray(node.size) && node.size[1] ? h = node.size[1] : typeof node.height == "number" ? h = node.height : node.properties && typeof node.properties.height == "number" && (h = node.properties.height), h;
+            }));
+          } else if (n === "height-min") {
+            previewHeight = Math.min(...s.map((node) => {
+              let h = 100;
+              return node.size && Array.isArray(node.size) && node.size[1] ? h = node.size[1] : typeof node.height == "number" ? h = node.height : node.properties && typeof node.properties.height == "number" && (h = node.properties.height), h;
+            }));
+          }
+
+          r.push({
+            x: t.pos[0],
+            y: t.pos[1],
+            width: previewWidth,
+            height: previewHeight
+          });
+        });
+        break;
       case "left":
         const h = [...s].sort((t, l) => t.pos[1] - l.pos[1]);
         let u = h[0].pos[1];
@@ -656,15 +703,34 @@ function oe() {
       { type: "top", icon: "⇡", label: "Top" },
       { type: "bottom", icon: "⇣", label: "Bottom" },
       { type: "horizontal-flow", icon: "→", label: "H-Flow" },
-      { type: "vertical-flow", icon: "↓", label: "V-Flow" }
-    ], d = f.slice(0, 4), p = f.slice(4);
+      { type: "vertical-flow", icon: "↓", label: "V-Flow" },
+      { type: "width-max", icon: "⟷", label: "W-Max" },
+      { type: "width-min", icon: "⟷", label: "W-Min" },
+      { type: "height-max", icon: "⟺", label: "H-Max" },
+      { type: "height-min", icon: "⟺", label: "H-Min" },
+      { type: "size-max", icon: "⇱", label: "Size-Max" }
+    ], d = f.slice(0, 4), p = f.slice(4, 6), size = f.slice(6);
     d.forEach((h) => {
       const u = X(h);
       s.appendChild(u);
     }), p.forEach((h) => {
       const u = X(h, !0);
       r.appendChild(u);
-    }), y.appendChild(s), y.appendChild(r);
+    });
+    const sizeSection = document.createElement("div");
+    sizeSection.style.cssText = `
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+            border-top: 1px solid #555;
+            padding-top: 8px;
+        `;
+    size.forEach((h) => {
+      const u = X(h, !1);
+      sizeSection.appendChild(u);
+    });
+    y.appendChild(s), y.appendChild(r), y.appendChild(sizeSection);
     const b = document.createElement("div");
     b.id = "alignment-info", b.style.cssText = `
             background: rgba(60, 60, 60, 0.8);
@@ -788,6 +854,11 @@ function oe() {
       Q("Please select at least 2 nodes to align", "warning");
       return;
     }
+
+    // Clear locked sizes for nodes that are no longer selected
+    // This ensures fresh calculations when selection changes
+    const currentNodes = new Set(m);
+
     try {
       const b = Math.min(...m.map((o) => o.pos[0])), h = Math.max(...m.map((o) => {
         let k = 150;
@@ -796,8 +867,108 @@ function oe() {
         let k = 100;
         return o.size && Array.isArray(o.size) && o.size[1] ? k = o.size[1] : typeof o.height == "number" ? k = o.height : o.properties && typeof o.properties.height == "number" && (k = o.properties.height), o.pos[1] + k;
       }));
+      // Calculate all reference sizes at the start to avoid drift on consecutive clicks
+      // Use locked sizes if available, otherwise read current sizes
+      const originalMaxWidth = Math.max(...m.map((o) => {
+        const locked = lockedSizes.get(o);
+        if (locked && locked.width !== undefined) return locked.width;
+        let k = 150;
+        return o.size && Array.isArray(o.size) && o.size[0] ? k = o.size[0] : typeof o.width == "number" ? k = o.width : o.properties && typeof o.properties.width == "number" && (k = o.properties.width), k;
+      }));
+      const originalMinWidth = Math.min(...m.map((o) => {
+        const locked = lockedSizes.get(o);
+        if (locked && locked.width !== undefined) return locked.width;
+        let k = 150;
+        return o.size && Array.isArray(o.size) && o.size[0] ? k = o.size[0] : typeof o.width == "number" ? k = o.width : o.properties && typeof o.properties.width == "number" && (k = o.properties.width), k;
+      }));
+      const originalMaxHeight = Math.max(...m.map((o) => {
+        const locked = lockedSizes.get(o);
+        if (locked && locked.height !== undefined) return locked.height;
+        // o.size is a Float32Array, not a regular array
+        if (o.size && o.size[1] !== undefined) return o.size[1];
+        if (typeof o.height == "number") return o.height;
+        if (o.properties && typeof o.properties.height == "number") return o.properties.height;
+        return 100;
+      }));
+      const originalMinHeight = Math.min(...m.map((o) => {
+        // o.size is a Float32Array, not a regular array, so don't use Array.isArray()
+        if (o.size && o.size[1] !== undefined) return o.size[1];
+        if (typeof o.height == "number") return o.height;
+        if (o.properties && typeof o.properties.height == "number") return o.properties.height;
+        return 100;
+      }));
+
+
       let c;
       switch (n) {
+        case "width-max":
+          m.forEach((o) => {
+            if (o.size) {
+              o.size[0] = originalMaxWidth;
+            }
+          });
+          break;
+        case "width-min":
+          m.forEach((o) => {
+            if (o.size) {
+              o.size[0] = originalMinWidth;
+            }
+          });
+          break;
+        case "height-max":
+          m.forEach((o) => {
+            if (o.size) {
+              o.size[1] = originalMaxHeight;
+            }
+          });
+          break;
+        case "height-min":
+          m.forEach((o) => {
+            if (o.size) {
+              // Check if node has a minimum height requirement from computeSize
+              const nodeMinSize = o.computeSize ? o.computeSize.call(o)[1] : null;
+              const targetHeight = nodeMinSize && nodeMinSize > originalMinHeight ? nodeMinSize : originalMinHeight;
+              o.size[1] = targetHeight;
+            }
+          });
+          break;
+        case "size-max":
+          m.forEach((o) => {
+            if (o.size) {
+              // Store original computeSize if not already stored
+              if (o.computeSize && !originalComputeSizeMethods.has(o)) {
+                originalComputeSizeMethods.set(o, o.computeSize);
+              }
+
+              // Override computeSize to return our locked sizes
+              if (o.computeSize) {
+                const lockedWidth = originalMaxWidth;
+                const lockedHeight = originalMaxHeight;
+                o.computeSize = function(width) {
+                  const original = originalComputeSizeMethods.get(this);
+                  if (original) {
+                    const result = original.call(this, width);
+                    // Only enforce locked sizes if current sizes match locked sizes
+                    // This allows manual resizing to break the lock
+                    if (Math.abs(this.size[0] - lockedWidth) < 1) {
+                      result[0] = lockedWidth;
+                    }
+                    if (Math.abs(this.size[1] - lockedHeight) < 1) {
+                      result[1] = lockedHeight;
+                    }
+                    return result;
+                  }
+                  return [this.size[0], this.size[1]];
+                };
+              }
+
+              o.size[0] = originalMaxWidth;
+              o.size[1] = originalMaxHeight;
+              // Lock both width and height values for future clicks
+              lockedSizes.set(o, { width: o.size[0], height: o.size[1] });
+            }
+          });
+          break;
         case "left":
           c = b;
           const o = [...m].sort((i, $) => i.pos[1] - $.pos[1]);
@@ -845,10 +1016,23 @@ function oe() {
           return;
       }
       try {
-        (r = (s = window.app) == null ? void 0 : s.canvas) != null && r.setDirtyCanvas ? window.app.canvas.setDirtyCanvas(!0, !0) : (d = (f = window.app) == null ? void 0 : f.graph) != null && d.setDirtyCanvas ? window.app.graph.setDirtyCanvas(!0, !0) : (p = window.app) != null && p.canvas && window.app.canvas.draw(!0, !0);
-      } catch {
+        if ((s = window.app) != null && s.canvas) {
+          if (typeof window.app.canvas.setDirtyCanvas === "function") {
+            window.app.canvas.setDirtyCanvas(true, true);
+          }
+          if (typeof window.app.canvas.draw === "function") {
+            window.app.canvas.draw(true, true);
+          }
+        }
+        if ((f = window.app) != null && f.graph && typeof window.app.graph.setDirtyCanvas === "function") {
+          window.app.graph.setDirtyCanvas(true, true);
+        }
+      } catch (canvasErr) {
+        console.error("Canvas update error:", canvasErr);
       }
-    } catch {
+    } catch (err) {
+      console.error("Alignment error:", err);
+      console.error("Error stack:", err.stack);
       Q("Error during alignment", "error");
     }
   }
