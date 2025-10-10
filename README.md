@@ -5,9 +5,10 @@ A simple ComfyUI custom node that provides node alignment tools and an interacti
 ## Features
 
 - Smart node alignment for multiple selected nodes
-- 6 alignment options: Left, Right, Top, Bottom, H-flow, V-flow
+- 11 alignment options: Left, Right, Top, Bottom, H-flow, V-flow, Width-Max, Width-Min, Height-Max, Height-Min, Size-Max
 - Keyboard shortcuts for quick alignment
 - Auto-appearing alignment panel
+- Width and height normalization for consistent node sizing
 
 ## Installation
 
@@ -41,6 +42,19 @@ Restart ComfyUI to load the new nodes.
 - **H-Flow**: Analyzes node connections and arranges them left-to-right in columns based on their workflow dependencies
 - **V-Flow**: Analyzes node connections and arranges them top-to-bottom in rows based on their workflow dependencies
 - Flow alignment respects the selected nodes' bounding box and positions relative to existing connections
+
+**Size Alignment:**
+- **W-Max**: Set all selected nodes to the width of the widest node
+- **W-Min**: Set all selected nodes to the width of the narrowest node
+- **H-Max**: Set all selected nodes to the height of the tallest node
+- **H-Min**: Set all selected nodes to the height of the shortest node (respects minimum node requirements)
+- **Size-Max**: Set all selected nodes to both the maximum width and maximum height (makes all nodes the same size as the largest node)
+
+**How Size Alignment Works:**
+- Width and height alignment normalize node dimensions across selected nodes for a cleaner, more uniform appearance
+- Height-Min respects each node's minimum height based on its widgets and content
+- Size-Max combines both W-Max and H-Max to create uniformly sized nodes
+- Useful for creating consistent layouts and organizing workflows visually
 
 ### Preview Functionality
 Visual preview overlays show where nodes will be positioned before applying alignment.
