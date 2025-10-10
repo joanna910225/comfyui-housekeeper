@@ -889,45 +889,43 @@ function oe() {
             let k = 100;
             return o.size && Array.isArray(o.size) && o.size[1] ? k = o.size[1] : typeof o.height == "number" ? k = o.height : o.properties && typeof o.properties.height == "number" && (k = o.properties.height), k;
           }));
+          console.log("Height-max target:", maxHeight);
           m.forEach((o) => {
-            if (o.size && typeof o.setSize === "function") {
-              const currentHeight = o.size[1];
+            if (o.size) {
               const currentWidth = o.size[0];
-              // First, try to set the size and see what ComfyUI adjusts it to
-              o.setSize([currentWidth, maxHeight]);
-              const adjustedHeight = o.size[1];
-              const adjustment = adjustedHeight - maxHeight;
-              // If ComfyUI added extra height, compensate by subtracting it
-              if (adjustment > 0) {
-                o.setSize([currentWidth, maxHeight - adjustment]);
-              }
-            } else if (o.size) {
+              console.log("Before:", o.title, o.size[1]);
+              // Store the target height directly without using setSize
               o.size[1] = maxHeight;
+              // Call onResize if it exists to update internal state
+              if (typeof o.onResize === "function") {
+                o.onResize(o.size);
+              }
+              console.log("After:", o.title, o.size[1]);
             }
           });
-          break;
+          // Skip canvas redraw for height changes - return early
+          return;
         case "height-min":
           const minHeight = Math.min(...m.map((o) => {
             let k = 100;
             return o.size && Array.isArray(o.size) && o.size[1] ? k = o.size[1] : typeof o.height == "number" ? k = o.height : o.properties && typeof o.properties.height == "number" && (k = o.properties.height), k;
           }));
+          console.log("Height-min target:", minHeight);
           m.forEach((o) => {
-            if (o.size && typeof o.setSize === "function") {
-              const currentHeight = o.size[1];
+            if (o.size) {
               const currentWidth = o.size[0];
-              // First, try to set the size and see what ComfyUI adjusts it to
-              o.setSize([currentWidth, minHeight]);
-              const adjustedHeight = o.size[1];
-              const adjustment = adjustedHeight - minHeight;
-              // If ComfyUI added extra height, compensate by subtracting it
-              if (adjustment > 0) {
-                o.setSize([currentWidth, minHeight - adjustment]);
-              }
-            } else if (o.size) {
+              console.log("Before:", o.title, o.size[1]);
+              // Store the target height directly without using setSize
               o.size[1] = minHeight;
+              // Call onResize if it exists to update internal state
+              if (typeof o.onResize === "function") {
+                o.onResize(o.size);
+              }
+              console.log("After:", o.title, o.size[1]);
             }
           });
-          break;
+          // Skip canvas redraw for height changes - return early
+          return;
         case "size-max":
           const maxW = Math.max(...m.map((o) => {
             let k = 150;
@@ -937,22 +935,22 @@ function oe() {
             let k = 100;
             return o.size && Array.isArray(o.size) && o.size[1] ? k = o.size[1] : typeof o.height == "number" ? k = o.height : o.properties && typeof o.properties.height == "number" && (k = o.properties.height), k;
           }));
+          console.log("Size-max targets:", maxW, maxH);
           m.forEach((o) => {
-            if (o.size && typeof o.setSize === "function") {
-              // Try setting the size first to see the adjustment
-              o.setSize([maxW, maxH]);
-              const adjustedHeight = o.size[1];
-              const adjustment = adjustedHeight - maxH;
-              // Compensate for height adjustment
-              if (adjustment > 0) {
-                o.setSize([maxW, maxH - adjustment]);
-              }
-            } else if (o.size) {
+            if (o.size) {
+              console.log("Before:", o.title, "Size:", [o.size[0], o.size[1]]);
+              // Set both width and height directly without using setSize
               o.size[0] = maxW;
               o.size[1] = maxH;
+              // Call onResize if it exists to update internal state
+              if (typeof o.onResize === "function") {
+                o.onResize(o.size);
+              }
+              console.log("After:", o.title, "Size:", [o.size[0], o.size[1]]);
             }
           });
-          break;
+          // Skip canvas redraw for size changes - return early
+          return;
         case "left":
           c = b;
           const o = [...m].sort((i, $) => i.pos[1] - $.pos[1]);
