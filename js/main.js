@@ -845,11 +845,14 @@ function oe() {
   }
   function N(n) {
     var s, r, f, d, p;
+    console.log("N function called with type:", n);
+    console.log("Selected nodes count:", m.length);
     if (m.length < 2) {
       Q("Please select at least 2 nodes to align", "warning");
       return;
     }
     try {
+      console.log("Starting alignment for type:", n);
       const b = Math.min(...m.map((o) => o.pos[0])), h = Math.max(...m.map((o) => {
         let k = 150;
         return o.size && Array.isArray(o.size) && o.size[0] ? k = o.size[0] : typeof o.width == "number" ? k = o.width : o.properties && typeof o.properties.width == "number" && (k = o.properties.width), o.pos[0] + k;
@@ -858,12 +861,15 @@ function oe() {
         return o.size && Array.isArray(o.size) && o.size[1] ? k = o.size[1] : typeof o.height == "number" ? k = o.height : o.properties && typeof o.properties.height == "number" && (k = o.properties.height), o.pos[1] + k;
       }));
       let c;
+      console.log("Bounds calculated - minX:", b, "maxX:", h, "minY:", u, "maxY:", g);
       switch (n) {
         case "width-max":
+          console.log("Executing width-max");
           const maxWidth = Math.max(...m.map((o) => {
             let k = 150;
             return o.size && Array.isArray(o.size) && o.size[0] ? k = o.size[0] : typeof o.width == "number" ? k = o.width : o.properties && typeof o.properties.width == "number" && (k = o.properties.width), k;
           }));
+          console.log("Max width found:", maxWidth);
           m.forEach((o) => {
             if (o.size && Array.isArray(o.size)) {
               o.size[0] = maxWidth;
@@ -875,6 +881,7 @@ function oe() {
               o.properties.width = maxWidth;
             }
           });
+          console.log("Width-max completed successfully");
           break;
         case "width-min":
           const minWidth = Math.min(...m.map((o) => {
@@ -1003,11 +1010,17 @@ function oe() {
           it();
           return;
       }
+      console.log("About to update canvas");
       try {
         (r = (s = window.app) == null ? void 0 : s.canvas) != null && r.setDirtyCanvas ? window.app.canvas.setDirtyCanvas(!0, !0) : (d = (f = window.app) == null ? void 0 : f.graph) != null && d.setDirtyCanvas ? window.app.graph.setDirtyCanvas(!0, !0) : (p = window.app) != null && p.canvas && window.app.canvas.draw(!0, !0);
-      } catch {
+        console.log("Canvas updated successfully");
+      } catch (canvasErr) {
+        console.error("Canvas update error:", canvasErr);
       }
-    } catch {
+      console.log("Alignment completed successfully");
+    } catch (err) {
+      console.error("Alignment error:", err);
+      console.error("Error stack:", err.stack);
       Q("Error during alignment", "error");
     }
   }
