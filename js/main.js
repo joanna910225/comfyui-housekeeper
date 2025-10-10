@@ -864,9 +864,12 @@ function oe() {
             let k = 150;
             return o.size && Array.isArray(o.size) && o.size[0] ? k = o.size[0] : typeof o.width == "number" ? k = o.width : o.properties && typeof o.properties.width == "number" && (k = o.properties.width), k;
           }));
+          console.log("Width-max - target width:", maxWidth);
           m.forEach((o) => {
             if (o.size) {
+              const oldSize = [o.size[0], o.size[1]];
               o.size[0] = maxWidth;
+              console.log("Node:", o.title, "Before:", oldSize, "After setting width:", [o.size[0], o.size[1]]);
             }
           });
           break;
@@ -977,6 +980,10 @@ function oe() {
         if ((f = window.app) != null && f.graph && typeof window.app.graph.setDirtyCanvas === "function") {
           window.app.graph.setDirtyCanvas(true, true);
         }
+        console.log("After canvas redraw, checking node sizes:");
+        m.forEach((o) => {
+          console.log("Node:", o.title, "Final size:", [o.size[0], o.size[1]]);
+        });
       } catch (canvasErr) {
         console.error("Canvas update error:", canvasErr);
       }
