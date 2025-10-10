@@ -410,6 +410,48 @@ function oe() {
       return h.size && Array.isArray(h.size) && h.size[1] ? u = h.size[1] : typeof h.height == "number" ? u = h.height : h.properties && typeof h.properties.height == "number" && (u = h.properties.height), h.pos[1] + u;
     }));
     switch (n) {
+      case "width-max":
+      case "width-min":
+      case "height-max":
+      case "height-min":
+      case "size-max":
+        s.forEach((t) => {
+          let l = 100, v = 150;
+          t.size && Array.isArray(t.size) ? (t.size[1] && (l = t.size[1]), t.size[0] && (v = t.size[0])) : (typeof t.height == "number" && (l = t.height), typeof t.width == "number" && (v = t.width), t.properties && (typeof t.properties.height == "number" && (l = t.properties.height), typeof t.properties.width == "number" && (v = t.properties.width)));
+
+          let previewWidth = v, previewHeight = l;
+          if (n === "width-max" || n === "size-max") {
+            previewWidth = Math.max(...s.map((node) => {
+              let w = 150;
+              return node.size && Array.isArray(node.size) && node.size[0] ? w = node.size[0] : typeof node.width == "number" ? w = node.width : node.properties && typeof node.properties.width == "number" && (w = node.properties.width), w;
+            }));
+          } else if (n === "width-min") {
+            previewWidth = Math.min(...s.map((node) => {
+              let w = 150;
+              return node.size && Array.isArray(node.size) && node.size[0] ? w = node.size[0] : typeof node.width == "number" ? w = node.width : node.properties && typeof node.properties.width == "number" && (w = node.properties.width), w;
+            }));
+          }
+
+          if (n === "height-max" || n === "size-max") {
+            previewHeight = Math.max(...s.map((node) => {
+              let h = 100;
+              return node.size && Array.isArray(node.size) && node.size[1] ? h = node.size[1] : typeof node.height == "number" ? h = node.height : node.properties && typeof node.properties.height == "number" && (h = node.properties.height), h;
+            }));
+          } else if (n === "height-min") {
+            previewHeight = Math.min(...s.map((node) => {
+              let h = 100;
+              return node.size && Array.isArray(node.size) && node.size[1] ? h = node.size[1] : typeof node.height == "number" ? h = node.height : node.properties && typeof node.properties.height == "number" && (h = node.properties.height), h;
+            }));
+          }
+
+          r.push({
+            x: t.pos[0],
+            y: t.pos[1],
+            width: previewWidth,
+            height: previewHeight
+          });
+        });
+        break;
       case "left":
         const h = [...s].sort((t, l) => t.pos[1] - l.pos[1]);
         let u = h[0].pos[1];
@@ -656,15 +698,34 @@ function oe() {
       { type: "top", icon: "⇡", label: "Top" },
       { type: "bottom", icon: "⇣", label: "Bottom" },
       { type: "horizontal-flow", icon: "→", label: "H-Flow" },
-      { type: "vertical-flow", icon: "↓", label: "V-Flow" }
-    ], d = f.slice(0, 4), p = f.slice(4);
+      { type: "vertical-flow", icon: "↓", label: "V-Flow" },
+      { type: "width-max", icon: "⟷", label: "W-Max" },
+      { type: "width-min", icon: "⟷", label: "W-Min" },
+      { type: "height-max", icon: "⟺", label: "H-Max" },
+      { type: "height-min", icon: "⟺", label: "H-Min" },
+      { type: "size-max", icon: "⇱", label: "Size-Max" }
+    ], d = f.slice(0, 4), p = f.slice(4, 6), size = f.slice(6);
     d.forEach((h) => {
       const u = X(h);
       s.appendChild(u);
     }), p.forEach((h) => {
       const u = X(h, !0);
       r.appendChild(u);
-    }), y.appendChild(s), y.appendChild(r);
+    });
+    const sizeSection = document.createElement("div");
+    sizeSection.style.cssText = `
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+            border-top: 1px solid #555;
+            padding-top: 8px;
+        `;
+    size.forEach((h) => {
+      const u = X(h, !1);
+      sizeSection.appendChild(u);
+    });
+    y.appendChild(s), y.appendChild(r), y.appendChild(sizeSection);
     const b = document.createElement("div");
     b.id = "alignment-info", b.style.cssText = `
             background: rgba(60, 60, 60, 0.8);
@@ -798,6 +859,104 @@ function oe() {
       }));
       let c;
       switch (n) {
+        case "width-max":
+          const maxWidth = Math.max(...m.map((o) => {
+            let k = 150;
+            return o.size && Array.isArray(o.size) && o.size[0] ? k = o.size[0] : typeof o.width == "number" ? k = o.width : o.properties && typeof o.properties.width == "number" && (k = o.properties.width), k;
+          }));
+          m.forEach((o) => {
+            if (o.size && Array.isArray(o.size)) {
+              o.size[0] = maxWidth;
+            }
+            if (typeof o.width == "number") {
+              o.width = maxWidth;
+            }
+            if (o.properties && typeof o.properties.width == "number") {
+              o.properties.width = maxWidth;
+            }
+          });
+          break;
+        case "width-min":
+          const minWidth = Math.min(...m.map((o) => {
+            let k = 150;
+            return o.size && Array.isArray(o.size) && o.size[0] ? k = o.size[0] : typeof o.width == "number" ? k = o.width : o.properties && typeof o.properties.width == "number" && (k = o.properties.width), k;
+          }));
+          m.forEach((o) => {
+            if (o.size && Array.isArray(o.size)) {
+              o.size[0] = minWidth;
+            }
+            if (typeof o.width == "number") {
+              o.width = minWidth;
+            }
+            if (o.properties && typeof o.properties.width == "number") {
+              o.properties.width = minWidth;
+            }
+          });
+          break;
+        case "height-max":
+          const maxHeight = Math.max(...m.map((o) => {
+            let k = 100;
+            return o.size && Array.isArray(o.size) && o.size[1] ? k = o.size[1] : typeof o.height == "number" ? k = o.height : o.properties && typeof o.properties.height == "number" && (k = o.properties.height), k;
+          }));
+          m.forEach((o) => {
+            if (o.size && Array.isArray(o.size)) {
+              o.size[1] = maxHeight;
+            }
+            if (typeof o.height == "number") {
+              o.height = maxHeight;
+            }
+            if (o.properties && typeof o.properties.height == "number") {
+              o.properties.height = maxHeight;
+            }
+          });
+          break;
+        case "height-min":
+          const minHeight = Math.min(...m.map((o) => {
+            let k = 100;
+            return o.size && Array.isArray(o.size) && o.size[1] ? k = o.size[1] : typeof o.height == "number" ? k = o.height : o.properties && typeof o.properties.height == "number" && (k = o.properties.height), k;
+          }));
+          m.forEach((o) => {
+            if (o.size && Array.isArray(o.size)) {
+              o.size[1] = minHeight;
+            }
+            if (typeof o.height == "number") {
+              o.height = minHeight;
+            }
+            if (o.properties && typeof o.properties.height == "number") {
+              o.properties.height = minHeight;
+            }
+          });
+          break;
+        case "size-max":
+          const maxW = Math.max(...m.map((o) => {
+            let k = 150;
+            return o.size && Array.isArray(o.size) && o.size[0] ? k = o.size[0] : typeof o.width == "number" ? k = o.width : o.properties && typeof o.properties.width == "number" && (k = o.properties.width), k;
+          }));
+          const maxH = Math.max(...m.map((o) => {
+            let k = 100;
+            return o.size && Array.isArray(o.size) && o.size[1] ? k = o.size[1] : typeof o.height == "number" ? k = o.height : o.properties && typeof o.properties.height == "number" && (k = o.properties.height), k;
+          }));
+          m.forEach((o) => {
+            if (o.size && Array.isArray(o.size)) {
+              o.size[0] = maxW;
+              o.size[1] = maxH;
+            }
+            if (typeof o.width == "number") {
+              o.width = maxW;
+            }
+            if (typeof o.height == "number") {
+              o.height = maxH;
+            }
+            if (o.properties) {
+              if (typeof o.properties.width == "number") {
+                o.properties.width = maxW;
+              }
+              if (typeof o.properties.height == "number") {
+                o.properties.height = maxH;
+              }
+            }
+          });
+          break;
         case "left":
           c = b;
           const o = [...m].sort((i, $) => i.pos[1] - $.pos[1]);
