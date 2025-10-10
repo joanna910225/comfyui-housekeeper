@@ -874,12 +874,6 @@ function oe() {
             if (o.size && Array.isArray(o.size)) {
               o.size[0] = maxWidth;
             }
-            if (typeof o.width == "number") {
-              o.width = maxWidth;
-            }
-            if (o.properties && typeof o.properties.width == "number") {
-              o.properties.width = maxWidth;
-            }
           });
           console.log("Width-max completed successfully");
           break;
@@ -892,12 +886,6 @@ function oe() {
             if (o.size && Array.isArray(o.size)) {
               o.size[0] = minWidth;
             }
-            if (typeof o.width == "number") {
-              o.width = minWidth;
-            }
-            if (o.properties && typeof o.properties.width == "number") {
-              o.properties.width = minWidth;
-            }
           });
           break;
         case "height-max":
@@ -909,12 +897,6 @@ function oe() {
             if (o.size && Array.isArray(o.size)) {
               o.size[1] = maxHeight;
             }
-            if (typeof o.height == "number") {
-              o.height = maxHeight;
-            }
-            if (o.properties && typeof o.properties.height == "number") {
-              o.properties.height = maxHeight;
-            }
           });
           break;
         case "height-min":
@@ -925,12 +907,6 @@ function oe() {
           m.forEach((o) => {
             if (o.size && Array.isArray(o.size)) {
               o.size[1] = minHeight;
-            }
-            if (typeof o.height == "number") {
-              o.height = minHeight;
-            }
-            if (o.properties && typeof o.properties.height == "number") {
-              o.properties.height = minHeight;
             }
           });
           break;
@@ -947,20 +923,6 @@ function oe() {
             if (o.size && Array.isArray(o.size)) {
               o.size[0] = maxW;
               o.size[1] = maxH;
-            }
-            if (typeof o.width == "number") {
-              o.width = maxW;
-            }
-            if (typeof o.height == "number") {
-              o.height = maxH;
-            }
-            if (o.properties) {
-              if (typeof o.properties.width == "number") {
-                o.properties.width = maxW;
-              }
-              if (typeof o.properties.height == "number") {
-                o.properties.height = maxH;
-              }
             }
           });
           break;
