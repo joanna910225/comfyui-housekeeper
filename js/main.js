@@ -845,14 +845,11 @@ function oe() {
   }
   function N(n) {
     var s, r, f, d, p;
-    console.log("N function called with type:", n);
-    console.log("Selected nodes count:", m.length);
     if (m.length < 2) {
       Q("Please select at least 2 nodes to align", "warning");
       return;
     }
     try {
-      console.log("Starting alignment for type:", n);
       const b = Math.min(...m.map((o) => o.pos[0])), h = Math.max(...m.map((o) => {
         let k = 150;
         return o.size && Array.isArray(o.size) && o.size[0] ? k = o.size[0] : typeof o.width == "number" ? k = o.width : o.properties && typeof o.properties.width == "number" && (k = o.properties.width), o.pos[0] + k;
@@ -861,34 +858,17 @@ function oe() {
         return o.size && Array.isArray(o.size) && o.size[1] ? k = o.size[1] : typeof o.height == "number" ? k = o.height : o.properties && typeof o.properties.height == "number" && (k = o.properties.height), o.pos[1] + k;
       }));
       let c;
-      console.log("Bounds calculated - minX:", b, "maxX:", h, "minY:", u, "maxY:", g);
       switch (n) {
         case "width-max":
-          console.log("Executing width-max");
           const maxWidth = Math.max(...m.map((o) => {
             let k = 150;
             return o.size && Array.isArray(o.size) && o.size[0] ? k = o.size[0] : typeof o.width == "number" ? k = o.width : o.properties && typeof o.properties.width == "number" && (k = o.properties.width), k;
           }));
-          console.log("Max width found:", maxWidth);
           m.forEach((o) => {
-            console.log("Before - Node size:", o.size);
-            console.log("Node has setSize?", typeof o.setSize);
-            console.log("Node has onResize?", typeof o.onResize);
             if (o.size) {
-              const oldWidth = o.size[0];
-              const oldHeight = o.size[1];
-              // Use setSize method if available
-              if (typeof o.setSize === "function") {
-                console.log("Calling node.setSize()");
-                o.setSize([maxWidth, oldHeight]);
-              } else {
-                // Fallback to direct assignment
-                o.size[0] = maxWidth;
-              }
-              console.log("After - Changed size from", oldWidth, "to", o.size[0]);
+              o.size[0] = maxWidth;
             }
           });
-          console.log("Width-max completed successfully");
           break;
         case "width-min":
           const minWidth = Math.min(...m.map((o) => {
@@ -897,12 +877,7 @@ function oe() {
           }));
           m.forEach((o) => {
             if (o.size) {
-              const oldHeight = o.size[1];
-              if (typeof o.setSize === "function") {
-                o.setSize([minWidth, oldHeight]);
-              } else {
-                o.size[0] = minWidth;
-              }
+              o.size[0] = minWidth;
             }
           });
           break;
@@ -911,22 +886,9 @@ function oe() {
             let k = 100;
             return o.size && Array.isArray(o.size) && o.size[1] ? k = o.size[1] : typeof o.height == "number" ? k = o.height : o.properties && typeof o.properties.height == "number" && (k = o.properties.height), k;
           }));
-          console.log("Max height found:", maxHeight);
           m.forEach((o) => {
             if (o.size) {
-              const oldWidth = o.size[0];
-              const oldHeight = o.size[1];
-              console.log("Node before height-max:", o.title, "size:", [oldWidth, oldHeight]);
-              if (typeof o.setSize === "function") {
-                o.setSize([oldWidth, maxHeight]);
-              } else {
-                o.size[1] = maxHeight;
-              }
-              console.log("Node after height-max:", o.title, "size:", [o.size[0], o.size[1]]);
-              // Check if setSize changed the height unexpectedly
-              if (o.size[1] !== maxHeight) {
-                console.warn("setSize adjusted height from", maxHeight, "to", o.size[1], "for node", o.title);
-              }
+              o.size[1] = maxHeight;
             }
           });
           break;
@@ -935,22 +897,9 @@ function oe() {
             let k = 100;
             return o.size && Array.isArray(o.size) && o.size[1] ? k = o.size[1] : typeof o.height == "number" ? k = o.height : o.properties && typeof o.properties.height == "number" && (k = o.properties.height), k;
           }));
-          console.log("Min height found:", minHeight);
           m.forEach((o) => {
             if (o.size) {
-              const oldWidth = o.size[0];
-              const oldHeight = o.size[1];
-              console.log("Node before height-min:", o.title, "size:", [oldWidth, oldHeight]);
-              if (typeof o.setSize === "function") {
-                o.setSize([oldWidth, minHeight]);
-              } else {
-                o.size[1] = minHeight;
-              }
-              console.log("Node after height-min:", o.title, "size:", [o.size[0], o.size[1]]);
-              // Check if setSize changed the height unexpectedly
-              if (o.size[1] !== minHeight) {
-                console.warn("setSize adjusted height from", minHeight, "to", o.size[1], "for node", o.title);
-              }
+              o.size[1] = minHeight;
             }
           });
           break;
@@ -965,12 +914,8 @@ function oe() {
           }));
           m.forEach((o) => {
             if (o.size) {
-              if (typeof o.setSize === "function") {
-                o.setSize([maxW, maxH]);
-              } else {
-                o.size[0] = maxW;
-                o.size[1] = maxH;
-              }
+              o.size[0] = maxW;
+              o.size[1] = maxH;
             }
           });
           break;
@@ -1020,9 +965,7 @@ function oe() {
           it();
           return;
       }
-      console.log("About to update canvas");
       try {
-        // Force canvas redraw
         if ((s = window.app) != null && s.canvas) {
           if (typeof window.app.canvas.setDirtyCanvas === "function") {
             window.app.canvas.setDirtyCanvas(true, true);
@@ -1034,11 +977,9 @@ function oe() {
         if ((f = window.app) != null && f.graph && typeof window.app.graph.setDirtyCanvas === "function") {
           window.app.graph.setDirtyCanvas(true, true);
         }
-        console.log("Canvas updated successfully");
       } catch (canvasErr) {
         console.error("Canvas update error:", canvasErr);
       }
-      console.log("Alignment completed successfully");
     } catch (err) {
       console.error("Alignment error:", err);
       console.error("Error stack:", err.stack);
