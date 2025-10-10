@@ -890,7 +890,18 @@ function oe() {
             return o.size && Array.isArray(o.size) && o.size[1] ? k = o.size[1] : typeof o.height == "number" ? k = o.height : o.properties && typeof o.properties.height == "number" && (k = o.properties.height), k;
           }));
           m.forEach((o) => {
-            if (o.size) {
+            if (o.size && typeof o.setSize === "function") {
+              const currentHeight = o.size[1];
+              const currentWidth = o.size[0];
+              // First, try to set the size and see what ComfyUI adjusts it to
+              o.setSize([currentWidth, maxHeight]);
+              const adjustedHeight = o.size[1];
+              const adjustment = adjustedHeight - maxHeight;
+              // If ComfyUI added extra height, compensate by subtracting it
+              if (adjustment > 0) {
+                o.setSize([currentWidth, maxHeight - adjustment]);
+              }
+            } else if (o.size) {
               o.size[1] = maxHeight;
             }
           });
@@ -901,7 +912,18 @@ function oe() {
             return o.size && Array.isArray(o.size) && o.size[1] ? k = o.size[1] : typeof o.height == "number" ? k = o.height : o.properties && typeof o.properties.height == "number" && (k = o.properties.height), k;
           }));
           m.forEach((o) => {
-            if (o.size) {
+            if (o.size && typeof o.setSize === "function") {
+              const currentHeight = o.size[1];
+              const currentWidth = o.size[0];
+              // First, try to set the size and see what ComfyUI adjusts it to
+              o.setSize([currentWidth, minHeight]);
+              const adjustedHeight = o.size[1];
+              const adjustment = adjustedHeight - minHeight;
+              // If ComfyUI added extra height, compensate by subtracting it
+              if (adjustment > 0) {
+                o.setSize([currentWidth, minHeight - adjustment]);
+              }
+            } else if (o.size) {
               o.size[1] = minHeight;
             }
           });
@@ -916,7 +938,16 @@ function oe() {
             return o.size && Array.isArray(o.size) && o.size[1] ? k = o.size[1] : typeof o.height == "number" ? k = o.height : o.properties && typeof o.properties.height == "number" && (k = o.properties.height), k;
           }));
           m.forEach((o) => {
-            if (o.size) {
+            if (o.size && typeof o.setSize === "function") {
+              // Try setting the size first to see the adjustment
+              o.setSize([maxW, maxH]);
+              const adjustedHeight = o.size[1];
+              const adjustment = adjustedHeight - maxH;
+              // Compensate for height adjustment
+              if (adjustment > 0) {
+                o.setSize([maxW, maxH - adjustment]);
+              }
+            } else if (o.size) {
               o.size[0] = maxW;
               o.size[1] = maxH;
             }
