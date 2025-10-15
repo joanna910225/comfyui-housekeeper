@@ -571,13 +571,23 @@ function initializeAlignmentPanel() {
                             if (n.properties && typeof n.properties.width === 'number') return n.properties.width;
                             return 150;
                         }));
-                    } else if (alignmentType === 'width-min' || alignmentType === 'size-min') {
+                    } else if (alignmentType === 'width-min') {
                         previewWidth = Math.min(...nodes.map((n: any) => {
                             if (n.size && Array.isArray(n.size) && n.size[0]) return n.size[0];
                             if (typeof n.width === 'number') return n.width;
                             if (n.properties && typeof n.properties.width === 'number') return n.properties.width;
                             return 150;
                         }));
+                    } else if (alignmentType === 'size-min') {
+                        // For size-min, use the node's minimum accepted size from computeSize
+                        if (node.computeSize) {
+                            const minSize = node.computeSize.call(node);
+                            previewWidth = minSize[0];
+                            previewHeight = minSize[1];
+                        } else {
+                            previewWidth = 150;
+                            previewHeight = 100;
+                        }
                     }
 
                     if (alignmentType === 'height-max' || alignmentType === 'size-max') {
@@ -587,7 +597,8 @@ function initializeAlignmentPanel() {
                             if (n.properties && typeof n.properties.height === 'number') return n.properties.height;
                             return 100;
                         }));
-                    } else if (alignmentType === 'height-min' || alignmentType === 'size-min') {
+                    } else if (alignmentType === 'height-min' && alignmentType !== 'size-min') {
+                        // Only apply height-min logic if not size-min (which handles both)
                         previewHeight = Math.min(...nodes.map((n: any) => {
                             if (n.size && Array.isArray(n.size) && n.size[1]) return n.size[1];
                             if (typeof n.height === 'number') return n.height;
@@ -1346,13 +1357,16 @@ function initializeAlignmentPanel() {
                 case 'size-min':
                     selectedNodes.forEach((node: any) => {
                         if (node.size) {
-                            // Set width to minimum
-                            node.size[0] = originalMinWidth;
-
-                            // For height, respect the node's minimum height requirement from computeSize
-                            const nodeMinSize = node.computeSize ? node.computeSize.call(node)[1] : null;
-                            const targetHeight = nodeMinSize && nodeMinSize > originalMinHeight ? nodeMinSize : originalMinHeight;
-                            node.size[1] = targetHeight;
+                            // Get the node's minimum accepted size from computeSize
+                            if (node.computeSize) {
+                                const minSize = node.computeSize.call(node);
+                                node.size[0] = minSize[0]; // Minimum width
+                                node.size[1] = minSize[1]; // Minimum height
+                            } else {
+                                // Fallback: use a reasonable minimum if computeSize is not available
+                                node.size[0] = 150; // Default minimum width
+                                node.size[1] = 100; // Default minimum height
+                            }
                         }
                     });
                     break;
