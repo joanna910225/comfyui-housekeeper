@@ -88,6 +88,10 @@ function initializeAlignmentPanel() {
     let selectedNodes: any[] = [];
     let previewElements: HTMLElement[] = [];
 
+    // Store locked sizes and original computeSize methods for size-max functionality
+    const lockedSizes = new WeakMap();
+    const originalComputeSizeMethods = new WeakMap();
+
     // Preview functionality
     function showPreview(alignmentType: string) {
         if (selectedNodes.length < 2) return;
@@ -535,8 +539,73 @@ function initializeAlignmentPanel() {
                     if (pos) positions.push(pos);
                 });
                 break;
+
+            case 'width-max':
+            case 'width-min':
+            case 'height-max':
+            case 'height-min':
+            case 'size-max':
+            case 'size-min':
+                // Calculate preview dimensions for size adjustment
+                nodes.forEach((node: any) => {
+                    let currentWidth = 150, currentHeight = 100;
+                    if (node.size && Array.isArray(node.size)) {
+                        if (node.size[0]) currentWidth = node.size[0];
+                        if (node.size[1]) currentHeight = node.size[1];
+                    } else {
+                        if (typeof node.width === 'number') currentWidth = node.width;
+                        if (typeof node.height === 'number') currentHeight = node.height;
+                        if (node.properties) {
+                            if (typeof node.properties.width === 'number') currentWidth = node.properties.width;
+                            if (typeof node.properties.height === 'number') currentHeight = node.properties.height;
+                        }
+                    }
+
+                    let previewWidth = currentWidth;
+                    let previewHeight = currentHeight;
+
+                    if (alignmentType === 'width-max' || alignmentType === 'size-max') {
+                        previewWidth = Math.max(...nodes.map((n: any) => {
+                            if (n.size && Array.isArray(n.size) && n.size[0]) return n.size[0];
+                            if (typeof n.width === 'number') return n.width;
+                            if (n.properties && typeof n.properties.width === 'number') return n.properties.width;
+                            return 150;
+                        }));
+                    } else if (alignmentType === 'width-min' || alignmentType === 'size-min') {
+                        previewWidth = Math.min(...nodes.map((n: any) => {
+                            if (n.size && Array.isArray(n.size) && n.size[0]) return n.size[0];
+                            if (typeof n.width === 'number') return n.width;
+                            if (n.properties && typeof n.properties.width === 'number') return n.properties.width;
+                            return 150;
+                        }));
+                    }
+
+                    if (alignmentType === 'height-max' || alignmentType === 'size-max') {
+                        previewHeight = Math.max(...nodes.map((n: any) => {
+                            if (n.size && Array.isArray(n.size) && n.size[1]) return n.size[1];
+                            if (typeof n.height === 'number') return n.height;
+                            if (n.properties && typeof n.properties.height === 'number') return n.properties.height;
+                            return 100;
+                        }));
+                    } else if (alignmentType === 'height-min' || alignmentType === 'size-min') {
+                        previewHeight = Math.min(...nodes.map((n: any) => {
+                            if (n.size && Array.isArray(n.size) && n.size[1]) return n.size[1];
+                            if (typeof n.height === 'number') return n.height;
+                            if (n.properties && typeof n.properties.height === 'number') return n.properties.height;
+                            return 100;
+                        }));
+                    }
+
+                    positions.push({
+                        x: node.pos[0],
+                        y: node.pos[1],
+                        width: previewWidth,
+                        height: previewHeight
+                    });
+                });
+                break;
         }
-        
+
         return positions;
     }
 
@@ -650,11 +719,18 @@ function initializeAlignmentPanel() {
             { type: 'top', icon: '⇡', label: 'Top' },
             { type: 'bottom', icon: '⇣', label: 'Bottom' },
             { type: 'horizontal-flow', icon: '→', label: 'H-Flow' },
-            { type: 'vertical-flow', icon: '↓', label: 'V-Flow' }
+            { type: 'vertical-flow', icon: '↓', label: 'V-Flow' },
+            { type: 'width-max', icon: '⟷', label: 'W-Max' },
+            { type: 'width-min', icon: '⟷', label: 'W-Min' },
+            { type: 'height-max', icon: '⟺', label: 'H-Max' },
+            { type: 'height-min', icon: '⟺', label: 'H-Min' },
+            { type: 'size-max', icon: '⇱', label: 'Size-Max' },
+            { type: 'size-min', icon: '↙', label: 'Size-Min' }
         ];
 
         const basicAlignments = alignments.slice(0, 4); // First 4 are basic
-        const advancedAlignments = alignments.slice(4); // Last 2 are advanced
+        const advancedAlignments = alignments.slice(4, 6); // Flow alignments
+        const sizeAlignments = alignments.slice(6); // Size adjustment buttons
 
         // Create basic alignment buttons
         basicAlignments.forEach(alignment => {
@@ -668,8 +744,26 @@ function initializeAlignmentPanel() {
             advancedContainer.appendChild(button);
         });
 
+        // Size adjustment buttons container
+        const sizeContainer = document.createElement('div');
+        sizeContainer.style.cssText = `
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+            border-top: 1px solid #555;
+            padding-top: 8px;
+        `;
+
+        // Create size adjustment buttons with a different style
+        sizeAlignments.forEach(alignment => {
+            const button = createAlignmentButton(alignment, true);
+            sizeContainer.appendChild(button);
+        });
+
         panel.appendChild(basicContainer);
         panel.appendChild(advancedContainer);
+        panel.appendChild(sizeContainer);
 
         // Info panel
         const infoPanel = document.createElement('div');
@@ -931,7 +1025,7 @@ function initializeAlignmentPanel() {
 
 
         try {
-            // Calculate all reference positions at the start to avoid drift on consecutive clicks
+            // Calculate all reference positions and sizes at the start to avoid drift on consecutive clicks
             const originalLeftPos = Math.min(...selectedNodes.map((node: any) => node.pos[0]));
             const originalRightPos = Math.max(...selectedNodes.map((node: any) => {
                 // Get actual node width, same logic as in positioning
@@ -959,6 +1053,52 @@ function initializeAlignmentPanel() {
                 return node.pos[1] + nodeHeight;
             }));
 
+            // Calculate max/min width and height for size adjustment functions
+            const originalMaxWidth = Math.max(...selectedNodes.map((node: any) => {
+                const locked = lockedSizes.get(node);
+                if (locked && locked.width !== undefined) return locked.width;
+                let k = 150;
+                if (node.size && Array.isArray(node.size) && node.size[0]) {
+                    k = node.size[0];
+                } else if (typeof node.width === 'number') {
+                    k = node.width;
+                } else if (node.properties && typeof node.properties.width === 'number') {
+                    k = node.properties.width;
+                }
+                return k;
+            }));
+
+            const originalMinWidth = Math.min(...selectedNodes.map((node: any) => {
+                const locked = lockedSizes.get(node);
+                if (locked && locked.width !== undefined) return locked.width;
+                let k = 150;
+                if (node.size && Array.isArray(node.size) && node.size[0]) {
+                    k = node.size[0];
+                } else if (typeof node.width === 'number') {
+                    k = node.width;
+                } else if (node.properties && typeof node.properties.width === 'number') {
+                    k = node.properties.width;
+                }
+                return k;
+            }));
+
+            const originalMaxHeight = Math.max(...selectedNodes.map((node: any) => {
+                const locked = lockedSizes.get(node);
+                if (locked && locked.height !== undefined) return locked.height;
+                // node.size is a Float32Array, not a regular array
+                if (node.size && node.size[1] !== undefined) return node.size[1];
+                if (typeof node.height === 'number') return node.height;
+                if (node.properties && typeof node.properties.height === 'number') return node.properties.height;
+                return 100;
+            }));
+
+            const originalMinHeight = Math.min(...selectedNodes.map((node: any) => {
+                // node.size is a Float32Array, not a regular array, so don't use Array.isArray()
+                if (node.size && node.size[1] !== undefined) return node.size[1];
+                if (typeof node.height === 'number') return node.height;
+                if (node.properties && typeof node.properties.height === 'number') return node.properties.height;
+                return 100;
+            }));
 
             let referenceValue: number;
 
@@ -1129,11 +1269,98 @@ function initializeAlignmentPanel() {
                         currentXBottom += nodeWidth + nodeSpacing;
                     });
                     break;
-                    
+
+                case 'width-max':
+                    selectedNodes.forEach((node: any) => {
+                        if (node.size) {
+                            node.size[0] = originalMaxWidth;
+                        }
+                    });
+                    break;
+
+                case 'width-min':
+                    selectedNodes.forEach((node: any) => {
+                        if (node.size) {
+                            node.size[0] = originalMinWidth;
+                        }
+                    });
+                    break;
+
+                case 'height-max':
+                    selectedNodes.forEach((node: any) => {
+                        if (node.size) {
+                            node.size[1] = originalMaxHeight;
+                        }
+                    });
+                    break;
+
+                case 'height-min':
+                    selectedNodes.forEach((node: any) => {
+                        if (node.size) {
+                            // Check if node has a minimum height requirement from computeSize
+                            const nodeMinSize = node.computeSize ? node.computeSize.call(node)[1] : null;
+                            const targetHeight = nodeMinSize && nodeMinSize > originalMinHeight ? nodeMinSize : originalMinHeight;
+                            node.size[1] = targetHeight;
+                        }
+                    });
+                    break;
+
+                case 'size-max':
+                    selectedNodes.forEach((node: any) => {
+                        if (node.size) {
+                            // Store original computeSize if not already stored
+                            if (node.computeSize && !originalComputeSizeMethods.has(node)) {
+                                originalComputeSizeMethods.set(node, node.computeSize);
+                            }
+
+                            // Override computeSize to return our locked sizes
+                            if (node.computeSize) {
+                                const lockedWidth = originalMaxWidth;
+                                const lockedHeight = originalMaxHeight;
+                                node.computeSize = function(width: any) {
+                                    const original = originalComputeSizeMethods.get(this);
+                                    if (original) {
+                                        const result = original.call(this, width);
+                                        // Only enforce locked sizes if current sizes match locked sizes
+                                        // This allows manual resizing to break the lock
+                                        if (Math.abs(this.size[0] - lockedWidth) < 1) {
+                                            result[0] = lockedWidth;
+                                        }
+                                        if (Math.abs(this.size[1] - lockedHeight) < 1) {
+                                            result[1] = lockedHeight;
+                                        }
+                                        return result;
+                                    }
+                                    return [this.size[0], this.size[1]];
+                                };
+                            }
+
+                            node.size[0] = originalMaxWidth;
+                            node.size[1] = originalMaxHeight;
+                            // Lock both width and height values for future clicks
+                            lockedSizes.set(node, { width: node.size[0], height: node.size[1] });
+                        }
+                    });
+                    break;
+
+                case 'size-min':
+                    selectedNodes.forEach((node: any) => {
+                        if (node.size) {
+                            // Set width to minimum
+                            node.size[0] = originalMinWidth;
+
+                            // For height, respect the node's minimum height requirement from computeSize
+                            const nodeMinSize = node.computeSize ? node.computeSize.call(node)[1] : null;
+                            const targetHeight = nodeMinSize && nodeMinSize > originalMinHeight ? nodeMinSize : originalMinHeight;
+                            node.size[1] = targetHeight;
+                        }
+                    });
+                    break;
+
                 case 'horizontal-flow':
                     alignHorizontalFlow();
                     return; // Don't continue to the success message at the bottom
-                    
+
                 case 'vertical-flow':
                     alignVerticalFlow();
                     return; // Don't continue to the success message at the bottom
