@@ -88,10 +88,6 @@ function initializeAlignmentPanel() {
     let selectedNodes: any[] = [];
     let previewElements: HTMLElement[] = [];
 
-    // Store locked sizes and original computeSize methods for size-max functionality
-    const lockedSizes = new WeakMap();
-    const originalComputeSizeMethods = new WeakMap();
-
     // Preview functionality
     function showPreview(alignmentType: string) {
         if (selectedNodes.length < 2) return;
@@ -1066,8 +1062,6 @@ function initializeAlignmentPanel() {
 
             // Calculate max/min width and height for size adjustment functions
             const originalMaxWidth = Math.max(...selectedNodes.map((node: any) => {
-                const locked = lockedSizes.get(node);
-                if (locked && locked.width !== undefined) return locked.width;
                 let k = 150;
                 if (node.size && Array.isArray(node.size) && node.size[0]) {
                     k = node.size[0];
@@ -1080,8 +1074,6 @@ function initializeAlignmentPanel() {
             }));
 
             const originalMinWidth = Math.min(...selectedNodes.map((node: any) => {
-                const locked = lockedSizes.get(node);
-                if (locked && locked.width !== undefined) return locked.width;
                 let k = 150;
                 if (node.size && Array.isArray(node.size) && node.size[0]) {
                     k = node.size[0];
@@ -1094,8 +1086,6 @@ function initializeAlignmentPanel() {
             }));
 
             const originalMaxHeight = Math.max(...selectedNodes.map((node: any) => {
-                const locked = lockedSizes.get(node);
-                if (locked && locked.height !== undefined) return locked.height;
                 // node.size is a Float32Array, not a regular array
                 if (node.size && node.size[1] !== undefined) return node.size[1];
                 if (typeof node.height === 'number') return node.height;
@@ -1319,37 +1309,10 @@ function initializeAlignmentPanel() {
                 case 'size-max':
                     selectedNodes.forEach((node: any) => {
                         if (node.size) {
-                            // Store original computeSize if not already stored
-                            if (node.computeSize && !originalComputeSizeMethods.has(node)) {
-                                originalComputeSizeMethods.set(node, node.computeSize);
-                            }
-
-                            // Override computeSize to return our locked sizes
-                            if (node.computeSize) {
-                                const lockedWidth = originalMaxWidth;
-                                const lockedHeight = originalMaxHeight;
-                                node.computeSize = function(width: any) {
-                                    const original = originalComputeSizeMethods.get(this);
-                                    if (original) {
-                                        const result = original.call(this, width);
-                                        // Only enforce locked sizes if current sizes match locked sizes
-                                        // This allows manual resizing to break the lock
-                                        if (Math.abs(this.size[0] - lockedWidth) < 1) {
-                                            result[0] = lockedWidth;
-                                        }
-                                        if (Math.abs(this.size[1] - lockedHeight) < 1) {
-                                            result[1] = lockedHeight;
-                                        }
-                                        return result;
-                                    }
-                                    return [this.size[0], this.size[1]];
-                                };
-                            }
-
+                            // Simply set to max size without locking behavior
+                            // Users can freely resize after applying size-max
                             node.size[0] = originalMaxWidth;
                             node.size[1] = originalMaxHeight;
-                            // Lock both width and height values for future clicks
-                            lockedSizes.set(node, { width: node.size[0], height: node.size[1] });
                         }
                     });
                     break;
