@@ -655,19 +655,21 @@ function initializeAlignmentPanel() {
     }
 
     // Create alignment button helper function
-    function createAlignmentButton(alignment: {type: string, icon: string, label: string}, isAdvanced: boolean = false) {
+    function createAlignmentButton(alignment: {type: string, icon: string, label: string}, isAdvanced: boolean = false, isSizeButton: boolean = false) {
         const button = document.createElement('button');
         button.innerHTML = `
             <span style="font-size: 16px; display: block;">${alignment.icon}</span>
             <span style="font-size: 11px;">${alignment.label}</span>
         `;
-        
-        const baseColor = isAdvanced ? '#4a5568' : '#505050';
-        const hoverColor = isAdvanced ? '#5a6578' : '#606060';
+
+        // Different colors for size buttons (purple/violet tones)
+        const baseColor = isSizeButton ? '#5b4a7e' : (isAdvanced ? '#4a5568' : '#505050');
+        const hoverColor = isSizeButton ? '#6b5a8e' : (isAdvanced ? '#5a6578' : '#606060');
+        const borderColor = isSizeButton ? '#8b7ab8' : (isAdvanced ? '#718096' : '#666');
         
         button.style.cssText = `
             background: linear-gradient(145deg, ${baseColor}, #404040);
-            border: 1px solid ${isAdvanced ? '#718096' : '#666'};
+            border: 1px solid ${borderColor};
             border-radius: 6px;
             color: white;
             padding: 12px 8px;
@@ -800,9 +802,9 @@ function initializeAlignmentPanel() {
             padding-top: 8px;
         `;
 
-        // Create size adjustment buttons with a different style
+        // Create size adjustment buttons with a different style (purple/violet color)
         sizeAlignments.forEach(alignment => {
-            const button = createAlignmentButton(alignment, true);
+            const button = createAlignmentButton(alignment, false, true);
             sizeContainer.appendChild(button);
         });
 
