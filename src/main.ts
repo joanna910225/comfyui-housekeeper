@@ -580,13 +580,27 @@ function initializeAlignmentPanel() {
                         }));
                     } else if (alignmentType === 'size-min') {
                         // For size-min, use the node's minimum accepted size from computeSize
-                        if (node.computeSize) {
-                            const minSize = node.computeSize.call(node);
-                            previewWidth = minSize[0];
-                            previewHeight = minSize[1];
-                        } else {
-                            previewWidth = 150;
-                            previewHeight = 100;
+                        // Use original computeSize if it was overridden by size-max
+                        const computeSizeMethod = originalComputeSizeMethods.get(node) || node.computeSize;
+                        if (computeSizeMethod) {
+                            try {
+                                const minSize = computeSizeMethod.call(node);
+                                // Check for both Array and Float32Array (use length and index access)
+                                if (minSize && minSize.length >= 2 && minSize[0] !== undefined && minSize[1] !== undefined) {
+                                    previewWidth = minSize[0];
+                                    // Add 30px to compensate for title bar height
+                                    previewHeight = minSize[1] + 30;
+                                } else if (typeof minSize === 'number') {
+                                    previewWidth = currentWidth;
+                                    previewHeight = minSize + 30;
+                                } else {
+                                    previewWidth = currentWidth;
+                                    previewHeight = currentHeight;
+                                }
+                            } catch (e) {
+                                previewWidth = currentWidth;
+                                previewHeight = currentHeight;
+                            }
                         }
                     }
 
@@ -597,14 +611,34 @@ function initializeAlignmentPanel() {
                             if (n.properties && typeof n.properties.height === 'number') return n.properties.height;
                             return 100;
                         }));
-                    } else if (alignmentType === 'height-min' && alignmentType !== 'size-min') {
-                        // Only apply height-min logic if not size-min (which handles both)
-                        previewHeight = Math.min(...nodes.map((n: any) => {
-                            if (n.size && Array.isArray(n.size) && n.size[1]) return n.size[1];
+                    } else if (alignmentType === 'height-min') {
+                        // Calculate minimum height among all selected nodes
+                        const minHeightAmongSelected = Math.min(...nodes.map((n: any) => {
+                            if (n.size && n.size[1] !== undefined) return n.size[1];
                             if (typeof n.height === 'number') return n.height;
                             if (n.properties && typeof n.properties.height === 'number') return n.properties.height;
                             return 100;
                         }));
+
+                        // Get this node's minimum accepted height from computeSize
+                        const computeSizeMethod = originalComputeSizeMethods.get(node) || node.computeSize;
+                        let nodeMinHeight = null;
+                        if (computeSizeMethod) {
+                            try {
+                                const result = computeSizeMethod.call(node);
+                                if (result && result.length >= 2 && result[1] !== undefined) {
+                                    // Add 30px to compensate for title bar height
+                                    nodeMinHeight = result[1] + 30;
+                                } else if (typeof result === 'number') {
+                                    nodeMinHeight = result + 30;
+                                }
+                            } catch (e) {
+                                // computeSize failed, use null
+                            }
+                        }
+
+                        // Use the larger of: min height among selected OR node's accepted minimum
+                        previewHeight = nodeMinHeight && nodeMinHeight > minHeightAmongSelected ? nodeMinHeight : minHeightAmongSelected;
                     }
 
                     positions.push({
@@ -1308,10 +1342,11 @@ function initializeAlignmentPanel() {
                 case 'height-min':
                     selectedNodes.forEach((node: any) => {
                         if (node.size) {
-                            // Check if node has a minimum height requirement from computeSize
-                            const nodeMinSize = node.computeSize ? node.computeSize.call(node)[1] : null;
-                            const targetHeight = nodeMinSize && nodeMinSize > originalMinHeight ? nodeMinSize : originalMinHeight;
-                            node.size[1] = targetHeight;
+                            const computeSizeMethod = originalComputeSizeMethods.get(node) || node.computeSize;
+                            if (computeSizeMethod) {
+                                const minSize = computeSizeMethod.call(node);
+                                node.size[1] = Math.max(originalMinHeight, minSize[1]); // Minimum height
+                            }
                         }
                     });
                     break;
@@ -1319,37 +1354,8 @@ function initializeAlignmentPanel() {
                 case 'size-max':
                     selectedNodes.forEach((node: any) => {
                         if (node.size) {
-                            // Store original computeSize if not already stored
-                            if (node.computeSize && !originalComputeSizeMethods.has(node)) {
-                                originalComputeSizeMethods.set(node, node.computeSize);
-                            }
-
-                            // Override computeSize to return our locked sizes
-                            if (node.computeSize) {
-                                const lockedWidth = originalMaxWidth;
-                                const lockedHeight = originalMaxHeight;
-                                node.computeSize = function(width: any) {
-                                    const original = originalComputeSizeMethods.get(this);
-                                    if (original) {
-                                        const result = original.call(this, width);
-                                        // Only enforce locked sizes if current sizes match locked sizes
-                                        // This allows manual resizing to break the lock
-                                        if (Math.abs(this.size[0] - lockedWidth) < 1) {
-                                            result[0] = lockedWidth;
-                                        }
-                                        if (Math.abs(this.size[1] - lockedHeight) < 1) {
-                                            result[1] = lockedHeight;
-                                        }
-                                        return result;
-                                    }
-                                    return [this.size[0], this.size[1]];
-                                };
-                            }
-
                             node.size[0] = originalMaxWidth;
                             node.size[1] = originalMaxHeight;
-                            // Lock both width and height values for future clicks
-                            lockedSizes.set(node, { width: node.size[0], height: node.size[1] });
                         }
                     });
                     break;
@@ -1364,10 +1370,6 @@ function initializeAlignmentPanel() {
                                 const minSize = computeSizeMethod.call(node);
                                 node.size[0] = minSize[0]; // Minimum width
                                 node.size[1] = minSize[1]; // Minimum height
-                            } else {
-                                // Fallback: use a reasonable minimum if computeSize is not available
-                                node.size[0] = 150; // Default minimum width
-                                node.size[1] = 100; // Default minimum height
                             }
                         }
                     });
