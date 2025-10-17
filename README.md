@@ -5,7 +5,7 @@ A simple ComfyUI custom node that provides node alignment tools and an interacti
 ## Features
 
 - Smart node alignment for multiple selected nodes
-- 11 alignment options: Left, Right, Top, Bottom, H-flow, V-flow, Width-Max, Width-Min, Height-Max, Height-Min, Size-Max
+- 12 alignment options: Left, Right, Top, Bottom, H-flow, V-flow, Width-Max, Width-Min, Height-Max, Height-Min, Size-Max, Size-Min
 - Keyboard shortcuts for quick alignment
 - Auto-appearing alignment panel
 - Width and height normalization for consistent node sizing
@@ -45,15 +45,18 @@ Restart ComfyUI to load the new nodes.
 
 **Size Alignment:**
 - **W-Max**: Set all selected nodes to the width of the widest node
-- **W-Min**: Set all selected nodes to the width of the narrowest node
+- **W-Min**: Set all selected nodes to the width of the narrowest node (respects minimum node width requirements)
 - **H-Max**: Set all selected nodes to the height of the tallest node
-- **H-Min**: Set all selected nodes to the height of the shortest node (respects minimum node requirements)
+- **H-Min**: Set all selected nodes to the height of the shortest node (respects each node's minimum height requirements)
 - **Size-Max**: Set all selected nodes to both the maximum width and maximum height (makes all nodes the same size as the largest node)
+- **Size-Min**: Minimize each node to its smallest accepted size based on content (respects each node's minimum size requirements)
 
 **How Size Alignment Works:**
 - Width and height alignment normalize node dimensions across selected nodes for a cleaner, more uniform appearance
-- Height-Min respects each node's minimum height based on its widgets and content
+- W-Min and H-Min respect each node's minimum width/height based on its widgets and content
 - Size-Max combines both W-Max and H-Max to create uniformly sized nodes
+- Size-Min shrinks each node to its individual minimum size - different nodes may end up with different dimensions based on their content requirements
+- All size operations respect ComfyUI's minimum node size constraints to ensure nodes remain functional
 - Useful for creating consistent layouts and organizing workflows visually
 
 ### Preview Functionality
