@@ -6,6 +6,20 @@ import { addWidget, ComponentWidgetImpl } from "../../../scripts/domWidget.js";
 import VueExampleComponent from "@/components/VueExampleComponent.vue";
 import NodeAlignmentPanel from "@/components/NodeAlignmentPanel.vue";
 
+import homeIconUrl from "../icons/home.svg?url";
+import alignLeftIconUrl from "../icons/left.svg?url";
+import alignRightIconUrl from "../icons/right.svg?url";
+import alignTopIconUrl from "../icons/top.svg?url";
+import alignBottomIconUrl from "../icons/bottom.svg?url";
+import widthMaxIconUrl from "../icons/width-max.svg?url";
+import widthMinIconUrl from "../icons/width-min.svg?url";
+import heightMaxIconUrl from "../icons/height-max.svg?url";
+import heightMinIconUrl from "../icons/height-min.svg?url";
+import sizeMaxIconUrl from "../icons/size-max.svg?url";
+import sizeMinIconUrl from "../icons/size-min.svg?url";
+import horizontalFlowIconUrl from "../icons/horizontal-flow.svg?url";
+import verticalFlowIconUrl from "../icons/vertical-flow.svg?url";
+
 const comfyApp: ComfyApp = app;
 
 // Global alignment panel instance
@@ -83,14 +97,706 @@ comfyApp.registerExtension({
 
 // Plain JavaScript implementation of the alignment panel
 function initializeAlignmentPanel() {
+    let wrapper: HTMLElement | null = null;
     let panel: HTMLElement | null = null;
-    let isVisible = false;
+    let infoPanel: HTMLElement | null = null;
+    let toggleHandle: HTMLButtonElement | null = null;
+    let isExpanded = false;
     let selectedNodes: any[] = [];
     let previewElements: HTMLElement[] = [];
 
     // Store locked sizes and original computeSize methods for size-max functionality
     const lockedSizes = new WeakMap();
     const originalComputeSizeMethods = new WeakMap();
+    let layoutObserver: ResizeObserver | null = null;
+    let layoutListenersAttached = false;
+
+    const DEFAULT_TOP_OFFSET = 48;
+    const PANEL_BOTTOM_MARGIN = 24;
+
+    function getToolbarElement(): HTMLElement | null {
+        return document.querySelector<HTMLElement>('#comfy-menu, .comfyui-menu, .litegraph-menu, .comfyui-toolbar');
+    }
+
+    function computeToolbarOffset(): number {
+        const toolbar = getToolbarElement();
+        if (!toolbar) {
+            return DEFAULT_TOP_OFFSET;
+        }
+        const rect = toolbar.getBoundingClientRect();
+        if (!rect || (rect.width === 0 && rect.height === 0)) {
+            return DEFAULT_TOP_OFFSET;
+        }
+        return Math.max(DEFAULT_TOP_OFFSET, Math.ceil(rect.bottom + 8));
+    }
+
+    function updateLayoutMetrics() {
+        const topOffset = computeToolbarOffset();
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+        const maxHeight = Math.max(viewportHeight - topOffset - PANEL_BOTTOM_MARGIN, 280);
+
+        document.documentElement.style.setProperty('--hk-top-offset', `${topOffset}px`);
+        document.documentElement.style.setProperty('--hk-panel-max-height', `${maxHeight}px`);
+    }
+
+    function ensureLayoutListeners() {
+        if (!layoutListenersAttached) {
+            layoutListenersAttached = true;
+            window.addEventListener('resize', updateLayoutMetrics);
+            window.addEventListener('orientationchange', updateLayoutMetrics);
+        }
+
+        if (typeof ResizeObserver !== 'undefined') {
+            const toolbar = getToolbarElement();
+            if (toolbar) {
+                if (!layoutObserver) {
+                    layoutObserver = new ResizeObserver(() => updateLayoutMetrics());
+                } else {
+                    layoutObserver.disconnect();
+                }
+                layoutObserver.observe(toolbar);
+            }
+        }
+    }
+
+    interface AlignmentButtonConfig {
+        type: string;
+        icon: string;
+        label: string;
+        group: 'basic' | 'size' | 'flow';
+    }
+
+    const basicAlignments: AlignmentButtonConfig[] = [
+        { type: 'left', icon: alignLeftIconUrl, label: 'Align left edges', group: 'basic' },
+        { type: 'right', icon: alignRightIconUrl, label: 'Align right edges', group: 'basic' },
+        { type: 'top', icon: alignTopIconUrl, label: 'Align top edges', group: 'basic' },
+        { type: 'bottom', icon: alignBottomIconUrl, label: 'Align bottom edges', group: 'basic' }
+    ];
+
+    const sizeAlignments: AlignmentButtonConfig[] = [
+        { type: 'width-max', icon: widthMaxIconUrl, label: 'Match widest width', group: 'size' },
+        { type: 'width-min', icon: widthMinIconUrl, label: 'Match narrowest width', group: 'size' },
+        { type: 'height-max', icon: heightMaxIconUrl, label: 'Match tallest height', group: 'size' },
+        { type: 'height-min', icon: heightMinIconUrl, label: 'Match shortest height', group: 'size' },
+        { type: 'size-max', icon: sizeMaxIconUrl, label: 'Match largest size', group: 'size' },
+        { type: 'size-min', icon: sizeMinIconUrl, label: 'Match smallest size', group: 'size' }
+    ];
+
+    const flowAlignments: AlignmentButtonConfig[] = [
+        { type: 'horizontal-flow', icon: horizontalFlowIconUrl, label: 'Distribute horizontally', group: 'flow' },
+        { type: 'vertical-flow', icon: verticalFlowIconUrl, label: 'Distribute vertically', group: 'flow' }
+    ];
+
+    function ensureStyleSheet() {
+        const styleId = 'housekeeper-alignment-styles';
+        if (document.getElementById(styleId)) return;
+
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+@import url('https://fonts.googleapis.com/css2?family=Gloria+Hallelujah&display=swap');
+
+:root {
+    --hk-accent: #8BC3F3;
+    --hk-panel-bg: rgba(24, 26, 32, 0.95);
+    --hk-panel-border: rgba(139, 195, 243, 0.35);
+    --hk-handle-bg: rgba(32, 35, 42, 0.92);
+    --hk-text-strong: #E8F3FF;
+    --hk-text-muted: rgba(232, 243, 255, 0.74);
+    --hk-top-offset: 48px;
+    --hk-panel-max-height: calc(100vh - 96px);
+    --hk-panel-width: min(360px, calc(100vw - 24px));
+    --hk-button-size: clamp(34px, 7vw, 40px);
+    --hk-icon-size: clamp(16px, 4vw, 20px);
+    --hk-button-gap: clamp(4px, 1vw, 8px);
+    --hk-header-font-size: clamp(18px, 2vw, 22px);
+    --hk-body-font-size: clamp(12px, 1.4vw, 14px);
+    --hk-subtitle-font-size: clamp(11px, 1.3vw, 13px);
+}
+
+.housekeeper-wrapper {
+    position: fixed;
+    top: var(--hk-top-offset);
+    right: clamp(8px, 2vw, 16px);
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: flex-start;
+    gap: 12px;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.housekeeper-handle,
+.housekeeper-panel {
+    pointer-events: auto;
+}
+
+.housekeeper-handle {
+    border: 1px solid var(--hk-panel-border);
+    background: var(--hk-handle-bg);
+    color: var(--hk-accent);
+    border-radius: 14px 0 0 14px;
+    padding: clamp(12px, 2vh, 16px) clamp(8px, 1.8vw, 10px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(10px, 2vh, 12px);
+    cursor: pointer;
+    width: clamp(44px, 7vw, 48px);
+    min-height: clamp(140px, 32vh, 200px);
+    transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+    font-family: 'Gloria Hallelujah', cursive;
+    font-size: clamp(12px, 2vw, 13px);
+    letter-spacing: 0.08em;
+    background-image: linear-gradient(160deg, rgba(139, 195, 243, 0.12), rgba(139, 195, 243, 0.05));
+}
+
+.housekeeper-handle img {
+    width: 26px;
+    height: 26px;
+}
+
+.housekeeper-handle span {
+    writing-mode: vertical-rl;
+    transform: rotate(0deg);
+    transition: transform 0.3s ease;
+}
+
+.housekeeper-wrapper.collapsed .housekeeper-handle span {
+    transform: rotate(180deg);
+}
+
+.housekeeper-handle:focus-visible {
+    outline: 2px solid var(--hk-accent);
+    outline-offset: 2px;
+}
+
+.housekeeper-wrapper.hk-has-selection .housekeeper-handle {
+    box-shadow: 0 0 14px rgba(139, 195, 243, 0.35);
+}
+
+.housekeeper-panel {
+    width: var(--hk-panel-width);
+    background: var(--hk-panel-bg);
+    border: 1px solid var(--hk-panel-border);
+    border-radius: 18px;
+    padding: clamp(10px, 1.2vw, 14px) clamp(10px, 1.2vw, 14px);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+    color: var(--hk-text-strong);
+    font-family: 'Gloria Hallelujah', cursive;
+    transform: translateX(110%);
+    opacity: 0;
+    max-height: var(--hk-panel-max-height);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+}
+
+.housekeeper-wrapper.expanded .housekeeper-panel {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.housekeeper-wrapper.collapsed .housekeeper-panel {
+    pointer-events: none;
+}
+
+.housekeeper-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+    scrollbar-gutter: stable;
+}
+
+.housekeeper-content > * + * {
+    margin-top: clamp(6px, 1vw, 12px);
+}
+
+.housekeeper-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--hk-accent);
+}
+
+.housekeeper-header-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: var(--hk-header-font-size);
+    margin: 0;
+}
+
+.housekeeper-header-title img {
+    width: 24px;
+    height: 24px;
+}
+
+.housekeeper-close {
+    background: transparent;
+    border: none;
+    color: var(--hk-accent);
+    font-size: 24px;
+    cursor: pointer;
+    line-height: 1;
+    transition: transform 0.2s ease;
+}
+
+.housekeeper-close:hover {
+    transform: scale(1.1);
+}
+
+.housekeeper-divider {
+    height: 1px;
+    background: rgba(139, 195, 243, 0.25);
+    width: 100%;
+    margin: 2px 0 4px;
+}
+
+.housekeeper-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.housekeeper-section-primary {
+    margin-top: 0 !important;
+}
+
+.housekeeper-divider + .housekeeper-section-primary {
+    margin-top: 0 !important;
+}
+
+.housekeeper-subtitle {
+    font-size: var(--hk-subtitle-font-size);
+    margin: 0;
+    color: var(--hk-text-muted);
+}
+
+.housekeeper-button-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hk-button-gap);
+    padding: clamp(4px, 0.8vw, 6px);
+    border-radius: 12px;
+    border: 1px solid rgba(139, 195, 243, 0.35);
+    background: rgba(22, 24, 29, 0.6);
+    justify-content: flex-start;
+    align-items: center;
+    width: 100%;
+    --hk-button-unit: min(var(--hk-button-size), calc((100% - 5 * var(--hk-button-gap)) / 6));
+}
+
+.hk-button {
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    flex: 0 0 var(--hk-button-unit);
+    aspect-ratio: 1 / 1;
+    max-width: var(--hk-button-unit);
+    padding: clamp(2px, 0.6vw, 4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    cursor: pointer;
+}
+
+.hk-button img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.hk-button:hover:not(:disabled),
+.hk-button:focus-visible {
+    transform: translateY(-1px);
+    background: rgba(139, 195, 243, 0.18);
+    outline: none;
+}
+
+.hk-button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+.housekeeper-info {
+    background: rgba(34, 37, 45, 0.9);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: var(--hk-body-font-size);
+    color: var(--hk-text-muted);
+    text-align: left;
+    line-height: 1.4;
+}
+
+.housekeeper-info small {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+.housekeeper-wrapper.expanded .housekeeper-handle {
+    display: none;
+}
+
+.housekeeper-wrapper.collapsed .housekeeper-handle {
+    opacity: 0.85;
+}
+
+.housekeeper-color-strip,
+.housekeeper-color-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: clamp(6px, 1vw, 10px) 12px;
+    border: 1px solid rgba(139, 195, 243, 0.35);
+    border-radius: 12px;
+    background: rgba(22, 24, 29, 0.6);
+    flex-wrap: wrap;
+}
+
+.hk-color-chip {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1px solid rgba(139, 195, 243, 0.4);
+}
+
+.housekeeper-color-custom-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: var(--hk-body-font-size);
+    color: var(--hk-text-muted);
+    margin-top: 14px;
+}
+
+.hk-toggle-placeholder {
+    width: 38px;
+    height: 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(139, 195, 243, 0.35);
+    background: rgba(139, 195, 243, 0.08);
+    position: relative;
+}
+
+.hk-toggle-placeholder::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgba(139, 195, 243, 0.85);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.housekeeper-color-picker-placeholder {
+    margin-top: 16px;
+    border: 1px solid rgba(139, 195, 243, 0.25);
+    border-radius: 14px;
+    background: linear-gradient(135deg, #ffffff 0%, #ff0000 50%, #000000 100%);
+    height: clamp(160px, 32vh, 220px);
+    position: relative;
+    overflow: hidden;
+}
+
+.housekeeper-color-picker-toolbar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 54px;
+    background: rgba(16, 17, 21, 0.92);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
+    color: var(--hk-text-muted);
+    font-size: var(--hk-body-font-size);
+}
+
+.housekeeper-color-picker-toolbar .hk-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.65);
+}
+
+.housekeeper-color-picker-toolbar .hk-slider-placeholder {
+    flex: 1;
+    height: 12px;
+    border-radius: 8px;
+    background: linear-gradient(90deg, red, yellow, lime, cyan, blue, magenta, red);
+    box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.35);
+}
+
+.hk-rgb-placeholder {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--hk-subtitle-font-size);
+}
+
+.hk-rgb-placeholder .hk-rgb-pill {
+    width: 36px;
+    height: 22px;
+    border-radius: 6px;
+    border: 1px solid rgba(139, 195, 243, 0.35);
+    background: rgba(139, 195, 243, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--hk-text-muted);
+    font-family: 'Gloria Hallelujah', cursive;
+    letter-spacing: 0.04em;
+}
+`;
+        document.head.appendChild(style);
+    }
+
+    ensureStyleSheet();
+    ensureLayoutListeners();
+    updateLayoutMetrics();
+
+    function createSection() {
+        const section = document.createElement('section');
+        section.className = 'housekeeper-section';
+        return section;
+    }
+
+    function createSubtitle(text: string) {
+        const subtitle = document.createElement('p');
+        subtitle.className = 'housekeeper-subtitle';
+        subtitle.textContent = text;
+        return subtitle;
+    }
+
+    function createButtonGrid(buttons: AlignmentButtonConfig[], group: AlignmentButtonConfig['group']) {
+        const grid = document.createElement('div');
+        grid.className = `housekeeper-button-grid housekeeper-button-grid-${group}`;
+        buttons.forEach(button => {
+            grid.appendChild(createAlignmentButton(button));
+        });
+        return grid;
+    }
+
+    function createAlignmentButton(alignment: AlignmentButtonConfig) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'hk-button';
+        button.dataset.alignmentType = alignment.type;
+        button.title = alignment.label;
+        button.setAttribute('aria-label', alignment.label);
+
+        const icon = document.createElement('img');
+        icon.src = alignment.icon;
+        icon.alt = '';
+        icon.draggable = false;
+        button.appendChild(icon);
+
+        button.addEventListener('mouseenter', () => showPreview(alignment.type));
+        button.addEventListener('mouseleave', () => hidePreview());
+        button.addEventListener('focus', () => showPreview(alignment.type));
+        button.addEventListener('blur', () => hidePreview());
+        button.addEventListener('click', () => alignNodes(alignment.type));
+
+        return button;
+    }
+
+    function showPanel() {
+        if (!wrapper) return;
+        updateLayoutMetrics();
+        isExpanded = true;
+        wrapper.classList.remove('collapsed');
+        wrapper.classList.add('expanded');
+        setTimeout(() => {
+            panel?.focus();
+        }, 0);
+    }
+
+    function hidePanel() {
+        if (!wrapper) return;
+        isExpanded = false;
+        wrapper.classList.remove('expanded');
+        wrapper.classList.add('collapsed');
+        toggleHandle?.focus();
+    }
+
+    function togglePanel(force?: boolean) {
+        const shouldExpand = typeof force === 'boolean' ? force : !isExpanded;
+        if (shouldExpand) {
+            showPanel();
+        } else {
+            hidePanel();
+        }
+    }
+
+    function createPanel() {
+        if (panel) return;
+
+        wrapper = document.createElement('div');
+        wrapper.className = 'housekeeper-wrapper collapsed';
+
+        toggleHandle = document.createElement('button');
+        toggleHandle.type = 'button';
+        toggleHandle.className = 'housekeeper-handle';
+        toggleHandle.title = 'Toggle Housekeeper panel (Ctrl+Shift+H)';
+
+        const handleIcon = document.createElement('img');
+        handleIcon.src = homeIconUrl;
+        handleIcon.alt = '';
+        handleIcon.draggable = false;
+        toggleHandle.appendChild(handleIcon);
+
+        const handleText = document.createElement('span');
+        handleText.textContent = 'Housekeeper';
+        toggleHandle.appendChild(handleText);
+
+        toggleHandle.addEventListener('click', () => togglePanel());
+
+        panel = document.createElement('div');
+        panel.className = 'housekeeper-panel';
+        panel.setAttribute('role', 'region');
+        panel.setAttribute('aria-label', 'Housekeeper alignment tools');
+        panel.tabIndex = -1;
+
+        const content = document.createElement('div');
+        content.className = 'housekeeper-content';
+
+        const header = document.createElement('div');
+        header.className = 'housekeeper-header';
+
+        const headerTitle = document.createElement('div');
+        headerTitle.className = 'housekeeper-header-title';
+
+        const headerIcon = document.createElement('img');
+        headerIcon.src = homeIconUrl;
+        headerIcon.alt = '';
+        headerIcon.draggable = false;
+        headerTitle.appendChild(headerIcon);
+
+        const headerText = document.createElement('span');
+        headerText.textContent = 'Housekeeper';
+        headerTitle.appendChild(headerText);
+
+        const closeButton = document.createElement('button');
+        closeButton.type = 'button';
+        closeButton.className = 'housekeeper-close';
+        closeButton.setAttribute('aria-label', 'Hide Housekeeper panel');
+        closeButton.innerHTML = '&times;';
+        closeButton.addEventListener('click', () => togglePanel(false));
+
+        header.appendChild(headerTitle);
+        header.appendChild(closeButton);
+
+        const divider = document.createElement('div');
+        divider.className = 'housekeeper-divider';
+
+        const alignmentSection = createSection();
+        alignmentSection.classList.add('housekeeper-section-primary');
+        alignmentSection.appendChild(createSubtitle('Basic Alignment'));
+        alignmentSection.appendChild(createButtonGrid(basicAlignments, 'basic'));
+        alignmentSection.appendChild(createSubtitle('Size Adjustment'));
+        alignmentSection.appendChild(createButtonGrid(sizeAlignments, 'size'));
+        alignmentSection.appendChild(createSubtitle('Flow Alignment'));
+        alignmentSection.appendChild(createButtonGrid(flowAlignments, 'flow'));
+
+        const buildPalette = (colors: string[], className: string) => {
+            const palette = document.createElement('div');
+            palette.className = className;
+            colors.forEach(color => {
+                const chip = document.createElement('div');
+                chip.className = 'hk-color-chip';
+                chip.style.background = color;
+                palette.appendChild(chip);
+            });
+            return palette;
+        };
+
+        const colorSection = createSection();
+        colorSection.appendChild(createSubtitle('Color'));
+        const primaryPalette = buildPalette(
+            ['#3D3F44', '#5C3A30', '#6A402C', '#3A5936', '#2F3E56', '#2E5561', '#3B395C', '#4A2740', '#1F1F21'],
+            'housekeeper-color-strip'
+        );
+        colorSection.appendChild(primaryPalette);
+
+        const customRow = document.createElement('div');
+        customRow.className = 'housekeeper-color-custom-row';
+        const customLabel = document.createElement('span');
+        customLabel.textContent = 'Custom';
+        const togglePlaceholder = document.createElement('div');
+        togglePlaceholder.className = 'hk-toggle-placeholder';
+        customRow.appendChild(customLabel);
+        customRow.appendChild(togglePlaceholder);
+        colorSection.appendChild(customRow);
+
+        const pickerPlaceholder = document.createElement('div');
+        pickerPlaceholder.className = 'housekeeper-color-picker-placeholder';
+        const pickerToolbar = document.createElement('div');
+        pickerToolbar.className = 'housekeeper-color-picker-toolbar';
+
+        const currentSwatch = document.createElement('div');
+        currentSwatch.className = 'hk-swatch';
+        currentSwatch.style.background = '#000000';
+
+        const accentSwatch = document.createElement('div');
+        accentSwatch.className = 'hk-swatch';
+        accentSwatch.style.background = '#ff4238';
+
+        const sliderPlaceholder = document.createElement('div');
+        sliderPlaceholder.className = 'hk-slider-placeholder';
+
+        const rgbPlaceholder = document.createElement('div');
+        rgbPlaceholder.className = 'hk-rgb-placeholder';
+        ['R', 'G', 'B'].forEach(letter => {
+            const pill = document.createElement('div');
+            pill.className = 'hk-rgb-pill';
+            pill.textContent = letter;
+            rgbPlaceholder.appendChild(pill);
+        });
+
+        pickerToolbar.appendChild(currentSwatch);
+        pickerToolbar.appendChild(accentSwatch);
+        pickerToolbar.appendChild(sliderPlaceholder);
+        pickerToolbar.appendChild(rgbPlaceholder);
+        pickerPlaceholder.appendChild(pickerToolbar);
+
+        colorSection.appendChild(pickerPlaceholder);
+        colorSection.appendChild(createSubtitle('On this page'));
+        const footerPalette = buildPalette(
+            ['#C9CCD1', '#5A7A9F', '#2E3136', '#6F7B89', '#4B6076', '#2B3F2F', '#2C3D4E', '#4C3C5A', '#3F2725', '#1E1E1F'],
+            'housekeeper-color-footer'
+        );
+        colorSection.appendChild(footerPalette);
+
+        content.appendChild(header);
+        content.appendChild(divider);
+        content.appendChild(alignmentSection);
+        const colorDivider = document.createElement('div');
+        colorDivider.className = 'housekeeper-divider';
+        content.appendChild(colorDivider);
+        content.appendChild(colorSection);
+
+        panel.appendChild(content);
+
+        wrapper.appendChild(toggleHandle);
+        wrapper.appendChild(panel);
+        document.body.appendChild(wrapper);
+        ensureLayoutListeners();
+        updateLayoutMetrics();
+    }
 
     // Preview functionality
     function showPreview(alignmentType: string) {
@@ -654,186 +1360,6 @@ function initializeAlignmentPanel() {
         return positions;
     }
 
-    // Create alignment button helper function
-    function createAlignmentButton(alignment: {type: string, icon: string, label: string}, isAdvanced: boolean = false, isSizeButton: boolean = false) {
-        const button = document.createElement('button');
-        button.innerHTML = `
-            <span style="font-size: 16px; display: block;">${alignment.icon}</span>
-            <span style="font-size: 11px;">${alignment.label}</span>
-        `;
-
-        // Different colors for size buttons (purple/violet tones)
-        const baseColor = isSizeButton ? '#5b4a7e' : (isAdvanced ? '#4a5568' : '#505050');
-        const hoverColor = isSizeButton ? '#6b5a8e' : (isAdvanced ? '#5a6578' : '#606060');
-        const borderColor = isSizeButton ? '#8b7ab8' : (isAdvanced ? '#718096' : '#666');
-        
-        button.style.cssText = `
-            background: linear-gradient(145deg, ${baseColor}, #404040);
-            border: 1px solid ${borderColor};
-            border-radius: 6px;
-            color: white;
-            padding: 12px 8px;
-            cursor: pointer;
-            font-family: inherit;
-            transition: all 0.2s ease;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            min-height: 44px;
-        `;
-
-        button.addEventListener('mouseenter', () => {
-            button.style.background = `linear-gradient(145deg, ${hoverColor}, #505050)`;
-            button.style.transform = 'translateY(-1px)';
-            button.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
-            showPreview(alignment.type);
-        });
-
-        button.addEventListener('mouseleave', () => {
-            button.style.background = `linear-gradient(145deg, ${baseColor}, #404040)`;
-            button.style.transform = 'translateY(0)';
-            button.style.boxShadow = 'none';
-            hidePreview();
-        });
-
-        button.addEventListener('click', () => alignNodes(alignment.type));
-        return button;
-    }
-
-    // Create the alignment panel
-    function createPanel() {
-        panel = document.createElement('div');
-        panel.className = 'housekeeper-alignment-panel';
-        panel.style.cssText = `
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(40, 40, 40, 0.95);
-            border: 1px solid #555;
-            border-radius: 8px;
-            padding: 12px;
-            z-index: 1000;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            min-width: 220px;
-            backdrop-filter: blur(10px);
-            opacity: 0;
-            transform: translateX(20px);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: none;
-            font-family: Arial, sans-serif;
-            color: white;
-        `;
-
-        // Header
-        const header = document.createElement('div');
-        header.innerHTML = '🎯 Node Alignment';
-        header.style.cssText = `
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            text-align: center;
-            border-bottom: 1px solid #555;
-            padding-bottom: 8px;
-        `;
-        panel.appendChild(header);
-
-        // Basic alignment buttons container
-        const basicContainer = document.createElement('div');
-        basicContainer.style.cssText = `
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 8px;
-        `;
-        
-        // Advanced alignment buttons container
-        const advancedContainer = document.createElement('div');
-        advancedContainer.style.cssText = `
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 12px;
-            border-top: 1px solid #555;
-            padding-top: 8px;
-        `;
-
-        // Create alignment buttons
-        const alignments = [
-            { type: 'left', icon: '⇤', label: 'Left' },
-            { type: 'right', icon: '⇥', label: 'Right' },
-            { type: 'top', icon: '⇡', label: 'Top' },
-            { type: 'bottom', icon: '⇣', label: 'Bottom' },
-            { type: 'horizontal-flow', icon: '→', label: 'H-Flow' },
-            { type: 'vertical-flow', icon: '↓', label: 'V-Flow' },
-            { type: 'width-max', icon: '⟷', label: 'W-Max' },
-            { type: 'width-min', icon: '⟷', label: 'W-Min' },
-            { type: 'height-max', icon: '⟺', label: 'H-Max' },
-            { type: 'height-min', icon: '⟺', label: 'H-Min' },
-            { type: 'size-max', icon: '⇱', label: 'Size-Max' },
-            { type: 'size-min', icon: '↙', label: 'Size-Min' }
-        ];
-
-        const basicAlignments = alignments.slice(0, 4); // First 4 are basic
-        const advancedAlignments = alignments.slice(4, 6); // Flow alignments
-        const sizeAlignments = alignments.slice(6); // Size adjustment buttons
-
-        // Create basic alignment buttons
-        basicAlignments.forEach(alignment => {
-            const button = createAlignmentButton(alignment);
-            basicContainer.appendChild(button);
-        });
-
-        // Create advanced alignment buttons
-        advancedAlignments.forEach(alignment => {
-            const button = createAlignmentButton(alignment, true);
-            advancedContainer.appendChild(button);
-        });
-
-        // Size adjustment buttons container
-        const sizeContainer = document.createElement('div');
-        sizeContainer.style.cssText = `
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 12px;
-            border-top: 1px solid #555;
-            padding-top: 8px;
-        `;
-
-        // Create size adjustment buttons with a different style (purple/violet color)
-        sizeAlignments.forEach(alignment => {
-            const button = createAlignmentButton(alignment, false, true);
-            sizeContainer.appendChild(button);
-        });
-
-        panel.appendChild(basicContainer);
-        panel.appendChild(advancedContainer);
-        panel.appendChild(sizeContainer);
-
-        // Info panel
-        const infoPanel = document.createElement('div');
-        infoPanel.id = 'alignment-info';
-        infoPanel.style.cssText = `
-            background: rgba(60, 60, 60, 0.8);
-            border-radius: 6px;
-            padding: 10px;
-            font-size: 12px;
-            text-align: center;
-        `;
-        infoPanel.innerHTML = `
-            Select multiple nodes to enable alignment<br>
-            <small style="opacity: 0.8;">
-                Basic: Ctrl+Shift+Arrows<br>
-                Flow: Ctrl+Alt+→/↓
-            </small>
-        `;
-        panel.appendChild(infoPanel);
-
-        document.body.appendChild(panel);
-    }
-
     // Update selected nodes
     function updateSelectedNodes() {
         if (!window.app?.graph) return;
@@ -842,73 +1368,38 @@ function initializeAlignmentPanel() {
         selectedNodes = allNodes.filter((node: any) => node && node.is_selected);
         
         const hasSelectedNodes = selectedNodes.length > 1;
-        
-        if (hasSelectedNodes && !isVisible) {
-            showPanel();
-        } else if (!hasSelectedNodes && isVisible) {
-            hidePanel();
+
+        if (!hasSelectedNodes) {
+            hidePreview();
         }
 
-        // Update info text
-        const infoDiv = document.getElementById('alignment-info');
-        if (infoDiv) {
+        if (wrapper) {
+            wrapper.classList.toggle('hk-has-selection', hasSelectedNodes);
+        }
+
+        if (infoPanel) {
             if (selectedNodes.length === 0) {
-                infoDiv.innerHTML = `
-                    Select multiple nodes to enable alignment<br>
-                    <small style="opacity: 0.8;">
-                        Basic: Ctrl+Shift+Arrows<br>
-                        Flow: Ctrl+Alt+→/↓
-                    </small>
+                infoPanel.innerHTML = `
+                    Select multiple nodes to enable alignment
+                    <small>Basic: Ctrl+Shift+Arrows · Flow: Ctrl+Alt+→/↓ · Toggle: Ctrl+Shift+H</small>
                 `;
             } else if (selectedNodes.length === 1) {
-                infoDiv.textContent = 'Select additional nodes to align';
+                infoPanel.innerHTML = `
+                    Select additional nodes to align
+                    <small>Tip: Hold Shift and click to add more nodes</small>
+                `;
             } else {
-                infoDiv.innerHTML = `
-                    ${selectedNodes.length} nodes selected - ready to align<br>
-                    <small style="opacity: 0.8;">Try H-Flow/V-Flow for smart layout</small>
+                infoPanel.innerHTML = `
+                    ${selectedNodes.length} nodes selected · ready to align
+                    <small>Try H-Flow/V-Flow for smart layout</small>
                 `;
             }
         }
 
-        // Enable/disable buttons
-        const buttons = panel?.querySelectorAll('button');
+        const buttons = panel?.querySelectorAll<HTMLButtonElement>('.hk-button');
         buttons?.forEach(button => {
-            if (hasSelectedNodes) {
-                (button as HTMLButtonElement).style.opacity = '1';
-                (button as HTMLButtonElement).style.pointerEvents = 'auto';
-            } else {
-                (button as HTMLButtonElement).style.opacity = '0.5';
-                (button as HTMLButtonElement).style.pointerEvents = 'none';
-            }
+            button.disabled = !hasSelectedNodes;
         });
-    }
-
-    // Show panel
-    function showPanel() {
-        if (!panel) return;
-        isVisible = true;
-        panel.style.display = 'block';
-        
-        setTimeout(() => {
-            if (panel) {
-                panel.style.opacity = '1';
-                panel.style.transform = 'translateX(0)';
-            }
-        }, 10);
-    }
-
-    // Hide panel
-    function hidePanel() {
-        if (!panel) return;
-        isVisible = false;
-        panel.style.opacity = '0';
-        panel.style.transform = 'translateX(20px)';
-        
-        setTimeout(() => {
-            if (panel) {
-                panel.style.display = 'none';
-            }
-        }, 300);
     }
 
     // Advanced node analysis functions
@@ -1853,6 +2344,12 @@ function initializeAlignmentPanel() {
     // Keyboard shortcuts
     function handleKeyboard(e: KeyboardEvent) {
         if (!(e.ctrlKey || e.metaKey)) return;
+
+        if (e.shiftKey && !e.altKey && (e.key === 'H' || e.key === 'h')) {
+            e.preventDefault();
+            togglePanel();
+            return;
+        }
         
         if (e.shiftKey) {
             // Basic alignment shortcuts

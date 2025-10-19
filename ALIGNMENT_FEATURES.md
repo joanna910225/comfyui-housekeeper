@@ -1,5 +1,12 @@
 # 🎯 Advanced Node Alignment Features
 
+## 🔄 Recent UI Updates
+- Collapsible *Housekeeper* panel with a slim right-side handle (toggle via `Ctrl+Shift+H` or click the handle).
+- Gloria Hallelujah–styled header and grouped button grids using blue SVG icons for all 12 alignment actions.
+- Buttons stay disabled until two or more nodes are selected; hover/focus previews highlight target positions.
+
+---
+
 ## ✨ **New Enhanced Alignment Panel**
 
 The alignment panel now includes **6 alignment options** with intelligent node arrangement capabilities:
@@ -145,3 +152,24 @@ After using the advanced alignment features, you should see:
 ✅ **Improved Workflow**: Easier to understand and modify complex node graphs  
 
 The enhanced alignment system transforms chaotic node arrangements into clean, professional layouts that clearly show the logical flow of your ComfyUI workflows! 🚀
+
+---
+
+## 🛠️ Implemented Methods Reference
+
+| Button Group        | Action Label        | Method Invoked                      | Notes |
+|---------------------|---------------------|-------------------------------------|-------|
+| Basic Alignment     | Align Left          | `alignNodes('left')`                | Snaps X position to leftmost edge while preserving vertical order. |
+|                     | Align Right         | `alignNodes('right')`               | Snaps X position to rightmost edge using node widths. |
+|                     | Align Top           | `alignNodes('top')`                 | Snaps Y position to topmost edge while preserving horizontal order. |
+|                     | Align Bottom        | `alignNodes('bottom')`              | Snaps Y position to lowest edge considering node heights. |
+| Size Adjustment     | Width → Max         | `alignNodes('width-max')`           | Expands widths to the widest selected node. |
+|                     | Width → Min         | `alignNodes('width-min')`           | Shrinks widths to the narrowest selected node. |
+|                     | Height → Max        | `alignNodes('height-max')`          | Extends heights to the tallest selected node. |
+|                     | Height → Min        | `alignNodes('height-min')`          | Shrinks heights while respecting each node's minimum height. |
+|                     | Size → Max          | `alignNodes('size-max')`            | Sets both dimensions to the maximum observed size. |
+|                     | Size → Min          | `alignNodes('size-min')`            | Restores both dimensions to each node's minimum from `computeSize`. |
+| Flow Alignment      | Horizontal Flow     | `alignHorizontalFlow()` via `alignNodes('horizontal-flow')` | Builds column layout based on graph connections. |
+|                     | Vertical Flow       | `alignVerticalFlow()` via `alignNodes('vertical-flow')`     | Builds row layout based on connection hierarchy. |
+
+The panel handle, toggle shortcut, and per-button event wiring live inside `initializeAlignmentPanel` (`src/main.ts`), ensuring the UI and alignment logic stay in sync.
