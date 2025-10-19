@@ -475,12 +475,12 @@ function It() {
 
 .housekeeper-handle span {
     writing-mode: vertical-rl;
-    transform: rotate(0deg);
+    transform: rotate(180deg);
     transition: transform 0.3s ease;
 }
 
 .housekeeper-wrapper.collapsed .housekeeper-handle span {
-    transform: rotate(180deg);
+    transform: rotate(0deg);
 }
 
 .housekeeper-handle:focus-visible {
@@ -572,6 +572,10 @@ function It() {
     background: rgba(139, 195, 243, 0.25);
     width: 100%;
     margin: 2px 0 4px;
+}
+
+.housekeeper-divider.housekeeper-divider-spaced {
+    margin: clamp(10px, 1.5vw, 16px) 0 clamp(6px, 1vw, 12px);
 }
 
 .housekeeper-section {
@@ -875,7 +879,7 @@ function It() {
     );
     x.appendChild(ee), l.appendChild(h), l.appendChild(u), l.appendChild(k);
     const i = document.createElement("div");
-    i.className = "housekeeper-divider", l.appendChild(i), l.appendChild(x), B.appendChild(l), z.appendChild(_), z.appendChild(B), document.body.appendChild(z), ce(), T();
+    i.className = "housekeeper-divider housekeeper-divider-spaced", l.appendChild(i), l.appendChild(x), B.appendChild(l), z.appendChild(_), z.appendChild(B), document.body.appendChild(z), ce(), T();
   }
   function Ae(s) {
     var h;

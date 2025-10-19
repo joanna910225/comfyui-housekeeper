@@ -258,12 +258,12 @@ function initializeAlignmentPanel() {
 
 .housekeeper-handle span {
     writing-mode: vertical-rl;
-    transform: rotate(0deg);
+    transform: rotate(180deg);
     transition: transform 0.3s ease;
 }
 
 .housekeeper-wrapper.collapsed .housekeeper-handle span {
-    transform: rotate(180deg);
+    transform: rotate(0deg);
 }
 
 .housekeeper-handle:focus-visible {
@@ -355,6 +355,10 @@ function initializeAlignmentPanel() {
     background: rgba(139, 195, 243, 0.25);
     width: 100%;
     margin: 2px 0 4px;
+}
+
+.housekeeper-divider.housekeeper-divider-spaced {
+    margin: clamp(10px, 1.5vw, 16px) 0 clamp(6px, 1vw, 12px);
 }
 
 .housekeeper-section {
@@ -785,7 +789,7 @@ function initializeAlignmentPanel() {
         content.appendChild(divider);
         content.appendChild(alignmentSection);
         const colorDivider = document.createElement('div');
-        colorDivider.className = 'housekeeper-divider';
+        colorDivider.className = 'housekeeper-divider housekeeper-divider-spaced';
         content.appendChild(colorDivider);
         content.appendChild(colorSection);
 
