@@ -104,12 +104,6 @@ function initializeAlignmentPanel() {
     let isExpanded = false;
     let selectedNodes: any[] = [];
     let selectedGroups: any[] = [];
-    let contrastOverrideActive = false;
-    let originalTextColors: {
-        NODE_TEXT_COLOR: string;
-        NODE_TITLE_COLOR: string;
-        NODE_SELECTED_TITLE_COLOR: string;
-    } | null = null;
     let previewElements: HTMLElement[] = [];
     let currentPaletteIndex = 0;
 
@@ -208,9 +202,9 @@ function initializeAlignmentPanel() {
         ['#2b193d', '#412271', '#6a4c93', '#9b5de5', '#f15bb5', '#f9a1bc', '#feeafa', '#ffd6e0', '#ffe5f1']
     ];
 
-    const TEXT_CONTRAST_THRESHOLD = 0.68;
-    const DARK_TEXT_COLOR = '#1b1f27';
-    const DARK_SELECTED_TEXT_COLOR = '#0b0d11';
+    const MIN_CONTRAST_RATIO = 4.5;
+    const CONTRAST_STEP = 0.06;
+    const DEFAULT_TEXT_COLOR = '#AAAAAA';
 
     function ensureStyleSheet() {
         const styleId = 'housekeeper-alignment-styles';
@@ -817,53 +811,90 @@ function initializeAlignmentPanel() {
         return getRelativeLuminance(rgb);
     }
 
-    function ensureOriginalTextColors() {
-        if (originalTextColors) return true;
-        const liteGraph = (window as any).LiteGraph;
-        if (!liteGraph) return false;
-        originalTextColors = {
-            NODE_TEXT_COLOR: liteGraph.NODE_TEXT_COLOR,
-            NODE_TITLE_COLOR: liteGraph.NODE_TITLE_COLOR,
-            NODE_SELECTED_TITLE_COLOR: liteGraph.NODE_SELECTED_TITLE_COLOR
-        };
-        return true;
-    }
-
-    function setCanvasTitleColor(value: string) {
-        const canvas = (window as any).app?.canvas;
-        if (canvas) {
-            canvas.node_title_color = value;
-        }
-    }
-
-    function updateGlobalTextContrast(luminance: number) {
-        const liteGraph = (window as any).LiteGraph;
-        if (!liteGraph) return;
-        if (!ensureOriginalTextColors()) return;
-
-        if (luminance > TEXT_CONTRAST_THRESHOLD) {
-            if (!contrastOverrideActive) {
-                liteGraph.NODE_TEXT_COLOR = DARK_TEXT_COLOR;
-                liteGraph.NODE_TITLE_COLOR = DARK_TEXT_COLOR;
-                liteGraph.NODE_SELECTED_TITLE_COLOR = DARK_SELECTED_TEXT_COLOR;
-                setCanvasTitleColor(DARK_TEXT_COLOR);
-                contrastOverrideActive = true;
-            }
-        } else if (contrastOverrideActive && originalTextColors) {
-            liteGraph.NODE_TEXT_COLOR = originalTextColors.NODE_TEXT_COLOR;
-            liteGraph.NODE_TITLE_COLOR = originalTextColors.NODE_TITLE_COLOR;
-            liteGraph.NODE_SELECTED_TITLE_COLOR = originalTextColors.NODE_SELECTED_TITLE_COLOR;
-            setCanvasTitleColor(originalTextColors.NODE_TITLE_COLOR);
-            contrastOverrideActive = false;
-        }
-    }
-
     function getRelativeLuminance(rgb: { r: number; g: number; b: number }): number {
         const channel = (value: number) => {
             const v = value / 255;
             return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
         };
         return 0.2126 * channel(rgb.r) + 0.7152 * channel(rgb.g) + 0.0722 * channel(rgb.b);
+    }
+
+    function getContrastRatio(l1: number, l2: number) {
+        const brightest = Math.max(l1, l2);
+        const darkest = Math.min(l1, l2);
+        return (brightest + 0.05) / (darkest + 0.05);
+    }
+
+    function ensureContrastWithDefaultText(hex: string) {
+        const baseLum = luminanceFromHex(hex);
+        const textLum = luminanceFromHex(DEFAULT_TEXT_COLOR);
+        let ratio = getContrastRatio(baseLum, textLum);
+        if (ratio >= MIN_CONTRAST_RATIO) return hex;
+
+        const hsl = hexToHsl(hex);
+        if (!hsl) return hex;
+
+        const direction = baseLum > textLum ? -1 : 1;
+        let low = hsl.l;
+        let high = direction > 0 ? 0.98 : 0.02;
+        let bestHex = hex;
+        let bestRatio = ratio;
+
+        for (let i = 0; i < 12; i++) {
+            const mid = low + (high - low) * 0.5;
+            const candidate = hslToHex(hsl.h, hsl.s, Math.max(0.02, Math.min(0.98, mid)));
+            const candidateLum = luminanceFromHex(candidate);
+            const candidateRatio = getContrastRatio(candidateLum, textLum);
+
+            if (candidateRatio >= MIN_CONTRAST_RATIO) {
+                bestHex = candidate;
+                bestRatio = candidateRatio;
+                if (direction > 0) {
+                    low = mid;
+                } else {
+                    high = mid;
+                }
+            } else {
+                if (direction > 0) {
+                    high = mid;
+                } else {
+                    low = mid;
+                }
+            }
+        }
+
+        return bestRatio >= MIN_CONTRAST_RATIO ? bestHex : hex;
+    }
+
+    function computeAccessibleTextPalette(baseHex: string) {
+        const baseHsl = hexToHsl(baseHex);
+        if (!baseHsl) return null;
+        const baseLum = luminanceFromHex(baseHex);
+        const direction = baseLum >= 0.5 ? -1 : 1;
+
+        let candidateHex = baseHex;
+        let candidateLum = baseLum;
+        let offset = 0.5;
+
+        for (let i = 0; i < 12; i++) {
+            const newLightness = Math.max(0.02, Math.min(0.98, baseHsl.l + direction * offset));
+            candidateHex = hslToHex(baseHsl.h, baseHsl.s, newLightness);
+            candidateLum = luminanceFromHex(candidateHex);
+            if (getContrastRatio(baseLum, candidateLum) >= MIN_CONTRAST_RATIO) {
+                break;
+            }
+            offset += CONTRAST_STEP;
+        }
+
+        const textColor = candidateHex;
+        const titleColor = adjustLightness(textColor, direction * -0.08);
+        const selectedColor = adjustLightness(textColor, direction * 0.12);
+
+        return {
+            textColor,
+            titleColor,
+            selectedColor
+        };
     }
 
     function ensureSeparation(base: string, candidate: string, step: number, maxIterations = 6) {
@@ -882,9 +913,9 @@ function initializeAlignmentPanel() {
         const sanitized = hex.startsWith('#') ? hex : `#${hex}`;
         const base = sanitized;
 
-        let bgcolor = base;
-        let color = adjustLightness(base, -0.18);
-        let groupcolor = adjustLightness(base, 0.16);
+        let bgcolor = ensureContrastWithDefaultText(base);
+        let color = adjustLightness(bgcolor, -0.16);
+        let groupcolor = adjustLightness(bgcolor, 0.12);
 
         color = ensureSeparation(bgcolor, color, -0.08);
         groupcolor = ensureSeparation(bgcolor, groupcolor, 0.08);
@@ -904,7 +935,6 @@ function initializeAlignmentPanel() {
         }
 
         const colorOption = buildColorOption(hex);
-        updateGlobalTextContrast(luminanceFromHex(colorOption.bgcolor));
         const graphs = new Set<any>();
         targets.forEach((item: any) => {
             if (item?.graph) graphs.add(item.graph);
@@ -958,7 +988,6 @@ function initializeAlignmentPanel() {
     }
 
     function applyPreviewColor(option: { color: string; bgcolor: string; groupcolor: string }) {
-        updateGlobalTextContrast(luminanceFromHex(option.bgcolor));
         selectedNodes.forEach(node => applyColorToTarget(node, option));
         selectedGroups.forEach(group => applyColorToTarget(group, option));
 
@@ -969,14 +998,20 @@ function initializeAlignmentPanel() {
     function restorePreviewColors() {
         if (!previewState.active) return;
 
-        const liteGraph = (window as any).LiteGraph;
-        if (liteGraph && originalTextColors) {
-            const maxLuminance = Math.max(
-                ...[...previewState.nodes.values()].map(v => luminanceFromHex(v.bgcolor || '#000000')),
-                ...[...previewState.groups.values()].map(v => luminanceFromHex(v.color || '#000000')),
-                0
-            );
-            updateGlobalTextContrast(maxLuminance);
+        let restoreBaseHex: string | undefined;
+        for (const stored of previewState.nodes.values()) {
+            if (stored.bgcolor) {
+                restoreBaseHex = stored.bgcolor;
+                break;
+            }
+        }
+        if (!restoreBaseHex) {
+            for (const stored of previewState.groups.values()) {
+                if (stored.color) {
+                    restoreBaseHex = stored.color;
+                    break;
+                }
+            }
         }
 
         previewState.nodes.forEach((stored, node) => {
@@ -1018,6 +1053,10 @@ function initializeAlignmentPanel() {
         const activate = (event?: Event) => {
             event?.preventDefault();
             applyColorToSelection(hex);
+            previewState.active = false;
+            previewState.colorOption = null;
+            previewState.nodes.clear();
+            previewState.groups.clear();
         };
         chip.addEventListener('click', activate);
         chip.addEventListener('keydown', (event: KeyboardEvent) => {
