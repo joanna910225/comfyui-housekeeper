@@ -115,9 +115,7 @@ function initializeAlignmentPanel() {
     let recentPaletteStrip: HTMLElement | null = null;
     let customColorInput: HTMLInputElement | null = null;
     let customHexInput: HTMLInputElement | null = null;
-    let customPreviewBody: HTMLElement | null = null;
-    let customPreviewTitle: HTMLElement | null = null;
-    let customPreviewGroup: HTMLElement | null = null;
+    let customPreviewSwatch: HTMLElement | null = null;
 
     // Store locked sizes and original computeSize methods for size-max functionality
     const lockedSizes = new WeakMap();
@@ -543,43 +541,18 @@ function initializeAlignmentPanel() {
     outline-offset: 2px;
 }
 
-.housekeeper-custom-picker {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.25s ease, opacity 0.2s ease;
-    opacity: 0;
-}
-
-.housekeeper-custom-picker.expanded {
-    max-height: 220px;
-    opacity: 1;
-    margin-top: 8px;
-}
-
-.housekeeper-custom-picker-content {
+.housekeeper-custom-inline {
     display: flex;
-    gap: 16px;
-    padding: 10px 12px 12px;
-    border: 1px solid rgba(139, 195, 243, 0.35);
-    border-radius: 10px;
-    background: rgba(22, 24, 29, 0.78);
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
 }
 
-.hk-custom-inputs {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.hk-custom-label {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    font-size: 12px;
+.housekeeper-custom-inline span {
     color: var(--hk-text-muted);
 }
 
-.hk-custom-label input[type="color"] {
+.hk-custom-inline-picker {
     width: 48px;
     height: 32px;
     padding: 0;
@@ -589,7 +562,7 @@ function initializeAlignmentPanel() {
     cursor: pointer;
 }
 
-.hk-custom-label input[type="text"] {
+.hk-custom-hex-inline {
     background: rgba(34, 37, 45, 0.9);
     border: 1px solid rgba(139, 195, 243, 0.35);
     border-radius: 6px;
@@ -597,52 +570,15 @@ function initializeAlignmentPanel() {
     color: var(--hk-text-strong);
     font-family: 'Gloria Hallelujah', cursive;
     letter-spacing: 0.04em;
+    width: 90px;
 }
 
-.hk-custom-label input[type="text"]::placeholder {
+.hk-custom-hex-inline::placeholder {
     color: rgba(232, 243, 255, 0.45);
 }
 
-.hk-custom-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    justify-content: center;
-}
-
-.hk-custom-apply {
-    border: 1px solid rgba(139, 195, 243, 0.35);
-    background: rgba(139, 195, 243, 0.16);
-    color: var(--hk-accent);
-    border-radius: 8px;
-    padding: 6px 14px;
-    cursor: pointer;
-    transition: background 0.2s ease, transform 0.2s ease;
-    font-size: 13px;
-}
-
-.hk-custom-apply:hover {
-    background: rgba(139, 195, 243, 0.26);
-    transform: translateY(-1px);
-}
-
-.hk-custom-preview {
-    display: flex;
-    gap: 12px;
-    align-items: flex-start;
-}
-
-.hk-custom-preview-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    color: var(--hk-text-muted);
-}
-
-.hk-custom-preview-swatch {
-    width: 32px;
+.hk-custom-preview-inline {
+    width: 42px;
     height: 32px;
     border-radius: 8px;
     border: 1px solid rgba(139, 195, 243, 0.35);
@@ -1062,11 +998,9 @@ function initializeAlignmentPanel() {
 
     function updateCustomPreview(hex: string) {
         const normalized = normalizeHex(hex);
-        if (!normalized) return;
+        if (!normalized || !customPreviewSwatch) return;
         const option = buildColorOption(normalized);
-        if (customPreviewBody) customPreviewBody.style.background = option.bgcolor;
-        if (customPreviewTitle) customPreviewTitle.style.background = option.color;
-        if (customPreviewGroup) customPreviewGroup.style.background = option.groupcolor;
+        customPreviewSwatch.style.background = `linear-gradient(90deg, ${option.color} 0%, ${option.color} 20%, ${option.bgcolor} 20%, ${option.bgcolor} 60%, ${option.groupcolor} 60%, ${option.groupcolor} 100%)`;
     }
 
     function updateCustomInputs(hex: string) {
@@ -1550,95 +1484,28 @@ function initializeAlignmentPanel() {
         updatePaletteArrowLabels();
 
         const customRow = document.createElement('div');
-        customRow.className = 'housekeeper-custom-row';
+        customRow.className = 'housekeeper-custom-inline';
+
         const customLabel = document.createElement('span');
         customLabel.textContent = 'Custom';
         customRow.appendChild(customLabel);
 
-        const customToggle = document.createElement('button');
-        customToggle.type = 'button';
-        customToggle.className = 'hk-custom-toggle';
-        customToggle.textContent = 'Show';
-        customToggle.setAttribute('aria-expanded', 'false');
-        customRow.appendChild(customToggle);
-        colorSection.appendChild(customRow);
-
-        const customPickerWrapper = document.createElement('div');
-        customPickerWrapper.className = 'housekeeper-custom-picker';
-        const customPickerContent = document.createElement('div');
-        customPickerContent.className = 'housekeeper-custom-picker-content';
-        customPickerWrapper.appendChild(customPickerContent);
-        colorSection.appendChild(customPickerWrapper);
-
-        const customInputs = document.createElement('div');
-        customInputs.className = 'hk-custom-inputs';
-
-        const colorInputLabel = document.createElement('label');
-        colorInputLabel.className = 'hk-custom-label';
-        colorInputLabel.textContent = 'Pick';
         customColorInput = document.createElement('input');
         customColorInput.type = 'color';
-        colorInputLabel.appendChild(customColorInput);
-        customInputs.appendChild(colorInputLabel);
+        customColorInput.className = 'hk-custom-inline-picker';
+        customRow.appendChild(customColorInput);
 
-        const hexInputLabel = document.createElement('label');
-        hexInputLabel.className = 'hk-custom-label';
-        hexInputLabel.textContent = 'Hex';
         customHexInput = document.createElement('input');
         customHexInput.type = 'text';
         customHexInput.placeholder = '#RRGGBB';
         customHexInput.maxLength = 7;
-        hexInputLabel.appendChild(customHexInput);
-        customInputs.appendChild(hexInputLabel);
+        customHexInput.className = 'hk-custom-hex-inline';
+        customRow.appendChild(customHexInput);
 
-        const customActions = document.createElement('div');
-        customActions.className = 'hk-custom-actions';
-        const customApplyButton = document.createElement('button');
-        customApplyButton.type = 'button';
-        customApplyButton.className = 'hk-custom-apply';
-        customApplyButton.textContent = 'Apply';
-        customActions.appendChild(customApplyButton);
-
-        const customPreview = document.createElement('div');
-        customPreview.className = 'hk-custom-preview';
-
-        const makePreviewItem = (label: string) => {
-            const item = document.createElement('div');
-            item.className = 'hk-custom-preview-item';
-            const swatch = document.createElement('div');
-            swatch.className = 'hk-custom-preview-swatch';
-            const text = document.createElement('span');
-            text.textContent = label;
-            item.appendChild(swatch);
-            item.appendChild(text);
-            return { item, swatch };
-        };
-
-        const bodyPreview = makePreviewItem('Body');
-        const titlePreview = makePreviewItem('Title');
-        const groupPreview = makePreviewItem('Group');
-        customPreviewBody = bodyPreview.swatch;
-        customPreviewTitle = titlePreview.swatch;
-        customPreviewGroup = groupPreview.swatch;
-        customPreview.appendChild(bodyPreview.item);
-        customPreview.appendChild(titlePreview.item);
-        customPreview.appendChild(groupPreview.item);
-
-        customPickerContent.appendChild(customInputs);
-        customPickerContent.appendChild(customActions);
-        customPickerContent.appendChild(customPreview);
+        colorSection.appendChild(customRow);
 
         const initialCustomColor = recentColors[0] || FALLBACK_RECENT_COLORS[0];
         updateCustomInputs(initialCustomColor);
-
-        customToggle.addEventListener('click', () => {
-            const expanded = customPickerWrapper.classList.toggle('expanded');
-            customToggle.textContent = expanded ? 'Hide' : 'Show';
-            customToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-            if (!expanded) {
-                restorePreviewColors();
-            }
-        });
 
         const handleCustomPreview = (value: string, source: 'color' | 'text') => {
             const normalized = normalizeHex(value);
@@ -1654,6 +1521,7 @@ function initializeAlignmentPanel() {
 
         customColorInput?.addEventListener('input', () => handleCustomPreview(customColorInput!.value, 'color'));
         customColorInput?.addEventListener('change', () => commitCustomColor(customColorInput!.value));
+        customColorInput?.addEventListener('click', () => captureCurrentColors(buildColorOption(customColorInput!.value)));
         customColorInput?.addEventListener('blur', () => restorePreviewColors());
 
         customHexInput?.addEventListener('input', () => handleCustomPreview(customHexInput!.value, 'text'));
@@ -1665,7 +1533,14 @@ function initializeAlignmentPanel() {
         });
         customHexInput?.addEventListener('blur', () => restorePreviewColors());
 
-        customApplyButton.addEventListener('click', () => commitCustomColor(customHexInput?.value || customColorInput?.value || initialCustomColor));
+        const applyColor = () => commitCustomColor(customHexInput?.value || customColorInput?.value || initialCustomColor);
+        customRow.addEventListener('keydown', (event: KeyboardEvent) => {
+            if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'enter') {
+                event.preventDefault();
+                applyColor();
+            }
+        });
+        customRow.addEventListener('dblclick', () => applyColor());
         colorSection.appendChild(createSubtitle('On this page'));
         const footerPalette = buildPalette(
             ['#C9CCD1', '#5A7A9F', '#2E3136', '#6F7B89', '#4B6076', '#2B3F2F', '#2C3D4E', '#4C3C5A', '#3F2725', '#1E1E1F'],
