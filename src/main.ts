@@ -913,19 +913,105 @@ function initializeAlignmentPanel() {
         graphs.forEach(graph => graph?.beforeChange?.());
 
         targets.forEach((item: any) => {
-            if (typeof item.setColorOption === 'function') {
-                item.setColorOption(colorOption);
-            } else {
-                item.color = colorOption.color;
-                item.bgcolor = colorOption.bgcolor;
-                item.groupcolor = colorOption.groupcolor;
-            }
+            applyColorToTarget(item, colorOption);
         });
 
         graphs.forEach(graph => graph?.afterChange?.());
 
         const activeCanvas = (window as any).LGraphCanvas?.active_canvas ?? (window as any).app?.canvas;
         activeCanvas?.setDirty?.(true, true);
+    }
+
+    function applyColorToTarget(target: any, option: { color: string; bgcolor: string; groupcolor: string }) {
+        if (typeof target.setColorOption === 'function') {
+            target.setColorOption(option);
+        } else {
+            target.color = option.color;
+            target.bgcolor = option.bgcolor;
+            target.groupcolor = option.groupcolor;
+        }
+    }
+
+    function captureCurrentColors(option: { color: string; bgcolor: string; groupcolor: string }) {
+        if (previewState.active && previewState.colorOption?.bgcolor === option.bgcolor) {
+            return;
+        }
+
+        previewState.active = true;
+        previewState.colorOption = option;
+        previewState.nodes.clear();
+        previewState.groups.clear();
+
+        selectedNodes.forEach(node => {
+            previewState.nodes.set(node, {
+                color: node.color,
+                bgcolor: node.bgcolor,
+                groupcolor: node.groupcolor
+            });
+        });
+
+        selectedGroups.forEach(group => {
+            previewState.groups.set(group, {
+                color: group.color
+            });
+        });
+    }
+
+    function applyPreviewColor(option: { color: string; bgcolor: string; groupcolor: string }) {
+        updateGlobalTextContrast(luminanceFromHex(option.bgcolor));
+        selectedNodes.forEach(node => applyColorToTarget(node, option));
+        selectedGroups.forEach(group => applyColorToTarget(group, option));
+
+        const canvas = (window as any).LGraphCanvas?.active_canvas ?? (window as any).app?.canvas;
+        canvas?.setDirty?.(true, true);
+    }
+
+    function restorePreviewColors() {
+        if (!previewState.active) return;
+
+        const liteGraph = (window as any).LiteGraph;
+        if (liteGraph && originalTextColors) {
+            const maxLuminance = Math.max(
+                ...[...previewState.nodes.values()].map(v => luminanceFromHex(v.bgcolor || '#000000')),
+                ...[...previewState.groups.values()].map(v => luminanceFromHex(v.color || '#000000')),
+                0
+            );
+            updateGlobalTextContrast(maxLuminance);
+        }
+
+        previewState.nodes.forEach((stored, node) => {
+            if (!node) return;
+            if (typeof node.setColorOption === 'function') {
+                node.setColorOption({
+                    color: stored.color ?? node.color,
+                    bgcolor: stored.bgcolor ?? node.bgcolor,
+                    groupcolor: stored.groupcolor ?? node.groupcolor
+                });
+            } else {
+                node.color = stored.color;
+                node.bgcolor = stored.bgcolor;
+                node.groupcolor = stored.groupcolor;
+            }
+        });
+
+        previewState.groups.forEach((stored, group) => {
+            if (!group) return;
+            if (typeof group.setColorOption === 'function') {
+                group.setColorOption({
+                    color: stored.color ?? group.color,
+                    bgcolor: stored.color ?? group.bgcolor,
+                    groupcolor: stored.color ?? group.groupcolor
+                });
+            } else {
+                group.color = stored.color;
+            }
+        });
+
+        previewState.active = false;
+        previewState.colorOption = null;
+
+        const canvas = (window as any).LGraphCanvas?.active_canvas ?? (window as any).app?.canvas;
+        canvas?.setDirty?.(true, true);
     }
 
     function attachColorChipHandlers(chip: HTMLButtonElement, hex: string) {
@@ -940,6 +1026,18 @@ function initializeAlignmentPanel() {
                 activate();
             }
         });
+        chip.addEventListener('mouseenter', () => {
+            const option = buildColorOption(hex);
+            captureCurrentColors(option);
+            applyPreviewColor(option);
+        });
+        chip.addEventListener('focus', () => {
+            const option = buildColorOption(hex);
+            captureCurrentColors(option);
+            applyPreviewColor(option);
+        });
+        chip.addEventListener('mouseleave', () => restorePreviewColors());
+        chip.addEventListener('blur', () => restorePreviewColors());
     }
 
     function createColorChip(hex: string, interactive = true) {
@@ -2801,3 +2899,9 @@ function initializeAlignmentPanel() {
     document.addEventListener('keydown', handleKeyboard);
     
 }
+    const previewState = {
+        active: false,
+        colorOption: null as null | { color: string; bgcolor: string; groupcolor: string },
+        nodes: new Map<any, { color?: string; bgcolor?: string; groupcolor?: string }>(),
+        groups: new Map<any, { color?: string }>()
+    };
