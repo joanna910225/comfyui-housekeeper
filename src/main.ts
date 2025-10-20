@@ -1432,12 +1432,6 @@ function initializeAlignmentPanel() {
         };
 
         const colorSection = createSection();
-        colorSection.appendChild(createSubtitle('Recent colors'));
-        recentPaletteStrip = document.createElement('div');
-        recentPaletteStrip.className = 'housekeeper-color-recent';
-        renderRecentPalette();
-        colorSection.appendChild(recentPaletteStrip);
-
         colorSection.appendChild(createSubtitle('Preset palettes'));
         const paletteCarousel = document.createElement('div');
         paletteCarousel.className = 'housekeeper-color-carousel';
@@ -1504,6 +1498,12 @@ function initializeAlignmentPanel() {
 
         colorSection.appendChild(customRow);
 
+        colorSection.appendChild(createSubtitle('Recent colors'));
+        recentPaletteStrip = document.createElement('div');
+        recentPaletteStrip.className = 'housekeeper-color-recent';
+        renderRecentPalette();
+        colorSection.appendChild(recentPaletteStrip);
+
         const initialCustomColor = recentColors[0] || FALLBACK_RECENT_COLORS[0];
         updateCustomInputs(initialCustomColor);
 
@@ -1541,13 +1541,6 @@ function initializeAlignmentPanel() {
             }
         });
         customRow.addEventListener('dblclick', () => applyColor());
-        colorSection.appendChild(createSubtitle('On this page'));
-        const footerPalette = buildPalette(
-            ['#C9CCD1', '#5A7A9F', '#2E3136', '#6F7B89', '#4B6076', '#2B3F2F', '#2C3D4E', '#4C3C5A', '#3F2725', '#1E1E1F'],
-            'housekeeper-color-footer'
-        );
-        colorSection.appendChild(footerPalette);
-
         content.appendChild(header);
         content.appendChild(divider);
         content.appendChild(alignmentSection);
