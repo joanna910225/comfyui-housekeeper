@@ -107,6 +107,18 @@ function initializeAlignmentPanel() {
     let previewElements: HTMLElement[] = [];
     let currentPaletteIndex = 0;
 
+    const RECENT_COLOR_STORAGE_KEY = 'housekeeper-recent-colors';
+    const RECENT_COLOR_LIMIT = 9;
+    const FALLBACK_RECENT_COLORS = ['#353535', '#3f5159', '#593930', '#335533', '#333355', '#335555', '#553355', '#665533', '#000000'];
+
+    let recentColors = loadRecentColors();
+    let recentPaletteStrip: HTMLElement | null = null;
+    let customColorInput: HTMLInputElement | null = null;
+    let customHexInput: HTMLInputElement | null = null;
+    let customPreviewBody: HTMLElement | null = null;
+    let customPreviewTitle: HTMLElement | null = null;
+    let customPreviewGroup: HTMLElement | null = null;
+
     // Store locked sizes and original computeSize methods for size-max functionality
     const lockedSizes = new WeakMap();
     const originalComputeSizeMethods = new WeakMap();
@@ -487,6 +499,155 @@ function initializeAlignmentPanel() {
     width: 100%;
 }
 
+.housekeeper-color-recent {
+    display: grid;
+    grid-template-columns: repeat(9, minmax(0, 1fr));
+    gap: 6px;
+    padding: 6px 10px;
+    border: 1px solid rgba(139, 195, 243, 0.35);
+    border-radius: 10px;
+    background: rgba(22, 24, 29, 0.6);
+}
+
+.housekeeper-color-recent .hk-color-chip {
+    width: 100%;
+    height: 26px;
+}
+
+.housekeeper-custom-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 12px;
+    color: var(--hk-text-muted);
+}
+
+.hk-custom-toggle {
+    border: 1px solid rgba(139, 195, 243, 0.35);
+    background: rgba(139, 195, 243, 0.12);
+    color: var(--hk-accent);
+    border-radius: 8px;
+    padding: 4px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.hk-custom-toggle:hover {
+    background: rgba(139, 195, 243, 0.22);
+    transform: translateY(-1px);
+}
+
+.hk-custom-toggle:focus-visible {
+    outline: 2px solid var(--hk-accent);
+    outline-offset: 2px;
+}
+
+.housekeeper-custom-picker {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease, opacity 0.2s ease;
+    opacity: 0;
+}
+
+.housekeeper-custom-picker.expanded {
+    max-height: 220px;
+    opacity: 1;
+    margin-top: 8px;
+}
+
+.housekeeper-custom-picker-content {
+    display: flex;
+    gap: 16px;
+    padding: 10px 12px 12px;
+    border: 1px solid rgba(139, 195, 243, 0.35);
+    border-radius: 10px;
+    background: rgba(22, 24, 29, 0.78);
+}
+
+.hk-custom-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hk-custom-label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--hk-text-muted);
+}
+
+.hk-custom-label input[type="color"] {
+    width: 48px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid rgba(139, 195, 243, 0.35);
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+}
+
+.hk-custom-label input[type="text"] {
+    background: rgba(34, 37, 45, 0.9);
+    border: 1px solid rgba(139, 195, 243, 0.35);
+    border-radius: 6px;
+    padding: 6px 8px;
+    color: var(--hk-text-strong);
+    font-family: 'Gloria Hallelujah', cursive;
+    letter-spacing: 0.04em;
+}
+
+.hk-custom-label input[type="text"]::placeholder {
+    color: rgba(232, 243, 255, 0.45);
+}
+
+.hk-custom-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    justify-content: center;
+}
+
+.hk-custom-apply {
+    border: 1px solid rgba(139, 195, 243, 0.35);
+    background: rgba(139, 195, 243, 0.16);
+    color: var(--hk-accent);
+    border-radius: 8px;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+    font-size: 13px;
+}
+
+.hk-custom-apply:hover {
+    background: rgba(139, 195, 243, 0.26);
+    transform: translateY(-1px);
+}
+
+.hk-custom-preview {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.hk-custom-preview-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--hk-text-muted);
+}
+
+.hk-custom-preview-swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid rgba(139, 195, 243, 0.35);
+}
+
 .housekeeper-color-strip {
     flex: 1;
     flex-wrap: nowrap;
@@ -825,6 +986,117 @@ function initializeAlignmentPanel() {
         return (brightest + 0.05) / (darkest + 0.05);
     }
 
+    function normalizeHex(input: string | null | undefined): string | null {
+        if (typeof input !== 'string') return null;
+        let value = input.trim();
+        if (!value) return null;
+        if (!value.startsWith('#')) value = `#${value}`;
+        if (/^#([0-9a-fA-F]{3})$/.test(value)) {
+            value = `#${value[1]}${value[1]}${value[2]}${value[2]}${value[3]}${value[3]}`;
+        }
+        if (/^#([0-9a-fA-F]{6})$/.test(value)) {
+            return value.toLowerCase();
+        }
+        return null;
+    }
+
+    function getDefaultRecentColors(): string[] {
+        const colors: string[] = [];
+        const canvasColors = (window as any).LGraphCanvas?.node_colors;
+        if (canvasColors) {
+            for (const key of Object.keys(canvasColors)) {
+                const option = canvasColors[key];
+                const source = option?.bgcolor || option?.color || option?.groupcolor;
+                const normalized = normalizeHex(source);
+                if (normalized && !colors.includes(normalized)) {
+                    colors.push(normalized);
+                }
+                if (colors.length >= RECENT_COLOR_LIMIT) break;
+            }
+        }
+        if (!colors.length) {
+            FALLBACK_RECENT_COLORS.forEach(color => {
+                const normalized = normalizeHex(color);
+                if (normalized && !colors.includes(normalized) && colors.length < RECENT_COLOR_LIMIT) {
+                    colors.push(normalized);
+                }
+            });
+        }
+        return colors.slice(0, RECENT_COLOR_LIMIT);
+    }
+
+    function loadRecentColors(): string[] {
+        try {
+            const stored = window.localStorage?.getItem(RECENT_COLOR_STORAGE_KEY);
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                if (Array.isArray(parsed)) {
+                    const normalized = parsed
+                        .map(item => normalizeHex(item))
+                        .filter((item): item is string => !!item);
+                    if (normalized.length) {
+                        return normalized.slice(0, RECENT_COLOR_LIMIT);
+                    }
+                }
+            }
+        } catch (error) {
+        }
+        return getDefaultRecentColors();
+    }
+
+    function saveRecentColors(colors: string[]) {
+        try {
+            window.localStorage?.setItem(RECENT_COLOR_STORAGE_KEY, JSON.stringify(colors));
+        } catch (error) {
+        }
+    }
+
+    function renderRecentPalette() {
+        if (!recentPaletteStrip) return;
+        recentPaletteStrip.replaceChildren();
+        recentColors.forEach(color => {
+            const chip = createColorChip(color);
+            recentPaletteStrip.appendChild(chip);
+        });
+    }
+
+    function updateCustomPreview(hex: string) {
+        const normalized = normalizeHex(hex);
+        if (!normalized) return;
+        const option = buildColorOption(normalized);
+        if (customPreviewBody) customPreviewBody.style.background = option.bgcolor;
+        if (customPreviewTitle) customPreviewTitle.style.background = option.color;
+        if (customPreviewGroup) customPreviewGroup.style.background = option.groupcolor;
+    }
+
+    function updateCustomInputs(hex: string) {
+        const normalized = normalizeHex(hex);
+        if (!normalized) return;
+        if (customColorInput) customColorInput.value = normalized;
+        if (customHexInput) customHexInput.value = normalized.toUpperCase();
+        updateCustomPreview(normalized);
+    }
+
+    function recordRecentColor(hex: string) {
+        const normalized = normalizeHex(hex);
+        if (!normalized) return;
+        recentColors = [normalized, ...recentColors.filter(color => color !== normalized)];
+        if (recentColors.length > RECENT_COLOR_LIMIT) {
+            recentColors.length = RECENT_COLOR_LIMIT;
+        }
+        saveRecentColors(recentColors);
+        renderRecentPalette();
+        updateCustomInputs(normalized);
+    }
+
+    function commitCustomColor(hex: string) {
+        const normalized = normalizeHex(hex);
+        if (!normalized) return;
+        applyColorToSelection(normalized);
+        restorePreviewColors();
+    }
+
+
     function ensureContrastWithDefaultText(hex: string) {
         const baseLum = luminanceFromHex(hex);
         const textLum = luminanceFromHex(DEFAULT_TEXT_COLOR);
@@ -947,6 +1219,8 @@ function initializeAlignmentPanel() {
         });
 
         graphs.forEach(graph => graph?.afterChange?.());
+
+        recordRecentColor(colorOption.bgcolor);
 
         const activeCanvas = (window as any).LGraphCanvas?.active_canvas ?? (window as any).app?.canvas;
         activeCanvas?.setDirty?.(true, true);
@@ -1224,7 +1498,13 @@ function initializeAlignmentPanel() {
         };
 
         const colorSection = createSection();
-        colorSection.appendChild(createSubtitle('Color'));
+        colorSection.appendChild(createSubtitle('Recent colors'));
+        recentPaletteStrip = document.createElement('div');
+        recentPaletteStrip.className = 'housekeeper-color-recent';
+        renderRecentPalette();
+        colorSection.appendChild(recentPaletteStrip);
+
+        colorSection.appendChild(createSubtitle('Preset palettes'));
         const paletteCarousel = document.createElement('div');
         paletteCarousel.className = 'housekeeper-color-carousel';
 
@@ -1270,47 +1550,122 @@ function initializeAlignmentPanel() {
         updatePaletteArrowLabels();
 
         const customRow = document.createElement('div');
-        customRow.className = 'housekeeper-color-custom-row';
+        customRow.className = 'housekeeper-custom-row';
         const customLabel = document.createElement('span');
         customLabel.textContent = 'Custom';
-        const togglePlaceholder = document.createElement('div');
-        togglePlaceholder.className = 'hk-toggle-placeholder';
         customRow.appendChild(customLabel);
-        customRow.appendChild(togglePlaceholder);
+
+        const customToggle = document.createElement('button');
+        customToggle.type = 'button';
+        customToggle.className = 'hk-custom-toggle';
+        customToggle.textContent = 'Show';
+        customToggle.setAttribute('aria-expanded', 'false');
+        customRow.appendChild(customToggle);
         colorSection.appendChild(customRow);
 
-        const pickerPlaceholder = document.createElement('div');
-        pickerPlaceholder.className = 'housekeeper-color-picker-placeholder';
-        const pickerToolbar = document.createElement('div');
-        pickerToolbar.className = 'housekeeper-color-picker-toolbar';
+        const customPickerWrapper = document.createElement('div');
+        customPickerWrapper.className = 'housekeeper-custom-picker';
+        const customPickerContent = document.createElement('div');
+        customPickerContent.className = 'housekeeper-custom-picker-content';
+        customPickerWrapper.appendChild(customPickerContent);
+        colorSection.appendChild(customPickerWrapper);
 
-        const currentSwatch = document.createElement('div');
-        currentSwatch.className = 'hk-swatch';
-        currentSwatch.style.background = '#000000';
+        const customInputs = document.createElement('div');
+        customInputs.className = 'hk-custom-inputs';
 
-        const accentSwatch = document.createElement('div');
-        accentSwatch.className = 'hk-swatch';
-        accentSwatch.style.background = '#ff4238';
+        const colorInputLabel = document.createElement('label');
+        colorInputLabel.className = 'hk-custom-label';
+        colorInputLabel.textContent = 'Pick';
+        customColorInput = document.createElement('input');
+        customColorInput.type = 'color';
+        colorInputLabel.appendChild(customColorInput);
+        customInputs.appendChild(colorInputLabel);
 
-        const sliderPlaceholder = document.createElement('div');
-        sliderPlaceholder.className = 'hk-slider-placeholder';
+        const hexInputLabel = document.createElement('label');
+        hexInputLabel.className = 'hk-custom-label';
+        hexInputLabel.textContent = 'Hex';
+        customHexInput = document.createElement('input');
+        customHexInput.type = 'text';
+        customHexInput.placeholder = '#RRGGBB';
+        customHexInput.maxLength = 7;
+        hexInputLabel.appendChild(customHexInput);
+        customInputs.appendChild(hexInputLabel);
 
-        const rgbPlaceholder = document.createElement('div');
-        rgbPlaceholder.className = 'hk-rgb-placeholder';
-        ['R', 'G', 'B'].forEach(letter => {
-            const pill = document.createElement('div');
-            pill.className = 'hk-rgb-pill';
-            pill.textContent = letter;
-            rgbPlaceholder.appendChild(pill);
+        const customActions = document.createElement('div');
+        customActions.className = 'hk-custom-actions';
+        const customApplyButton = document.createElement('button');
+        customApplyButton.type = 'button';
+        customApplyButton.className = 'hk-custom-apply';
+        customApplyButton.textContent = 'Apply';
+        customActions.appendChild(customApplyButton);
+
+        const customPreview = document.createElement('div');
+        customPreview.className = 'hk-custom-preview';
+
+        const makePreviewItem = (label: string) => {
+            const item = document.createElement('div');
+            item.className = 'hk-custom-preview-item';
+            const swatch = document.createElement('div');
+            swatch.className = 'hk-custom-preview-swatch';
+            const text = document.createElement('span');
+            text.textContent = label;
+            item.appendChild(swatch);
+            item.appendChild(text);
+            return { item, swatch };
+        };
+
+        const bodyPreview = makePreviewItem('Body');
+        const titlePreview = makePreviewItem('Title');
+        const groupPreview = makePreviewItem('Group');
+        customPreviewBody = bodyPreview.swatch;
+        customPreviewTitle = titlePreview.swatch;
+        customPreviewGroup = groupPreview.swatch;
+        customPreview.appendChild(bodyPreview.item);
+        customPreview.appendChild(titlePreview.item);
+        customPreview.appendChild(groupPreview.item);
+
+        customPickerContent.appendChild(customInputs);
+        customPickerContent.appendChild(customActions);
+        customPickerContent.appendChild(customPreview);
+
+        const initialCustomColor = recentColors[0] || FALLBACK_RECENT_COLORS[0];
+        updateCustomInputs(initialCustomColor);
+
+        customToggle.addEventListener('click', () => {
+            const expanded = customPickerWrapper.classList.toggle('expanded');
+            customToggle.textContent = expanded ? 'Hide' : 'Show';
+            customToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+            if (!expanded) {
+                restorePreviewColors();
+            }
         });
 
-        pickerToolbar.appendChild(currentSwatch);
-        pickerToolbar.appendChild(accentSwatch);
-        pickerToolbar.appendChild(sliderPlaceholder);
-        pickerToolbar.appendChild(rgbPlaceholder);
-        pickerPlaceholder.appendChild(pickerToolbar);
+        const handleCustomPreview = (value: string, source: 'color' | 'text') => {
+            const normalized = normalizeHex(value);
+            if (!normalized) return;
+            if (source === 'color' && customHexInput) customHexInput.value = normalized.toUpperCase();
+            if (source === 'text' && customColorInput) customColorInput.value = normalized;
+            updateCustomPreview(normalized);
+            if (!selectedNodes.length && !selectedGroups.length) return;
+            const option = buildColorOption(normalized);
+            captureCurrentColors(option);
+            applyPreviewColor(option);
+        };
 
-        colorSection.appendChild(pickerPlaceholder);
+        customColorInput?.addEventListener('input', () => handleCustomPreview(customColorInput!.value, 'color'));
+        customColorInput?.addEventListener('change', () => commitCustomColor(customColorInput!.value));
+        customColorInput?.addEventListener('blur', () => restorePreviewColors());
+
+        customHexInput?.addEventListener('input', () => handleCustomPreview(customHexInput!.value, 'text'));
+        customHexInput?.addEventListener('keydown', (event: KeyboardEvent) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                commitCustomColor(customHexInput!.value);
+            }
+        });
+        customHexInput?.addEventListener('blur', () => restorePreviewColors());
+
+        customApplyButton.addEventListener('click', () => commitCustomColor(customHexInput?.value || customColorInput?.value || initialCustomColor));
         colorSection.appendChild(createSubtitle('On this page'));
         const footerPalette = buildPalette(
             ['#C9CCD1', '#5A7A9F', '#2E3136', '#6F7B89', '#4B6076', '#2B3F2F', '#2C3D4E', '#4C3C5A', '#3F2725', '#1E1E1F'],
