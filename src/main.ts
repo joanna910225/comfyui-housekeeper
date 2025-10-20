@@ -104,6 +104,7 @@ function initializeAlignmentPanel() {
     let isExpanded = false;
     let selectedNodes: any[] = [];
     let previewElements: HTMLElement[] = [];
+    let currentPaletteIndex = 0;
 
     // Store locked sizes and original computeSize methods for size-max functionality
     const lockedSizes = new WeakMap();
@@ -185,6 +186,19 @@ function initializeAlignmentPanel() {
     const flowAlignments: AlignmentButtonConfig[] = [
         { type: 'horizontal-flow', icon: horizontalFlowIconUrl, label: 'Distribute horizontally', group: 'flow' },
         { type: 'vertical-flow', icon: verticalFlowIconUrl, label: 'Distribute vertically', group: 'flow' }
+    ];
+
+    const harmonyColorSets: string[][] = [
+        ['#ff6f61', '#ff9a76', '#ffc36a', '#ffe29a', '#ffd6d1', '#ffa69e', '#ff7b89', '#ef5d60', '#c03a53'],
+        ['#003f5c', '#2f4b7c', '#376996', '#3f7cac', '#49a3c7', '#56cfe1', '#72efdd', '#80ffdb', '#c0fdfb'],
+        ['#2a6041', '#3b7d4f', '#4f945c', '#66ad71', '#81c784', '#a5d6a7', '#dcedc8', '#93b48b', '#6d8b74'],
+        ['#150050', '#3f0071', '#610094', '#7b2cbf', '#c77dff', '#ff61d2', '#ff97c1', '#ffcbf2', '#ffe5f1'],
+        ['#f6d1c1', '#f5b5c4', '#e9a6c1', '#d4a5e3', '#b4a0e5', '#9fc9eb', '#a7d7c5', '#d5e2b8', '#f1e3a0'],
+        ['#3d0c02', '#7f2b0a', '#b3541e', '#d89a54', '#f2d0a9', '#c2956b', '#8c5a45', '#5a3d2b', '#2f1b10'],
+        ['#0f0f3d', '#1b1b7d', '#3a0ca3', '#7209b7', '#f72585', '#ff0677', '#ff6d00', '#ff9f1c', '#ffbf69'],
+        ['#051937', '#004d7a', '#008793', '#00bf72', '#a8eb12', '#dce35b', '#ffd23f', '#ff9b71', '#ef476f'],
+        ['#0d1b2a', '#1b263b', '#274060', '#335c81', '#406e8e', '#4f83a1', '#5f9bbf', '#6faad1', '#8fc0e6'],
+        ['#2b193d', '#412271', '#6a4c93', '#9b5de5', '#f15bb5', '#f9a1bc', '#feeafa', '#ffd6e0', '#ffe5f1']
     ];
 
     function ensureStyleSheet() {
@@ -460,12 +474,57 @@ function initializeAlignmentPanel() {
 .housekeeper-color-footer {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: clamp(6px, 1vw, 10px) 12px;
+    gap: 6px;
+    padding: 6px 10px;
     border: 1px solid rgba(139, 195, 243, 0.35);
-    border-radius: 12px;
+    border-radius: 10px;
     background: rgba(22, 24, 29, 0.6);
+    width: 100%;
+}
+
+.housekeeper-color-strip {
+    flex: 1;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+}
+
+.housekeeper-color-footer {
     flex-wrap: wrap;
+    justify-content: flex-start;
+}
+
+.housekeeper-color-carousel {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+}
+
+.hk-palette-arrow {
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+    border: 1px solid rgba(139, 195, 243, 0.25);
+    background: rgba(139, 195, 243, 0.12);
+    color: var(--hk-accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+    font-size: 14px;
+    flex-shrink: 0;
+    padding: 0;
+}
+
+.hk-palette-arrow:hover {
+    background: rgba(139, 195, 243, 0.25);
+    transform: translateY(-1px);
+}
+
+.hk-palette-arrow:focus-visible {
+    outline: 2px solid var(--hk-accent);
+    outline-offset: 2px;
 }
 
 .hk-color-chip {
@@ -473,6 +532,29 @@ function initializeAlignmentPanel() {
     height: 22px;
     border-radius: 50%;
     border: 1px solid rgba(139, 195, 243, 0.4);
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    background: transparent;
+}
+
+.hk-color-chip:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+}
+
+.hk-color-chip:focus-visible {
+    outline: 2px solid var(--hk-accent);
+    outline-offset: 2px;
+}
+
+.housekeeper-color-strip .hk-color-chip {
+    flex: 1;
+    min-width: 0;
+    max-width: calc((100% - 8 * 4px) / 9);
 }
 
 .housekeeper-color-custom-row {
@@ -618,6 +700,125 @@ function initializeAlignmentPanel() {
         return button;
     }
 
+    function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+        const normalized = hex.replace('#', '');
+        if (normalized.length === 3) {
+            const r = parseInt(normalized[0] + normalized[0], 16);
+            const g = parseInt(normalized[1] + normalized[1], 16);
+            const b = parseInt(normalized[2] + normalized[2], 16);
+            return { r, g, b };
+        }
+        if (normalized.length === 6) {
+            return {
+                r: parseInt(normalized.slice(0, 2), 16),
+                g: parseInt(normalized.slice(2, 4), 16),
+                b: parseInt(normalized.slice(4, 6), 16)
+            };
+        }
+        return null;
+    }
+
+    function getRelativeLuminance(rgb: { r: number; g: number; b: number }): number {
+        const channel = (value: number) => {
+            const v = value / 255;
+            return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+        };
+        return 0.2126 * channel(rgb.r) + 0.7152 * channel(rgb.g) + 0.0722 * channel(rgb.b);
+    }
+
+    function getContrastingTextColor(hex: string): string {
+        const rgb = hexToRgb(hex);
+        if (!rgb) return '#1a1a1a';
+        const luminance = getRelativeLuminance(rgb);
+        return luminance > 0.5 ? '#1a1a1a' : '#f5f5f5';
+    }
+
+    function buildColorOption(hex: string) {
+        const sanitized = hex.startsWith('#') ? hex : `#${hex}`;
+        const textColor = getContrastingTextColor(sanitized);
+        return {
+            color: textColor,
+            bgcolor: sanitized,
+            groupcolor: sanitized
+        };
+    }
+
+    function applyColorToSelection(hex: string) {
+        if (!selectedNodes.length) {
+            showMessage('Select nodes to apply color', 'warning');
+            return;
+        }
+
+        const colorOption = buildColorOption(hex);
+        const graphs = new Set<any>();
+        selectedNodes.forEach((node: any) => {
+            if (node?.graph) graphs.add(node.graph);
+        });
+
+        graphs.forEach(graph => graph?.beforeChange?.());
+
+        selectedNodes.forEach((node: any) => {
+            if (typeof node.setColorOption === 'function') {
+                node.setColorOption(colorOption);
+            } else {
+                node.color = colorOption.color;
+                node.bgcolor = colorOption.bgcolor;
+                node.groupcolor = colorOption.groupcolor;
+            }
+        });
+
+        graphs.forEach(graph => graph?.afterChange?.());
+
+        const activeCanvas = (window as any).LGraphCanvas?.active_canvas ?? (window as any).app?.canvas;
+        activeCanvas?.setDirty?.(true, true);
+    }
+
+    function attachColorChipHandlers(chip: HTMLButtonElement, hex: string) {
+        const activate = (event?: Event) => {
+            event?.preventDefault();
+            applyColorToSelection(hex);
+        };
+        chip.addEventListener('click', activate);
+        chip.addEventListener('keydown', (event: KeyboardEvent) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                activate();
+            }
+        });
+    }
+
+    function createColorChip(hex: string, interactive = true) {
+        const element = document.createElement(interactive ? 'button' : 'div') as HTMLButtonElement | HTMLDivElement;
+        if (interactive) {
+            (element as HTMLButtonElement).type = 'button';
+            element.setAttribute('aria-label', `Apply color ${hex.toUpperCase()}`);
+            element.title = `Apply color ${hex.toUpperCase()}`;
+        }
+        element.className = 'hk-color-chip';
+        element.style.background = hex;
+        element.dataset.colorHex = hex;
+        if (interactive) {
+            attachColorChipHandlers(element as HTMLButtonElement, hex);
+        }
+        return element;
+    }
+
+    function renderHarmonyPalette(target: HTMLElement, paletteIndex: number) {
+        if (!harmonyColorSets.length) return;
+        const total = harmonyColorSets.length;
+        const normalizedIndex = ((paletteIndex % total) + total) % total;
+        currentPaletteIndex = normalizedIndex;
+
+        const colors = harmonyColorSets[normalizedIndex];
+        target.replaceChildren();
+        colors.forEach(color => {
+            const chip = createColorChip(color);
+            target.appendChild(chip);
+        });
+
+        target.setAttribute('aria-label', `Color harmony palette ${normalizedIndex + 1} of ${total}`);
+    }
+
     function showPanel() {
         if (!wrapper) return;
         updateLayoutMetrics();
@@ -716,13 +917,12 @@ function initializeAlignmentPanel() {
         alignmentSection.appendChild(createSubtitle('Flow Alignment'));
         alignmentSection.appendChild(createButtonGrid(flowAlignments, 'flow'));
 
-        const buildPalette = (colors: string[], className: string) => {
+        const buildPalette = (colors: string[], className: string, interactive = true) => {
             const palette = document.createElement('div');
             palette.className = className;
+            palette.setAttribute('role', 'group');
             colors.forEach(color => {
-                const chip = document.createElement('div');
-                chip.className = 'hk-color-chip';
-                chip.style.background = color;
+                const chip = createColorChip(color, interactive);
                 palette.appendChild(chip);
             });
             return palette;
@@ -730,11 +930,49 @@ function initializeAlignmentPanel() {
 
         const colorSection = createSection();
         colorSection.appendChild(createSubtitle('Color'));
-        const primaryPalette = buildPalette(
-            ['#3D3F44', '#5C3A30', '#6A402C', '#3A5936', '#2F3E56', '#2E5561', '#3B395C', '#4A2740', '#1F1F21'],
-            'housekeeper-color-strip'
-        );
-        colorSection.appendChild(primaryPalette);
+        const paletteCarousel = document.createElement('div');
+        paletteCarousel.className = 'housekeeper-color-carousel';
+
+        const prevPaletteButton = document.createElement('button');
+        prevPaletteButton.type = 'button';
+        prevPaletteButton.className = 'hk-palette-arrow hk-palette-arrow-prev';
+        prevPaletteButton.innerHTML = '&#9664;';
+
+        const paletteStrip = document.createElement('div');
+        paletteStrip.className = 'housekeeper-color-strip';
+        paletteStrip.setAttribute('role', 'group');
+
+        const nextPaletteButton = document.createElement('button');
+        nextPaletteButton.type = 'button';
+        nextPaletteButton.className = 'hk-palette-arrow hk-palette-arrow-next';
+        nextPaletteButton.innerHTML = '&#9654;';
+
+        paletteCarousel.appendChild(prevPaletteButton);
+        paletteCarousel.appendChild(paletteStrip);
+        paletteCarousel.appendChild(nextPaletteButton);
+        colorSection.appendChild(paletteCarousel);
+
+        const updatePaletteArrowLabels = () => {
+            const total = harmonyColorSets.length;
+            const prevIndex = (currentPaletteIndex - 1 + total) % total;
+            const nextIndex = (currentPaletteIndex + 1) % total;
+            prevPaletteButton.setAttribute('aria-label', `Show color set ${prevIndex + 1} of ${total}`);
+            nextPaletteButton.setAttribute('aria-label', `Show color set ${nextIndex + 1} of ${total}`);
+        };
+
+        const cyclePalette = (delta: number) => {
+            const total = harmonyColorSets.length;
+            if (!total) return;
+            currentPaletteIndex = (currentPaletteIndex + delta + total) % total;
+            renderHarmonyPalette(paletteStrip, currentPaletteIndex);
+            updatePaletteArrowLabels();
+        };
+
+        prevPaletteButton.addEventListener('click', () => cyclePalette(-1));
+        nextPaletteButton.addEventListener('click', () => cyclePalette(1));
+
+        renderHarmonyPalette(paletteStrip, currentPaletteIndex);
+        updatePaletteArrowLabels();
 
         const customRow = document.createElement('div');
         customRow.className = 'housekeeper-color-custom-row';
