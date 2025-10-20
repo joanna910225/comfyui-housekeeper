@@ -103,6 +103,13 @@ function initializeAlignmentPanel() {
     let toggleHandle: HTMLButtonElement | null = null;
     let isExpanded = false;
     let selectedNodes: any[] = [];
+    let selectedGroups: any[] = [];
+    let contrastOverrideActive = false;
+    let originalTextColors: {
+        NODE_TEXT_COLOR: string;
+        NODE_TITLE_COLOR: string;
+        NODE_SELECTED_TITLE_COLOR: string;
+    } | null = null;
     let previewElements: HTMLElement[] = [];
     let currentPaletteIndex = 0;
 
@@ -200,6 +207,10 @@ function initializeAlignmentPanel() {
         ['#0d1b2a', '#1b263b', '#274060', '#335c81', '#406e8e', '#4f83a1', '#5f9bbf', '#6faad1', '#8fc0e6'],
         ['#2b193d', '#412271', '#6a4c93', '#9b5de5', '#f15bb5', '#f9a1bc', '#feeafa', '#ffd6e0', '#ffe5f1']
     ];
+
+    const TEXT_CONTRAST_THRESHOLD = 0.68;
+    const DARK_TEXT_COLOR = '#1b1f27';
+    const DARK_SELECTED_TEXT_COLOR = '#0b0d11';
 
     function ensureStyleSheet() {
         const styleId = 'housekeeper-alignment-styles';
@@ -718,6 +729,135 @@ function initializeAlignmentPanel() {
         return null;
     }
 
+    function rgbToHex(r: number, g: number, b: number) {
+        const toHex = (value: number) => {
+            const clamped = Math.max(0, Math.min(255, Math.round(value)));
+            return clamped.toString(16).padStart(2, '0');
+        };
+        return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+    }
+
+    function hexToHsl(hex: string): { h: number; s: number; l: number } | null {
+        const rgb = hexToRgb(hex);
+        if (!rgb) return null;
+
+        const r = rgb.r / 255;
+        const g = rgb.g / 255;
+        const b = rgb.b / 255;
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const delta = max - min;
+        let h = 0;
+        if (delta !== 0) {
+            if (max === r) {
+                h = ((g - b) / delta) % 6;
+            } else if (max === g) {
+                h = (b - r) / delta + 2;
+            } else {
+                h = (r - g) / delta + 4;
+            }
+        }
+        h = Math.round(h * 60);
+        if (h < 0) h += 360;
+
+        const l = (max + min) / 2;
+        const s = delta === 0 ? 0 : delta / (1 - Math.abs(2 * l - 1));
+
+        return { h, s, l };
+    }
+
+    function hslToHex(h: number, s: number, l: number) {
+        const c = (1 - Math.abs(2 * l - 1)) * s;
+        const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+        const m = l - c / 2;
+
+        let r = 0;
+        let g = 0;
+        let b = 0;
+
+        if (0 <= h && h < 60) {
+            r = c;
+            g = x;
+            b = 0;
+        } else if (60 <= h && h < 120) {
+            r = x;
+            g = c;
+            b = 0;
+        } else if (120 <= h && h < 180) {
+            r = 0;
+            g = c;
+            b = x;
+        } else if (180 <= h && h < 240) {
+            r = 0;
+            g = x;
+            b = c;
+        } else if (240 <= h && h < 300) {
+            r = x;
+            g = 0;
+            b = c;
+        } else {
+            r = c;
+            g = 0;
+            b = x;
+        }
+
+        return rgbToHex((r + m) * 255, (g + m) * 255, (b + m) * 255);
+    }
+
+    function adjustLightness(hex: string, delta: number) {
+        const hsl = hexToHsl(hex);
+        if (!hsl) return hex;
+        const newLightness = Math.max(0, Math.min(1, hsl.l + delta));
+        return hslToHex(hsl.h, hsl.s, newLightness);
+    }
+
+    function luminanceFromHex(hex: string): number {
+        const rgb = hexToRgb(hex);
+        if (!rgb) return 0;
+        return getRelativeLuminance(rgb);
+    }
+
+    function ensureOriginalTextColors() {
+        if (originalTextColors) return true;
+        const liteGraph = (window as any).LiteGraph;
+        if (!liteGraph) return false;
+        originalTextColors = {
+            NODE_TEXT_COLOR: liteGraph.NODE_TEXT_COLOR,
+            NODE_TITLE_COLOR: liteGraph.NODE_TITLE_COLOR,
+            NODE_SELECTED_TITLE_COLOR: liteGraph.NODE_SELECTED_TITLE_COLOR
+        };
+        return true;
+    }
+
+    function setCanvasTitleColor(value: string) {
+        const canvas = (window as any).app?.canvas;
+        if (canvas) {
+            canvas.node_title_color = value;
+        }
+    }
+
+    function updateGlobalTextContrast(luminance: number) {
+        const liteGraph = (window as any).LiteGraph;
+        if (!liteGraph) return;
+        if (!ensureOriginalTextColors()) return;
+
+        if (luminance > TEXT_CONTRAST_THRESHOLD) {
+            if (!contrastOverrideActive) {
+                liteGraph.NODE_TEXT_COLOR = DARK_TEXT_COLOR;
+                liteGraph.NODE_TITLE_COLOR = DARK_TEXT_COLOR;
+                liteGraph.NODE_SELECTED_TITLE_COLOR = DARK_SELECTED_TEXT_COLOR;
+                setCanvasTitleColor(DARK_TEXT_COLOR);
+                contrastOverrideActive = true;
+            }
+        } else if (contrastOverrideActive && originalTextColors) {
+            liteGraph.NODE_TEXT_COLOR = originalTextColors.NODE_TEXT_COLOR;
+            liteGraph.NODE_TITLE_COLOR = originalTextColors.NODE_TITLE_COLOR;
+            liteGraph.NODE_SELECTED_TITLE_COLOR = originalTextColors.NODE_SELECTED_TITLE_COLOR;
+            setCanvasTitleColor(originalTextColors.NODE_TITLE_COLOR);
+            contrastOverrideActive = false;
+        }
+    }
+
     function getRelativeLuminance(rgb: { r: number; g: number; b: number }): number {
         const channel = (value: number) => {
             const v = value / 255;
@@ -726,44 +866,59 @@ function initializeAlignmentPanel() {
         return 0.2126 * channel(rgb.r) + 0.7152 * channel(rgb.g) + 0.0722 * channel(rgb.b);
     }
 
-    function getContrastingTextColor(hex: string): string {
-        const rgb = hexToRgb(hex);
-        if (!rgb) return '#1a1a1a';
-        const luminance = getRelativeLuminance(rgb);
-        return luminance > 0.5 ? '#1a1a1a' : '#f5f5f5';
+    function ensureSeparation(base: string, candidate: string, step: number, maxIterations = 6) {
+        let result = candidate;
+        let attempts = 0;
+        while (Math.abs(luminanceFromHex(base) - luminanceFromHex(result)) < 0.08 && attempts < maxIterations) {
+            const adjusted = adjustLightness(result, step);
+            if (adjusted === result) break;
+            result = adjusted;
+            attempts += 1;
+        }
+        return result;
     }
 
     function buildColorOption(hex: string) {
         const sanitized = hex.startsWith('#') ? hex : `#${hex}`;
-        const textColor = getContrastingTextColor(sanitized);
+        const base = sanitized;
+
+        let bgcolor = base;
+        let color = adjustLightness(base, -0.18);
+        let groupcolor = adjustLightness(base, 0.16);
+
+        color = ensureSeparation(bgcolor, color, -0.08);
+        groupcolor = ensureSeparation(bgcolor, groupcolor, 0.08);
+
         return {
-            color: textColor,
-            bgcolor: sanitized,
-            groupcolor: sanitized
+            color,
+            bgcolor,
+            groupcolor
         };
     }
 
     function applyColorToSelection(hex: string) {
-        if (!selectedNodes.length) {
-            showMessage('Select nodes to apply color', 'warning');
+        const targets = [...selectedNodes, ...selectedGroups];
+        if (!targets.length) {
+            showMessage('Select nodes or groups to apply color', 'warning');
             return;
         }
 
         const colorOption = buildColorOption(hex);
+        updateGlobalTextContrast(luminanceFromHex(colorOption.bgcolor));
         const graphs = new Set<any>();
-        selectedNodes.forEach((node: any) => {
-            if (node?.graph) graphs.add(node.graph);
+        targets.forEach((item: any) => {
+            if (item?.graph) graphs.add(item.graph);
         });
 
         graphs.forEach(graph => graph?.beforeChange?.());
 
-        selectedNodes.forEach((node: any) => {
-            if (typeof node.setColorOption === 'function') {
-                node.setColorOption(colorOption);
+        targets.forEach((item: any) => {
+            if (typeof item.setColorOption === 'function') {
+                item.setColorOption(colorOption);
             } else {
-                node.color = colorOption.color;
-                node.bgcolor = colorOption.bgcolor;
-                node.groupcolor = colorOption.groupcolor;
+                item.color = colorOption.color;
+                item.bgcolor = colorOption.bgcolor;
+                item.groupcolor = colorOption.groupcolor;
             }
         });
 
@@ -788,15 +943,18 @@ function initializeAlignmentPanel() {
     }
 
     function createColorChip(hex: string, interactive = true) {
+        const optionPreview = buildColorOption(hex);
+        const labelHex = optionPreview.bgcolor.toUpperCase();
         const element = document.createElement(interactive ? 'button' : 'div') as HTMLButtonElement | HTMLDivElement;
         if (interactive) {
             (element as HTMLButtonElement).type = 'button';
-            element.setAttribute('aria-label', `Apply color ${hex.toUpperCase()}`);
-            element.title = `Apply color ${hex.toUpperCase()}`;
+            element.setAttribute('aria-label', `Apply color ${labelHex}`);
+            element.title = `Apply color ${labelHex}`;
         }
         element.className = 'hk-color-chip';
-        element.style.background = hex;
-        element.dataset.colorHex = hex;
+        element.style.background = optionPreview.bgcolor;
+        element.style.borderColor = optionPreview.color;
+        element.dataset.colorHex = optionPreview.bgcolor;
         if (interactive) {
             attachColorChipHandlers(element as HTMLButtonElement, hex);
         }
@@ -1606,10 +1764,14 @@ function initializeAlignmentPanel() {
     function updateSelectedNodes() {
         if (!window.app?.graph) return;
         
-        const allNodes = Object.values(window.app.graph._nodes || {});
+        const graph = window.app.graph;
+        const allNodes = Object.values(graph._nodes || {});
         selectedNodes = allNodes.filter((node: any) => node && node.is_selected);
+        const allGroups = Array.isArray(graph._groups) ? graph._groups : [];
+        selectedGroups = allGroups.filter((group: any) => group && group.selected);
         
         const hasSelectedNodes = selectedNodes.length > 1;
+        const totalSelections = selectedNodes.length + selectedGroups.length;
 
         if (!hasSelectedNodes) {
             hidePreview();
@@ -1620,19 +1782,24 @@ function initializeAlignmentPanel() {
         }
 
         if (infoPanel) {
-            if (selectedNodes.length === 0) {
+            if (totalSelections === 0) {
                 infoPanel.innerHTML = `
                     Select multiple nodes to enable alignment
                     <small>Basic: Ctrl+Shift+Arrows · Flow: Ctrl+Alt+→/↓ · Toggle: Ctrl+Shift+H</small>
                 `;
-            } else if (selectedNodes.length === 1) {
+            } else if (selectedNodes.length === 0 && selectedGroups.length > 0) {
+                infoPanel.innerHTML = `
+                    ${selectedGroups.length} group${selectedGroups.length === 1 ? '' : 's'} selected
+                    <small>Click a palette color to recolor the group</small>
+                `;
+            } else if (selectedNodes.length === 1 && selectedGroups.length === 0) {
                 infoPanel.innerHTML = `
                     Select additional nodes to align
                     <small>Tip: Hold Shift and click to add more nodes</small>
                 `;
             } else {
                 infoPanel.innerHTML = `
-                    ${selectedNodes.length} nodes selected · ready to align
+                    ${selectedNodes.length} node${selectedNodes.length === 1 ? '' : 's'} selected${selectedGroups.length ? ` · ${selectedGroups.length} group${selectedGroups.length === 1 ? '' : 's'} selected` : ''} 
                     <small>Try H-Flow/V-Flow for smart layout</small>
                 `;
             }
