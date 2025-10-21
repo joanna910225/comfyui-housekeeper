@@ -235,7 +235,7 @@ function initializeAlignmentPanel() {
     --hk-text-muted: rgba(232, 243, 255, 0.74);
     --hk-top-offset: 48px;
     --hk-panel-max-height: calc(100vh - 96px);
-    --hk-panel-width: clamp(240px, 20vw, min(360px, calc(100vw - 24px)));
+    --hk-panel-width: clamp(270px, 18vw, min(270px, calc(100vw - 24px)));
     --hk-button-size: clamp(34px, 7vw, 40px);
     --hk-icon-size: clamp(16px, 4vw, 20px);
     --hk-button-gap: clamp(4px, 1vw, 8px);
@@ -267,26 +267,30 @@ function initializeAlignmentPanel() {
     border: 1px solid var(--hk-panel-border);
     background: var(--hk-handle-bg);
     color: var(--hk-accent);
-    border-radius: clamp(8px, 1.5vw, 14px) 0 0 clamp(8px, 1.5vw, 14px);
-    padding: clamp(6px, 1.2vh, 12px) clamp(4px, 1vw, 8px) clamp(4px, 0.8vh, 6px);
+    border-radius: clamp(8px, 1.5vw, 12px) 0 0 clamp(8px, 1.5vw, 12px);
+    padding: clamp(6px, 1.2vh, 10px) clamp(2px, 0.5vw, 4px) clamp(4px, 0.8vh, 6px) clamp(6px, 1.2vw, 9px);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: clamp(6px, 1.2vh, 10px);
+    gap: clamp(6px, 1.2vh, 8px);
     cursor: pointer;
     width: clamp(32px, 4vw, 48px);
-    min-height: clamp(100px, 18vh, 160px);
+    max-width: 44px;
+    min-height: clamp(100px, 18vh, 140px);
+    max-height: 140px;
     transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
     font-family: 'Gloria Hallelujah', cursive;
-    font-size: clamp(10px, 1.4vw, 13px);
+    font-size: clamp(10px, 1.4vw, 12px);
     letter-spacing: 0.08em;
     background-image: linear-gradient(160deg, rgba(139, 195, 243, 0.12), rgba(139, 195, 243, 0.05));
     margin-right: -4px;
 }
 
 .housekeeper-handle img {
-    width: clamp(18px, 2.5vw, 26px);
-    height: clamp(18px, 2.5vw, 26px);
+    width: clamp(18px, 2.5vw, 24px);
+    height: clamp(18px, 2.5vw, 24px);
+    max-width: 24px;
+    max-height: 24px;
 }
 
 .housekeeper-handle span {
@@ -312,8 +316,8 @@ function initializeAlignmentPanel() {
     width: var(--hk-panel-width);
     background: var(--hk-panel-bg);
     border: 1px solid var(--hk-panel-border);
-    border-radius: 18px;
-    padding: clamp(10px, 1.2vw, 14px) clamp(10px, 1.2vw, 14px);
+    border-radius: 10px;
+    padding: clamp(8px, 1vw, 10px) clamp(10px, 1.2vw, 14px);
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
     color: var(--hk-text-strong);
     font-family: 'Gloria Hallelujah', cursive;
@@ -501,7 +505,7 @@ function initializeAlignmentPanel() {
 .housekeeper-color-recent {
     display: flex;
     flex-wrap: nowrap;
-    gap: 3px;
+    gap: 4px;
     width: 100%;
     justify-content: flex-start;
 }
@@ -623,10 +627,19 @@ function initializeAlignmentPanel() {
     color: var(--hk-text-muted);
 }
 
+.housekeeper-palette-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+}
+
 .housekeeper-color-strip {
     flex: 1;
     flex-wrap: nowrap;
     justify-content: center;
+    min-width: 0;
 }
 
 .housekeeper-color-footer {
@@ -642,8 +655,9 @@ function initializeAlignmentPanel() {
 }
 
 .hk-palette-arrow {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
     border-radius: 6px;
     border: 1px solid rgba(139, 195, 243, 0.35);
     background: rgba(139, 195, 243, 0.12);
@@ -668,9 +682,9 @@ function initializeAlignmentPanel() {
 }
 
 .hk-color-chip {
-    flex: 0 0 calc((100% - 24px) / 9);
-    width: calc((100% - 24px) / 9);
-    aspect-ratio: 1 / 1;
+    flex: 0 0 16px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
     border: none;
     padding: 0;
@@ -1475,24 +1489,29 @@ function initializeAlignmentPanel() {
         const paletteTitle = document.createElement('span');
         paletteTitle.textContent = 'Preset palettes';
         paletteHeader.appendChild(paletteTitle);
+        colorSection.appendChild(paletteHeader);
+
+        const paletteRowWrapper = document.createElement('div');
+        paletteRowWrapper.className = 'housekeeper-palette-row';
 
         const prevPaletteButton = document.createElement('button');
         prevPaletteButton.type = 'button';
         prevPaletteButton.className = 'hk-palette-arrow hk-palette-arrow-prev';
         prevPaletteButton.innerHTML = '&#9664;';
-        paletteHeader.appendChild(prevPaletteButton);
+        paletteRowWrapper.appendChild(prevPaletteButton);
+
+        const paletteStrip = document.createElement('div');
+        paletteStrip.className = 'housekeeper-color-strip';
+        paletteStrip.setAttribute('role', 'group');
+        paletteRowWrapper.appendChild(paletteStrip);
 
         const nextPaletteButton = document.createElement('button');
         nextPaletteButton.type = 'button';
         nextPaletteButton.className = 'hk-palette-arrow hk-palette-arrow-next';
         nextPaletteButton.innerHTML = '&#9654;';
-        paletteHeader.appendChild(nextPaletteButton);
-        colorSection.appendChild(paletteHeader);
+        paletteRowWrapper.appendChild(nextPaletteButton);
 
-        const paletteStrip = document.createElement('div');
-        paletteStrip.className = 'housekeeper-color-strip';
-        paletteStrip.setAttribute('role', 'group');
-        colorSection.appendChild(paletteStrip);
+        colorSection.appendChild(paletteRowWrapper);
 
         const updatePaletteArrowLabels = () => {
             const total = harmonyColorSets.length;
