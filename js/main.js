@@ -435,7 +435,7 @@ function Ee() {
     --hk-text-muted: rgba(232, 243, 255, 0.74);
     --hk-top-offset: 48px;
     --hk-panel-max-height: calc(100vh - 96px);
-    --hk-panel-width: min(20vw, 360px, calc(100vw - 24px));
+    --hk-panel-width: clamp(240px, 20vw, min(360px, calc(100vw - 24px)));
     --hk-button-size: clamp(34px, 7vw, 40px);
     --hk-icon-size: clamp(16px, 4vw, 20px);
     --hk-button-gap: clamp(4px, 1vw, 8px);
@@ -738,7 +738,7 @@ function Ee() {
 .housekeeper-custom-inline {
     display: flex;
     align-items: center;
-    gap: clamp(6px, 1.5vw, 12px);
+    gap: clamp(4px, 0.8vw, 6px);
     margin-top: clamp(8px, 1.5vh, 12px);
 }
 
