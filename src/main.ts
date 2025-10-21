@@ -345,9 +345,9 @@ function initializeAlignmentPanel() {
     scrollbar-gutter: stable;
 }
 
-.housekeeper-content > * + * {
-    margin-top: clamp(6px, 1vw, 12px);
-}
+// .housekeeper-content > * + * {
+//     margin-top: clamp(6px, 1vw, 12px);
+// }
 
 .housekeeper-header {
     display: flex;
@@ -415,18 +415,25 @@ function initializeAlignmentPanel() {
     color: var(--hk-text-muted);
 }
 
+.housekeeper-palette-header,
+.housekeeper-custom-inline,
+.housekeeper-color-section-title {
+    font-size: var(--hk-subtitle-font-size);
+    color: var(--hk-text-muted);
+}
+
 .housekeeper-button-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--hk-button-gap);
-    padding: clamp(4px, 0.8vw, 6px);
+    // gap: var(--hk-button-gap);
+    // padding: clamp(4px, 0.8vw, 6px);
     border-radius: 12px;
     border: 1px solid rgba(139, 195, 243, 0.35);
     background: rgba(22, 24, 29, 0.6);
     justify-content: flex-start;
     align-items: center;
     width: 100%;
-    --hk-button-unit: min(var(--hk-button-size), calc((100% - 5 * var(--hk-button-gap)) / 6));
+    --hk-button-unit: calc(100% / 6);
 }
 
 .hk-button {
@@ -490,30 +497,13 @@ function initializeAlignmentPanel() {
 }
 
 .housekeeper-color-strip,
-.housekeeper-color-footer {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 10px;
-    border: 1px solid rgba(139, 195, 243, 0.35);
-    border-radius: 10px;
-    background: rgba(22, 24, 29, 0.6);
-    width: 100%;
-}
-
+.housekeeper-color-footer,
 .housekeeper-color-recent {
-    display: grid;
-    grid-template-columns: repeat(9, minmax(0, 1fr));
-    gap: 6px;
-    padding: 6px 10px;
-    border: 1px solid rgba(139, 195, 243, 0.35);
-    border-radius: 10px;
-    background: rgba(22, 24, 29, 0.6);
-}
-
-.housekeeper-color-recent .hk-color-chip {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 4px;
     width: 100%;
-    height: 26px;
+    justify-content: center;
 }
 
 .housekeeper-custom-row {
@@ -573,7 +563,7 @@ function initializeAlignmentPanel() {
     color: var(--hk-text-strong);
     font-family: 'Gloria Hallelujah', cursive;
     letter-spacing: 0.04em;
-    width: 90px;
+    width: 70px;
 }
 
 .hk-custom-hex-inline::placeholder {
@@ -608,10 +598,20 @@ function initializeAlignmentPanel() {
     outline-offset: 2px;
 }
 
+.housekeeper-palette-header {
+    display: flex;
+    align-items: center;
+    justify-content: left;
+    gap: 6px;
+    width: 100%;
+    margin: 4px 0;
+    color: var(--hk-text-muted);
+}
+
 .housekeeper-color-strip {
     flex: 1;
     flex-wrap: nowrap;
-    justify-content: space-between;
+    justify-content: center;
 }
 
 .housekeeper-color-footer {
@@ -627,19 +627,18 @@ function initializeAlignmentPanel() {
 }
 
 .hk-palette-arrow {
-    width: 24px;
-    height: 24px;
-    border-radius: 8px;
-    border: 1px solid rgba(139, 195, 243, 0.25);
+    width: 18px;
+    height: 18px;
+    border-radius: 6px;
+    border: 1px solid rgba(139, 195, 243, 0.35);
     background: rgba(139, 195, 243, 0.12);
     color: var(--hk-accent);
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: background 0.2s ease, transform 0.2s ease;
-    font-size: 14px;
-    flex-shrink: 0;
+    font-size: 11px;
     padding: 0;
 }
 
@@ -654,10 +653,11 @@ function initializeAlignmentPanel() {
 }
 
 .hk-color-chip {
-    width: 22px;
-    height: 22px;
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
-    border: 1px solid rgba(139, 195, 243, 0.4);
+    border: none;
     padding: 0;
     display: inline-flex;
     align-items: center;
@@ -669,18 +669,12 @@ function initializeAlignmentPanel() {
 
 .hk-color-chip:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
 }
 
 .hk-color-chip:focus-visible {
     outline: 2px solid var(--hk-accent);
     outline-offset: 2px;
-}
-
-.housekeeper-color-strip .hk-color-chip {
-    flex: 1;
-    min-width: 0;
-    max-width: calc((100% - 8 * 4px) / 9);
 }
 
 .housekeeper-color-custom-row {
@@ -1460,28 +1454,30 @@ function initializeAlignmentPanel() {
         };
 
         const colorSection = createSection();
-        colorSection.appendChild(createSubtitle('Preset palettes'));
-        const paletteCarousel = document.createElement('div');
-        paletteCarousel.className = 'housekeeper-color-carousel';
+        const paletteHeader = document.createElement('div');
+        paletteHeader.className = 'housekeeper-palette-header';
+        paletteHeader.classList.add('housekeeper-color-section-title');
+        const paletteTitle = document.createElement('span');
+        paletteTitle.textContent = 'Preset palettes';
+        paletteHeader.appendChild(paletteTitle);
 
         const prevPaletteButton = document.createElement('button');
         prevPaletteButton.type = 'button';
         prevPaletteButton.className = 'hk-palette-arrow hk-palette-arrow-prev';
         prevPaletteButton.innerHTML = '&#9664;';
-
-        const paletteStrip = document.createElement('div');
-        paletteStrip.className = 'housekeeper-color-strip';
-        paletteStrip.setAttribute('role', 'group');
+        paletteHeader.appendChild(prevPaletteButton);
 
         const nextPaletteButton = document.createElement('button');
         nextPaletteButton.type = 'button';
         nextPaletteButton.className = 'hk-palette-arrow hk-palette-arrow-next';
         nextPaletteButton.innerHTML = '&#9654;';
+        paletteHeader.appendChild(nextPaletteButton);
+        colorSection.appendChild(paletteHeader);
 
-        paletteCarousel.appendChild(prevPaletteButton);
-        paletteCarousel.appendChild(paletteStrip);
-        paletteCarousel.appendChild(nextPaletteButton);
-        colorSection.appendChild(paletteCarousel);
+        const paletteStrip = document.createElement('div');
+        paletteStrip.className = 'housekeeper-color-strip';
+        paletteStrip.setAttribute('role', 'group');
+        colorSection.appendChild(paletteStrip);
 
         const updatePaletteArrowLabels = () => {
             const total = harmonyColorSets.length;
@@ -1532,7 +1528,9 @@ function initializeAlignmentPanel() {
 
         colorSection.appendChild(customRow);
 
-        colorSection.appendChild(createSubtitle('Recent colors'));
+        const recentTitle = createSubtitle('Recent colors');
+        recentTitle.classList.add('housekeeper-color-section-title');
+        colorSection.appendChild(recentTitle);
         recentPaletteStrip = document.createElement('div');
         recentPaletteStrip.className = 'housekeeper-color-recent';
         renderRecentPalette();
