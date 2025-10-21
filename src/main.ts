@@ -235,7 +235,7 @@ function initializeAlignmentPanel() {
     --hk-text-muted: rgba(232, 243, 255, 0.74);
     --hk-top-offset: 48px;
     --hk-panel-max-height: calc(100vh - 96px);
-    --hk-panel-width: min(360px, calc(100vw - 24px));
+    --hk-panel-width: min(20vw, 360px, calc(100vw - 24px));
     --hk-button-size: clamp(34px, 7vw, 40px);
     --hk-icon-size: clamp(16px, 4vw, 20px);
     --hk-button-gap: clamp(4px, 1vw, 8px);
@@ -267,26 +267,26 @@ function initializeAlignmentPanel() {
     border: 1px solid var(--hk-panel-border);
     background: var(--hk-handle-bg);
     color: var(--hk-accent);
-    border-radius: 14px 0 0 14px;
-    padding: clamp(12px, 2vh, 16px) clamp(8px, 1.8vw, 10px);
+    border-radius: clamp(8px, 1.5vw, 14px) 0 0 clamp(8px, 1.5vw, 14px);
+    padding: clamp(6px, 1.2vh, 12px) clamp(4px, 1vw, 8px) clamp(4px, 0.8vh, 6px);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: clamp(10px, 2vh, 12px);
+    gap: clamp(6px, 1.2vh, 10px);
     cursor: pointer;
-    width: clamp(44px, 7vw, 48px);
-    min-height: clamp(140px, 32vh, 200px);
+    width: clamp(32px, 4vw, 48px);
+    min-height: clamp(100px, 18vh, 160px);
     transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
     font-family: 'Gloria Hallelujah', cursive;
-    font-size: clamp(12px, 2vw, 13px);
+    font-size: clamp(10px, 1.4vw, 13px);
     letter-spacing: 0.08em;
     background-image: linear-gradient(160deg, rgba(139, 195, 243, 0.12), rgba(139, 195, 243, 0.05));
     margin-right: -4px;
 }
 
 .housekeeper-handle img {
-    width: 26px;
-    height: 26px;
+    width: clamp(18px, 2.5vw, 26px);
+    height: clamp(18px, 2.5vw, 26px);
 }
 
 .housekeeper-handle span {
