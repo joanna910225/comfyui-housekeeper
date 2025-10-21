@@ -546,7 +546,6 @@ function Ee() {
     flex: 1;
     overflow-y: auto;
     padding: 0;
-    scrollbar-gutter: stable;
 }
 
 // .housekeeper-content > * + * {
@@ -708,6 +707,10 @@ function Ee() {
     gap: 4px;
     width: 100%;
     justify-content: flex-start;
+}
+
+.housekeeper-color-recent {
+    justify-content: center;
 }
 
 .housekeeper-custom-row {
