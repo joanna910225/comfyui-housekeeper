@@ -244,14 +244,16 @@ function initializeAlignmentPanel() {
     --hk-subtitle-font-size: clamp(11px, 1.3vw, 13px);
 }
 
+
 .housekeeper-wrapper {
     position: fixed;
     top: var(--hk-top-offset);
-    right: clamp(8px, 2vw, 16px);
+    right: 0;
     display: flex;
     flex-direction: row-reverse;
     align-items: flex-start;
-    gap: 12px;
+    gap: 8px;
+    padding-right: 4px;
     z-index: 1000;
     pointer-events: none;
 }
@@ -279,6 +281,7 @@ function initializeAlignmentPanel() {
     font-size: clamp(12px, 2vw, 13px);
     letter-spacing: 0.08em;
     background-image: linear-gradient(160deg, rgba(139, 195, 243, 0.12), rgba(139, 195, 243, 0.05));
+    margin-right: -4px;
 }
 
 .housekeeper-handle img {
