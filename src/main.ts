@@ -345,7 +345,7 @@ function initializeAlignmentPanel() {
     gap: 0;
     flex: 1;
     overflow-y: auto;
-    padding: 0;
+    padding: 0 0 8px 0;
 }
 
 // .housekeeper-content > * + * {
@@ -379,11 +379,22 @@ function initializeAlignmentPanel() {
     font-size: 24px;
     cursor: pointer;
     line-height: 1;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
     transition: transform 0.2s ease;
 }
 
+.housekeeper-close img {
+    width: 24px;
+    height: 24px;
+}
+
 .housekeeper-close:hover {
-    transform: scale(1.1);
+    opacity: 0.7;
 }
 
 .housekeeper-divider {
@@ -430,7 +441,7 @@ function initializeAlignmentPanel() {
     flex-wrap: wrap;
     // gap: var(--hk-button-gap);
     // padding: clamp(4px, 0.8vw, 6px);
-    border-radius: 12px;
+    border-radius: 8px;
     border: 1px solid rgba(139, 195, 243, 0.35);
     background: rgba(22, 24, 29, 0.6);
     justify-content: flex-start;
@@ -556,14 +567,28 @@ function initializeAlignmentPanel() {
 }
 
 .hk-custom-inline-picker {
-    width: clamp(36px, 8vw, 48px);
-    height: clamp(28px, 5vh, 36px);
-    min-width: 36px;
-    min-height: 28px;
+    width: 24px;
+    height: 24px;
     padding: 0;
     border: none;
     background: transparent;
     cursor: pointer;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.hk-custom-inline-picker::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.hk-custom-inline-picker::-webkit-color-swatch {
+    border: none;
+    border-radius: 4px;
+}
+
+.hk-custom-inline-picker::-moz-color-swatch {
+    border: none;
+    border-radius: 4px;
 }
 
 .hk-custom-hex-inline {
@@ -594,17 +619,15 @@ function initializeAlignmentPanel() {
     border: 1px solid rgba(139, 195, 243, 0.35);
     background: rgba(139, 195, 243, 0.12);
     color: var(--hk-accent);
-    border-radius: clamp(6px, 1vw, 8px);
+    border-radius: 6px;
     padding: 0;
-    width: clamp(28px, 5vw, 36px);
-    height: clamp(28px, 5vh, 36px);
-    min-width: 28px;
-    min-height: 28px;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: clamp(16px, 2.5vw, 20px);
+    font-size: 16px;
     font-weight: bold;
     line-height: 1;
     transition: background 0.2s ease, transform 0.2s ease;

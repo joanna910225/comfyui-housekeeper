@@ -1,5 +1,5 @@
 import { app as G0 } from "../../../scripts/app.js";
-import { ComponentWidgetImpl as Y0, addWidget as j0 } from "../../../scripts/domWidget.js";
+import { ComponentWidgetImpl as j0, addWidget as Y0 } from "../../../scripts/domWidget.js";
 import { defineComponent as T2, ref as a2, resolveDirective as W0, createElementBlock as _2, openBlock as b2, Fragment as d0, createElementVNode as u2, withDirectives as X0, createVNode as Z2, createBlock as g0, unref as t2, normalizeClass as C0, withCtx as q2, createTextVNode as m0, toDisplayString as S2, renderList as U0, normalizeStyle as K0, onMounted as w0, nextTick as q0 } from "vue";
 import J2 from "primevue/button";
 import { useI18n as b0 } from "vue-i18n";
@@ -17,7 +17,7 @@ const J0 = { class: "toolbar" }, Q0 = { class: "color-picker" }, ee = { class: "
     function V(b) {
       R.value = b, C("tool-change", b);
     }
-    function Y(b) {
+    function j(b) {
       U.value = b, C("color-change", b);
     }
     function G() {
@@ -33,7 +33,7 @@ const J0 = { class: "toolbar" }, Q0 = { class: "color-picker" }, ee = { class: "
         u2("div", J0, [
           X0((b2(), g0(t2(J2), {
             class: C0({ active: R.value === "pen" }),
-            onClick: z[0] || (z[0] = (j) => V("pen"))
+            onClick: z[0] || (z[0] = (Y) => V("pen"))
           }, {
             default: q2(() => [
               m0(S2(t2(_)("vue-basic.pen")), 1)
@@ -50,17 +50,17 @@ const J0 = { class: "toolbar" }, Q0 = { class: "color-picker" }, ee = { class: "
           })
         ]),
         u2("div", Q0, [
-          (b2(!0), _2(d0, null, U0(t2(i2), (j, W) => (b2(), g0(t2(J2), {
+          (b2(!0), _2(d0, null, U0(t2(i2), (Y, W) => (b2(), g0(t2(J2), {
             key: W,
-            class: C0({ "color-button": !0, active: U.value === j }),
-            onClick: (g2) => Y(j),
+            class: C0({ "color-button": !0, active: U.value === Y }),
+            onClick: (g2) => j(Y),
             type: "button",
-            title: j
+            title: Y
           }, {
             default: q2(() => [
               u2("i", {
                 class: "pi pi-circle-fill",
-                style: K0({ color: j })
+                style: K0({ color: Y })
               }, null, 4)
             ]),
             _: 2
@@ -73,7 +73,7 @@ const J0 = { class: "toolbar" }, Q0 = { class: "color-picker" }, ee = { class: "
             min: "1",
             max: "50",
             value: I.value,
-            onChange: z[1] || (z[1] = (j) => k(j))
+            onChange: z[1] || (z[1] = (Y) => k(Y))
           }, null, 40, te)
         ])
       ], 64);
@@ -94,7 +94,7 @@ const J0 = { class: "toolbar" }, Q0 = { class: "color-picker" }, ee = { class: "
   },
   emits: ["mounted", "drawing-start", "drawing", "drawing-end", "state-save", "canvas-clear"],
   setup(A, { expose: B, emit: _ }) {
-    const D = A, C = D.width || 800, i2 = D.height || 500, U = D.initialColor || "#000000", I = D.initialBrushSize || 5, R = _, V = a2(!1), Y = a2(0), G = a2(0), k = a2(null), b = a2(!1), z = a2(I), h2 = a2(U), j = a2(null), W = a2(null);
+    const D = A, C = D.width || 800, i2 = D.height || 500, U = D.initialColor || "#000000", I = D.initialBrushSize || 5, R = _, V = a2(!1), j = a2(0), G = a2(0), k = a2(null), b = a2(!1), z = a2(I), h2 = a2(U), Y = a2(null), W = a2(null);
     w0(() => {
       W.value && (k.value = W.value.getContext("2d"), g2(), q0(() => {
         W.value && R("mounted", W.value);
@@ -109,7 +109,7 @@ const J0 = { class: "toolbar" }, Q0 = { class: "color-picker" }, ee = { class: "
     function y2(O) {
       V.value = !0;
       const { offsetX: J, offsetY: Q } = K(O);
-      Y.value = J, G.value = Q, k.value && (k.value.beginPath(), k.value.moveTo(Y.value, G.value), k.value.arc(Y.value, G.value, z.value / 2, 0, Math.PI * 2), k.value.fill(), R("drawing-start", {
+      j.value = J, G.value = Q, k.value && (k.value.beginPath(), k.value.moveTo(j.value, G.value), k.value.arc(j.value, G.value, z.value / 2, 0, Math.PI * 2), k.value.fill(), R("drawing-start", {
         x: J,
         y: Q,
         tool: b.value ? "eraser" : "pen"
@@ -118,7 +118,7 @@ const J0 = { class: "toolbar" }, Q0 = { class: "color-picker" }, ee = { class: "
     function C2(O) {
       if (!V.value || !k.value) return;
       const { offsetX: J, offsetY: Q } = K(O);
-      k.value.beginPath(), k.value.moveTo(Y.value, G.value), k.value.lineTo(J, Q), k.value.stroke(), Y.value = J, G.value = Q, R("drawing", {
+      k.value.beginPath(), k.value.moveTo(j.value, G.value), k.value.lineTo(J, Q), k.value.stroke(), j.value = J, G.value = Q, R("drawing", {
         x: J,
         y: Q,
         tool: b.value ? "eraser" : "pen"
@@ -165,12 +165,12 @@ const J0 = { class: "toolbar" }, Q0 = { class: "color-picker" }, ee = { class: "
       k.value && (k.value.fillStyle = "#ffffff", k.value.fillRect(0, 0, C, i2), p2(), z2(), R("canvas-clear"));
     }
     function z2() {
-      W.value && (j.value = W.value.toDataURL("image/png"), j.value && R("state-save", j.value));
+      W.value && (Y.value = W.value.toDataURL("image/png"), Y.value && R("state-save", Y.value));
     }
     async function G2() {
       if (!W.value)
         throw new Error("Canvas is unable to get current data");
-      return j.value ? j.value : W.value.toDataURL("image/png");
+      return Y.value ? Y.value : W.value.toDataURL("image/png");
     }
     return B({
       setTool: R2,
@@ -207,24 +207,24 @@ const J0 = { class: "toolbar" }, Q0 = { class: "color-picker" }, ee = { class: "
   },
   emits: ["tool-change", "color-change", "brush-size-change", "drawing-start", "drawing", "drawing-end", "state-save", "mounted"],
   setup(A, { expose: B, emit: _ }) {
-    const D = A, C = D.width || 800, i2 = D.height || 500, U = D.initialColor || "#000000", I = D.initialBrushSize || 5, R = D.availableColors || ["#000000", "#ff0000", "#0000ff", "#00ff00", "#ffff00", "#ff00ff", "#00ffff"], V = _, Y = a2(null), G = a2(null);
+    const D = A, C = D.width || 800, i2 = D.height || 500, U = D.initialColor || "#000000", I = D.initialBrushSize || 5, R = D.availableColors || ["#000000", "#ff0000", "#0000ff", "#00ff00", "#ffff00", "#ff00ff", "#00ffff"], V = _, j = a2(null), G = a2(null);
     function k(F) {
       var K;
-      (K = Y.value) == null || K.setTool(F), V("tool-change", F);
+      (K = j.value) == null || K.setTool(F), V("tool-change", F);
     }
     function b(F) {
       var K;
-      (K = Y.value) == null || K.setColor(F), V("color-change", F);
+      (K = j.value) == null || K.setColor(F), V("color-change", F);
     }
     function z(F) {
       var K;
-      (K = Y.value) == null || K.setBrushSize(F), V("brush-size-change", F);
+      (K = j.value) == null || K.setBrushSize(F), V("brush-size-change", F);
     }
     function h2() {
       var F;
-      (F = Y.value) == null || F.clearCanvas();
+      (F = j.value) == null || F.clearCanvas();
     }
-    function j(F) {
+    function Y(F) {
       V("drawing-start", F);
     }
     function W(F) {
@@ -242,9 +242,9 @@ const J0 = { class: "toolbar" }, Q0 = { class: "color-picker" }, ee = { class: "
     async function C2() {
       if (G.value)
         return G.value;
-      if (Y.value)
+      if (j.value)
         try {
-          return await Y.value.getCurrentCanvasData();
+          return await j.value.getCurrentCanvasData();
         } catch (F) {
           throw console.error("unable to get canvas data:", F), new Error("unable to get canvas data");
         }
@@ -264,12 +264,12 @@ const J0 = { class: "toolbar" }, Q0 = { class: "color-picker" }, ee = { class: "
       }, null, 8, ["colors", "initialColor", "initialBrushSize"]),
       Z2(le, {
         ref_key: "drawingBoard",
-        ref: Y,
+        ref: j,
         width: t2(C),
         height: t2(i2),
         initialColor: t2(U),
         initialBrushSize: t2(I),
-        onDrawingStart: j,
+        onDrawingStart: Y,
         onDrawing: W,
         onDrawingEnd: g2,
         onStateSave: p2,
@@ -293,7 +293,7 @@ const J0 = { class: "toolbar" }, Q0 = { class: "color-picker" }, ee = { class: "
       try {
         if (!((R = window.app) != null && R.api))
           throw new Error("ComfyUI API not available");
-        const V = await fetch(U).then((z) => z.blob()), Y = `${I}_${Date.now()}.png`, G = new File([V], Y), k = new FormData();
+        const V = await fetch(U).then((z) => z.blob()), j = `${I}_${Date.now()}.png`, G = new File([V], j), k = new FormData();
         return k.append("image", G), k.append("subfolder", "threed"), k.append("type", "temp"), console.log("Vue Component: Using window.app.api.fetchApi"), (await window.app.api.fetchApi("/upload/image", {
           method: "POST",
           body: k
@@ -336,14 +336,14 @@ y0.registerExtension({
         const _ = {
           name: "custom_vue_component_basic",
           type: "vue-basic"
-        }, D = new Y0({
+        }, D = new j0({
           node: B,
           name: _.name,
           component: ue,
           inputSpec: _,
           options: {}
         });
-        return j0(B, D), { widget: D };
+        return Y0(B, D), { widget: D };
       }
     };
   },
@@ -367,9 +367,9 @@ y0.registerExtension({
 });
 function Ee() {
   let A = null, B = null, _ = null, D = !1, C = [], i2 = [], U = [], I = 0;
-  const R = "housekeeper-recent-colors", V = 9, Y = ["#353535", "#3f5159", "#593930", "#335533", "#333355", "#335555", "#553355", "#665533", "#000000"];
+  const R = "housekeeper-recent-colors", V = 9, j = ["#353535", "#3f5159", "#593930", "#335533", "#333355", "#335555", "#553355", "#665533", "#000000"];
   let G = L0(), k = null, b = null, z = null;
-  const h2 = /* @__PURE__ */ new WeakMap(), j = /* @__PURE__ */ new WeakMap();
+  const h2 = /* @__PURE__ */ new WeakMap(), Y = /* @__PURE__ */ new WeakMap();
   let W = null, g2 = !1;
   const p2 = 48, y2 = 24;
   function C2() {
@@ -545,7 +545,7 @@ function Ee() {
     gap: 0;
     flex: 1;
     overflow-y: auto;
-    padding: 0;
+    padding: 0 0 8px 0;
 }
 
 // .housekeeper-content > * + * {
@@ -579,11 +579,22 @@ function Ee() {
     font-size: 24px;
     cursor: pointer;
     line-height: 1;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
     transition: transform 0.2s ease;
 }
 
+.housekeeper-close img {
+    width: 24px;
+    height: 24px;
+}
+
 .housekeeper-close:hover {
-    transform: scale(1.1);
+    opacity: 0.7;
 }
 
 .housekeeper-divider {
@@ -630,7 +641,7 @@ function Ee() {
     flex-wrap: wrap;
     // gap: var(--hk-button-gap);
     // padding: clamp(4px, 0.8vw, 6px);
-    border-radius: 12px;
+    border-radius: 8px;
     border: 1px solid rgba(139, 195, 243, 0.35);
     background: rgba(22, 24, 29, 0.6);
     justify-content: flex-start;
@@ -756,14 +767,28 @@ function Ee() {
 }
 
 .hk-custom-inline-picker {
-    width: clamp(36px, 8vw, 48px);
-    height: clamp(28px, 5vh, 36px);
-    min-width: 36px;
-    min-height: 28px;
+    width: 24px;
+    height: 24px;
     padding: 0;
     border: none;
     background: transparent;
     cursor: pointer;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.hk-custom-inline-picker::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.hk-custom-inline-picker::-webkit-color-swatch {
+    border: none;
+    border-radius: 4px;
+}
+
+.hk-custom-inline-picker::-moz-color-swatch {
+    border: none;
+    border-radius: 4px;
 }
 
 .hk-custom-hex-inline {
@@ -794,17 +819,15 @@ function Ee() {
     border: 1px solid rgba(139, 195, 243, 0.35);
     background: rgba(139, 195, 243, 0.12);
     color: var(--hk-accent);
-    border-radius: clamp(6px, 1vw, 8px);
+    border-radius: 6px;
     padding: 0;
-    width: clamp(28px, 5vw, 36px);
-    height: clamp(28px, 5vh, 36px);
-    min-width: 28px;
-    min-height: 28px;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: clamp(16px, 2.5vw, 20px);
+    font-size: 16px;
     font-weight: bold;
     line-height: 1;
     transition: background 0.2s ease, transform 0.2s ease;
@@ -1052,7 +1075,7 @@ function Ee() {
     let u = 0, f = 0, p = 0;
     return 0 <= i && i < 60 ? (u = o, f = n, p = 0) : 60 <= i && i < 120 ? (u = n, f = o, p = 0) : 120 <= i && i < 180 ? (u = 0, f = o, p = n) : 180 <= i && i < 240 ? (u = 0, f = n, p = o) : 240 <= i && i < 300 ? (u = n, f = 0, p = o) : (u = o, f = 0, p = n), x0((u + l) * 255, (f + l) * 255, (p + l) * 255);
   }
-  function Y2(i, t) {
+  function j2(i, t) {
     const a = t0(i);
     if (!a) return i;
     const o = Math.max(0, Math.min(1, a.l + t));
@@ -1086,7 +1109,7 @@ function Ee() {
         const n = t[o], l = (n == null ? void 0 : n.bgcolor) || (n == null ? void 0 : n.color) || (n == null ? void 0 : n.groupcolor), u = f2(l);
         if (u && !i.includes(u) && i.push(u), i.length >= V) break;
       }
-    return i.length || Y.forEach((o) => {
+    return i.length || j.forEach((o) => {
       const n = f2(o);
       n && !i.includes(n) && i.length < V && i.push(n);
     }), i.slice(0, V);
@@ -1131,7 +1154,7 @@ function Ee() {
     const t = f2(i);
     t && (G = [t, ...G.filter((a) => a !== t)], G.length > V && (G.length = V), E0(G), a0(), s0(t));
   }
-  function j2(i) {
+  function Y2(i) {
     const t = f2(i);
     t && (l0(t), E2());
   }
@@ -1152,7 +1175,7 @@ function Ee() {
   function n0(i, t, a, o = 6) {
     let n = t, l = 0;
     for (; Math.abs(L2(i) - L2(n)) < 0.08 && l < o; ) {
-      const u = Y2(n, a);
+      const u = j2(n, a);
       if (u === n) break;
       n = u, l += 1;
     }
@@ -1160,7 +1183,7 @@ function Ee() {
   }
   function x2(i) {
     const a = i.startsWith("#") ? i : `#${i}`;
-    let o = M0(a), n = Y2(o, -0.16), l = Y2(o, 0.12);
+    let o = M0(a), n = j2(o, -0.16), l = j2(o, 0.12);
     return n = n0(o, n, -0.08), l = n0(o, l, 0.08), {
       color: n,
       bgcolor: o,
@@ -1336,7 +1359,7 @@ function Ee() {
     X.type = "button", X.className = "hk-custom-apply-inline", X.textContent = "✓", X.setAttribute("aria-label", "Apply custom color"), X.title = "Apply custom color", r2.appendChild(X), x.appendChild(r2);
     const s = J("Recent colors");
     s.classList.add("housekeeper-color-section-title"), x.appendChild(s), k = document.createElement("div"), k.className = "housekeeper-color-recent", a0(), x.appendChild(k);
-    const c = G[0] || Y[0];
+    const c = G[0] || j[0];
     s0(c);
     const L = (T, o2) => {
       const c2 = f2(T);
@@ -1344,10 +1367,10 @@ function Ee() {
       const P2 = x2(c2);
       V2(P2), X2(P2);
     };
-    b == null || b.addEventListener("input", () => L(b.value, "color")), b == null || b.addEventListener("change", () => j2(b.value)), b == null || b.addEventListener("click", () => V2(x2(b.value))), b == null || b.addEventListener("blur", () => E2()), z == null || z.addEventListener("input", () => L(z.value, "text")), z == null || z.addEventListener("keydown", (T) => {
-      T.key === "Enter" && (T.preventDefault(), j2(z.value));
+    b == null || b.addEventListener("input", () => L(b.value, "color")), b == null || b.addEventListener("change", () => Y2(b.value)), b == null || b.addEventListener("click", () => V2(x2(b.value))), b == null || b.addEventListener("blur", () => E2()), z == null || z.addEventListener("input", () => L(z.value, "text")), z == null || z.addEventListener("keydown", (T) => {
+      T.key === "Enter" && (T.preventDefault(), Y2(z.value));
     }), z == null || z.addEventListener("blur", () => E2());
-    const E = () => j2((z == null ? void 0 : z.value) || (b == null ? void 0 : b.value) || c);
+    const E = () => Y2((z == null ? void 0 : z.value) || (b == null ? void 0 : b.value) || c);
     X.addEventListener("click", () => E()), r2.addEventListener("keydown", (T) => {
       (T.metaKey || T.ctrlKey) && T.key.toLowerCase() === "enter" && (T.preventDefault(), E());
     }), r2.addEventListener("dblclick", () => E()), a.appendChild(o), a.appendChild(y), a.appendChild(m);
@@ -1576,7 +1599,7 @@ function Ee() {
           else if (i === "width-min")
             s2 = Math.min(...t.map((d) => d.size && Array.isArray(d.size) && d.size[0] ? d.size[0] : typeof d.width == "number" ? d.width : d.properties && typeof d.properties.width == "number" ? d.properties.width : 150));
           else if (i === "size-min") {
-            const d = j.get(e) || e.computeSize;
+            const d = Y.get(e) || e.computeSize;
             if (d)
               try {
                 const Z = d.call(e);
@@ -1588,7 +1611,7 @@ function Ee() {
           if (i === "height-max" || i === "size-max")
             n2 = Math.max(...t.map((d) => d.size && Array.isArray(d.size) && d.size[1] ? d.size[1] : typeof d.height == "number" ? d.height : d.properties && typeof d.properties.height == "number" ? d.properties.height : 100));
           else if (i === "height-min") {
-            const d = Math.min(...t.map((H) => H.size && H.size[1] !== void 0 ? H.size[1] : typeof H.height == "number" ? H.height : H.properties && typeof H.properties.height == "number" ? H.properties.height : 100)), Z = j.get(e) || e.computeSize;
+            const d = Math.min(...t.map((H) => H.size && H.size[1] !== void 0 ? H.size[1] : typeof H.height == "number" ? H.height : H.properties && typeof H.properties.height == "number" ? H.properties.height : 100)), Z = Y.get(e) || e.computeSize;
             let l2 = null;
             if (Z)
               try {
@@ -1776,7 +1799,7 @@ function Ee() {
         case "height-min":
           C.forEach((s) => {
             if (s.size) {
-              const c = j.get(s) || s.computeSize;
+              const c = Y.get(s) || s.computeSize;
               if (c) {
                 const L = c.call(s);
                 s.size[1] = Math.max(e2, L[1]);
@@ -1792,7 +1815,7 @@ function Ee() {
         case "size-min":
           C.forEach((s) => {
             if (s.size) {
-              const c = j.get(s) || s.computeSize;
+              const c = Y.get(s) || s.computeSize;
               if (c) {
                 const L = c.call(s);
                 s.size[0] = L[0], s.size[1] = L[1];
