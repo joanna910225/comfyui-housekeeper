@@ -6,7 +6,8 @@ import { addWidget, ComponentWidgetImpl } from "../../../scripts/domWidget.js";
 import VueExampleComponent from "@/components/VueExampleComponent.vue";
 import NodeAlignmentPanel from "@/components/NodeAlignmentPanel.vue";
 
-import homeIconUrl from "../icons/home.svg?url";
+import homeIconUrl from "../icons/housekeeper.svg?url";
+import collapseIconUrl from "../icons/collapse.svg?url";
 import alignLeftIconUrl from "../icons/left.svg?url";
 import alignRightIconUrl from "../icons/right.svg?url";
 import alignTopIconUrl from "../icons/top.svg?url";
@@ -556,17 +557,16 @@ function initializeAlignmentPanel() {
     width: 48px;
     height: 32px;
     padding: 0;
-    border: 1px solid rgba(139, 195, 243, 0.35);
-    border-radius: 6px;
+    border: none;
     background: transparent;
     cursor: pointer;
 }
 
 .hk-custom-hex-inline {
-    background: rgba(34, 37, 45, 0.9);
-    border: 1px solid rgba(139, 195, 243, 0.35);
-    border-radius: 6px;
-    padding: 6px 8px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(139, 195, 243, 0.35);
+    padding: 4px 6px;
     color: var(--hk-text-strong);
     font-family: 'Gloria Hallelujah', cursive;
     letter-spacing: 0.04em;
@@ -582,6 +582,27 @@ function initializeAlignmentPanel() {
     height: 32px;
     border-radius: 8px;
     border: 1px solid rgba(139, 195, 243, 0.35);
+}
+
+.hk-custom-apply-inline {
+    border: 1px solid rgba(139, 195, 243, 0.35);
+    background: rgba(139, 195, 243, 0.12);
+    color: var(--hk-accent);
+    border-radius: 8px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.hk-custom-apply-inline:hover {
+    background: rgba(139, 195, 243, 0.25);
+    transform: translateY(-1px);
+}
+
+.hk-custom-apply-inline:focus-visible {
+    outline: 2px solid var(--hk-accent);
+    outline-offset: 2px;
 }
 
 .housekeeper-color-strip {
@@ -1402,7 +1423,11 @@ function initializeAlignmentPanel() {
         closeButton.type = 'button';
         closeButton.className = 'housekeeper-close';
         closeButton.setAttribute('aria-label', 'Hide Housekeeper panel');
-        closeButton.innerHTML = '&times;';
+        const closeIcon = document.createElement('img');
+        closeIcon.src = collapseIconUrl;
+        closeIcon.alt = '';
+        closeIcon.draggable = false;
+        closeButton.appendChild(closeIcon);
         closeButton.addEventListener('click', () => togglePanel(false));
 
         header.appendChild(headerTitle);
@@ -1496,6 +1521,12 @@ function initializeAlignmentPanel() {
         customHexInput.className = 'hk-custom-hex-inline';
         customRow.appendChild(customHexInput);
 
+        const customApplyButton = document.createElement('button');
+        customApplyButton.type = 'button';
+        customApplyButton.className = 'hk-custom-apply-inline';
+        customApplyButton.textContent = 'Apply';
+        customRow.appendChild(customApplyButton);
+
         colorSection.appendChild(customRow);
 
         colorSection.appendChild(createSubtitle('Recent colors'));
@@ -1534,6 +1565,8 @@ function initializeAlignmentPanel() {
         customHexInput?.addEventListener('blur', () => restorePreviewColors());
 
         const applyColor = () => commitCustomColor(customHexInput?.value || customColorInput?.value || initialCustomColor);
+        customApplyButton.addEventListener('click', () => applyColor());
+
         customRow.addEventListener('keydown', (event: KeyboardEvent) => {
             if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'enter') {
                 event.preventDefault();
