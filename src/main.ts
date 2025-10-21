@@ -501,9 +501,9 @@ function initializeAlignmentPanel() {
 .housekeeper-color-recent {
     display: flex;
     flex-wrap: nowrap;
-    gap: 4px;
+    gap: 3px;
     width: 100%;
-    justify-content: center;
+    justify-content: flex-start;
 }
 
 .housekeeper-custom-row {
@@ -653,9 +653,9 @@ function initializeAlignmentPanel() {
 }
 
 .hk-color-chip {
-    flex: 0 0 18px;
-    width: 18px;
-    height: 18px;
+    flex: 0 0 calc((100% - 24px) / 9);
+    width: calc((100% - 24px) / 9);
+    aspect-ratio: 1 / 1;
     border-radius: 50%;
     border: none;
     padding: 0;
