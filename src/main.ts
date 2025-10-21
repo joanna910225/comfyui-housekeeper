@@ -538,17 +538,21 @@ function initializeAlignmentPanel() {
 .housekeeper-custom-inline {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-top: 12px;
+    gap: clamp(6px, 1.5vw, 12px);
+    margin-top: clamp(8px, 1.5vh, 12px);
 }
 
 .housekeeper-custom-inline span {
     color: var(--hk-text-muted);
+    font-size: var(--hk-body-font-size);
+    white-space: nowrap;
 }
 
 .hk-custom-inline-picker {
-    width: 48px;
-    height: 32px;
+    width: clamp(36px, 8vw, 48px);
+    height: clamp(28px, 5vh, 36px);
+    min-width: 36px;
+    min-height: 28px;
     padding: 0;
     border: none;
     background: transparent;
@@ -563,7 +567,9 @@ function initializeAlignmentPanel() {
     color: var(--hk-text-strong);
     font-family: 'Gloria Hallelujah', cursive;
     letter-spacing: 0.04em;
-    width: 70px;
+    width: clamp(60px, 12vw, 80px);
+    flex: 1;
+    min-width: 60px;
 }
 
 .hk-custom-hex-inline::placeholder {
@@ -581,10 +587,19 @@ function initializeAlignmentPanel() {
     border: 1px solid rgba(139, 195, 243, 0.35);
     background: rgba(139, 195, 243, 0.12);
     color: var(--hk-accent);
-    border-radius: 8px;
-    padding: 4px 10px;
+    border-radius: clamp(6px, 1vw, 8px);
+    padding: 0;
+    width: clamp(28px, 5vw, 36px);
+    height: clamp(28px, 5vh, 36px);
+    min-width: 28px;
+    min-height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    font-size: 13px;
+    font-size: clamp(16px, 2.5vw, 20px);
+    font-weight: bold;
+    line-height: 1;
     transition: background 0.2s ease, transform 0.2s ease;
 }
 
@@ -1523,7 +1538,9 @@ function initializeAlignmentPanel() {
         const customApplyButton = document.createElement('button');
         customApplyButton.type = 'button';
         customApplyButton.className = 'hk-custom-apply-inline';
-        customApplyButton.textContent = 'Apply';
+        customApplyButton.textContent = '✓';
+        customApplyButton.setAttribute('aria-label', 'Apply custom color');
+        customApplyButton.title = 'Apply custom color';
         customRow.appendChild(customApplyButton);
 
         colorSection.appendChild(customRow);
