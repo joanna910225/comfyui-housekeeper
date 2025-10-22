@@ -1329,28 +1329,56 @@ function initializeAlignmentPanel() {
         previewState.nodes.forEach((stored, node) => {
             if (!node) return;
             if (typeof node.setColorOption === 'function') {
-                node.setColorOption({
-                    color: stored.color ?? node.color,
-                    bgcolor: stored.bgcolor ?? node.bgcolor,
-                    groupcolor: stored.groupcolor ?? node.groupcolor
-                });
+                // If all colors were undefined (default node), pass null to remove color
+                if (stored.color === undefined && stored.bgcolor === undefined && stored.groupcolor === undefined) {
+                    node.setColorOption(null);
+                } else {
+                    node.setColorOption({
+                        color: stored.color,
+                        bgcolor: stored.bgcolor,
+                        groupcolor: stored.groupcolor
+                    });
+                }
             } else {
-                node.color = stored.color;
-                node.bgcolor = stored.bgcolor;
-                node.groupcolor = stored.groupcolor;
+                // Delete properties if they were originally undefined to restore default appearance
+                if (stored.color === undefined) {
+                    delete node.color;
+                } else {
+                    node.color = stored.color;
+                }
+                if (stored.bgcolor === undefined) {
+                    delete node.bgcolor;
+                } else {
+                    node.bgcolor = stored.bgcolor;
+                }
+                if (stored.groupcolor === undefined) {
+                    delete node.groupcolor;
+                } else {
+                    node.groupcolor = stored.groupcolor;
+                }
             }
         });
 
         previewState.groups.forEach((stored, group) => {
             if (!group) return;
             if (typeof group.setColorOption === 'function') {
-                group.setColorOption({
-                    color: stored.color ?? group.color,
-                    bgcolor: stored.color ?? group.bgcolor,
-                    groupcolor: stored.color ?? group.groupcolor
-                });
+                // If color was undefined (default group), pass null to remove color
+                if (stored.color === undefined) {
+                    group.setColorOption(null);
+                } else {
+                    group.setColorOption({
+                        color: stored.color,
+                        bgcolor: stored.color,
+                        groupcolor: stored.color
+                    });
+                }
             } else {
-                group.color = stored.color;
+                // Delete property if it was originally undefined to restore default appearance
+                if (stored.color === undefined) {
+                    delete group.color;
+                } else {
+                    group.color = stored.color;
+                }
             }
         });
 
