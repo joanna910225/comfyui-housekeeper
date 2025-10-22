@@ -247,7 +247,6 @@ function initializeAlignmentPanel() {
         const style = document.createElement('style');
         style.id = styleId;
         style.textContent = `
-@import url('https://fonts.googleapis.com/css2?family=Gloria+Hallelujah&display=swap');
 
 :root {
     --hk-accent: #8BC3F3;
@@ -302,7 +301,7 @@ function initializeAlignmentPanel() {
     min-height: clamp(100px, 18vh, 140px);
     max-height: 140px;
     transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
-    font-family: 'Gloria Hallelujah', cursive;
+    font-family: Arial, sans-serif;
     font-size: clamp(10px, 1.4vw, 12px);
     letter-spacing: 0.08em;
     background-image: linear-gradient(160deg, rgba(139, 195, 243, 0.12), rgba(139, 195, 243, 0.05));
@@ -343,7 +342,7 @@ function initializeAlignmentPanel() {
     padding: clamp(8px, 1vw, 10px) clamp(10px, 1.2vw, 14px);
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
     color: var(--hk-text-strong);
-    font-family: 'Gloria Hallelujah', cursive;
+    font-family: Arial, sans-serif;
     transform: translateX(110%);
     opacity: 0;
     max-height: var(--hk-panel-max-height);
@@ -424,11 +423,11 @@ function initializeAlignmentPanel() {
     height: 1px;
     background: rgba(139, 195, 243, 0.25);
     width: 100%;
-    margin: 2px 0 4px;
+    margin: 12px 0 12px;
 }
 
 .housekeeper-divider.housekeeper-divider-spaced {
-    margin: clamp(10px, 1.5vw, 16px) 0 clamp(6px, 1vw, 12px);
+    margin: clamp(16px, 2vw, 24px) 0 clamp(16px, 2vw, 24px);
 }
 
 .housekeeper-section {
@@ -620,7 +619,7 @@ function initializeAlignmentPanel() {
     border-bottom: 1px solid rgba(139, 195, 243, 0.35);
     padding: 4px 6px;
     color: var(--hk-text-strong);
-    font-family: 'Gloria Hallelujah', cursive;
+    font-family: Arial, sans-serif;
     letter-spacing: 0.04em;
     width: clamp(60px, 12vw, 80px);
     flex: 1;
@@ -842,7 +841,7 @@ function initializeAlignmentPanel() {
     align-items: center;
     justify-content: center;
     color: var(--hk-text-muted);
-    font-family: 'Gloria Hallelujah', cursive;
+    font-family: Arial, sans-serif;
     letter-spacing: 0.04em;
 }
 `;
