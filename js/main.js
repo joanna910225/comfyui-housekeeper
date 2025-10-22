@@ -1,9 +1,9 @@
-import { app as Xt } from "../../../scripts/app.js";
-import { ComponentWidgetImpl as It, addWidget as Wt } from "../../../scripts/domWidget.js";
-import { defineComponent as bt, ref as j, resolveDirective as Yt, createElementBlock as mt, openBlock as nt, Fragment as Ct, createElementVNode as rt, withDirectives as Vt, createVNode as wt, createBlock as Et, unref as Y, normalizeClass as kt, withCtx as xt, createTextVNode as Mt, toDisplayString as gt, renderList as $t, normalizeStyle as Rt, onMounted as Nt, nextTick as Gt } from "vue";
-import St from "primevue/button";
-import { useI18n as Dt } from "vue-i18n";
-const jt = { class: "toolbar" }, Ut = { class: "color-picker" }, Kt = { class: "size-slider" }, qt = ["value"], Jt = /* @__PURE__ */ bt({
+import { app as ie } from "../../../scripts/app.js";
+import { ComponentWidgetImpl as re, addWidget as se } from "../../../scripts/domWidget.js";
+import { defineComponent as U2, ref as l2, resolveDirective as ae, createElementBlock as O2, openBlock as A2, Fragment as L0, createElementVNode as w2, withDirectives as oe, createVNode as j2, createBlock as A0, unref as s2, normalizeClass as E0, withCtx as n0, createTextVNode as M0, toDisplayString as D2, renderList as le, normalizeStyle as ne, onMounted as _0, nextTick as ce } from "vue";
+import c0 from "primevue/button";
+import { useI18n as H0 } from "vue-i18n";
+const pe = { class: "toolbar" }, he = { class: "color-picker" }, ue = { class: "size-slider" }, fe = ["value"], ge = /* @__PURE__ */ U2({
   __name: "ToolBar",
   props: {
     colors: {},
@@ -12,79 +12,79 @@ const jt = { class: "toolbar" }, Ut = { class: "color-picker" }, Kt = { class: "
     initialTool: {}
   },
   emits: ["tool-change", "color-change", "canvas-clear", "brush-size-change"],
-  setup(v, { emit: H }) {
-    const { t: g } = Dt(), N = v, X = H, K = N.colors || ["#000000", "#ff0000", "#0000ff", "#69a869", "#ffff00", "#ff00ff", "#00ffff"], V = j(N.initialColor || "#000000"), $ = j(N.initialBrushSize || 5), B = j(N.initialTool || "pen");
-    function D(W) {
-      B.value = W, X("tool-change", W);
+  setup(A, { emit: V }) {
+    const { t: _ } = H0(), N = A, m = V, a2 = N.colors || ["#000000", "#ff0000", "#0000ff", "#69a869", "#ffff00", "#ff00ff", "#00ffff"], q = l2(N.initialColor || "#000000"), I = l2(N.initialBrushSize || 5), R = l2(N.initialTool || "pen");
+    function B(b) {
+      R.value = b, m("tool-change", b);
     }
-    function O(W) {
-      V.value = W, X("color-change", W);
+    function X(b) {
+      q.value = b, m("color-change", b);
     }
-    function I() {
-      X("canvas-clear");
+    function Y() {
+      m("canvas-clear");
     }
-    function d(W) {
-      const F = W.target;
-      $.value = Number(F.value), X("brush-size-change", $.value);
+    function z(b) {
+      const k = b.target;
+      I.value = Number(k.value), m("brush-size-change", I.value);
     }
-    return (W, F) => {
-      const st = Yt("tooltip");
-      return nt(), mt(Ct, null, [
-        rt("div", jt, [
-          Vt((nt(), Et(Y(St), {
-            class: kt({ active: B.value === "pen" }),
-            onClick: F[0] || (F[0] = (R) => D("pen"))
+    return (b, k) => {
+      const d2 = ae("tooltip");
+      return A2(), O2(L0, null, [
+        w2("div", pe, [
+          oe((A2(), A0(s2(c0), {
+            class: E0({ active: R.value === "pen" }),
+            onClick: k[0] || (k[0] = (j) => B("pen"))
           }, {
-            default: xt(() => [
-              Mt(gt(Y(g)("vue-basic.pen")), 1)
+            default: n0(() => [
+              M0(D2(s2(_)("vue-basic.pen")), 1)
             ]),
             _: 1
           }, 8, ["class"])), [
-            [st, { value: Y(g)("vue-basic.pen-tooltip"), showDelay: 300 }]
+            [d2, { value: s2(_)("vue-basic.pen-tooltip"), showDelay: 300 }]
           ]),
-          wt(Y(St), { onClick: I }, {
-            default: xt(() => [
-              Mt(gt(Y(g)("vue-basic.clear-canvas")), 1)
+          j2(s2(c0), { onClick: Y }, {
+            default: n0(() => [
+              M0(D2(s2(_)("vue-basic.clear-canvas")), 1)
             ]),
             _: 1
           })
         ]),
-        rt("div", Ut, [
-          (nt(!0), mt(Ct, null, $t(Y(K), (R, L) => (nt(), Et(Y(St), {
-            key: L,
-            class: kt({ "color-button": !0, active: V.value === R }),
-            onClick: (et) => O(R),
+        w2("div", he, [
+          (A2(!0), O2(L0, null, le(s2(a2), (j, U) => (A2(), A0(s2(c0), {
+            key: U,
+            class: E0({ "color-button": !0, active: q.value === j }),
+            onClick: (y2) => X(j),
             type: "button",
-            title: R
+            title: j
           }, {
-            default: xt(() => [
-              rt("i", {
+            default: n0(() => [
+              w2("i", {
                 class: "pi pi-circle-fill",
-                style: Rt({ color: R })
+                style: ne({ color: j })
               }, null, 4)
             ]),
             _: 2
           }, 1032, ["class", "onClick", "title"]))), 128))
         ]),
-        rt("div", Kt, [
-          rt("label", null, gt(Y(g)("vue-basic.brush-size")) + ": " + gt($.value) + "px", 1),
-          rt("input", {
+        w2("div", ue, [
+          w2("label", null, D2(s2(_)("vue-basic.brush-size")) + ": " + D2(I.value) + "px", 1),
+          w2("input", {
             type: "range",
             min: "1",
             max: "50",
-            value: $.value,
-            onChange: F[1] || (F[1] = (R) => d(R))
-          }, null, 40, qt)
+            value: I.value,
+            onChange: k[1] || (k[1] = (j) => z(j))
+          }, null, 40, fe)
         ])
       ], 64);
     };
   }
-}), _t = (v, H) => {
-  const g = v.__vccOpts || v;
-  for (const [N, X] of H)
-    g[N] = X;
-  return g;
-}, Qt = /* @__PURE__ */ _t(Jt, [["__scopeId", "data-v-cae98791"]]), Zt = { class: "drawing-board" }, te = { class: "canvas-container" }, ee = ["width", "height"], ie = /* @__PURE__ */ bt({
+}), p0 = (A, V) => {
+  const _ = A.__vccOpts || A;
+  for (const [N, m] of V)
+    _[N] = m;
+  return _;
+}, Ce = /* @__PURE__ */ p0(ge, [["__scopeId", "data-v-cae98791"]]), de = { class: "drawing-board" }, me = { class: "canvas-container" }, we = ["width", "height"], ve = /* @__PURE__ */ U2({
   __name: "DrawingBoard",
   props: {
     width: {},
@@ -93,110 +93,110 @@ const jt = { class: "toolbar" }, Ut = { class: "color-picker" }, Kt = { class: "
     initialBrushSize: {}
   },
   emits: ["mounted", "drawing-start", "drawing", "drawing-end", "state-save", "canvas-clear"],
-  setup(v, { expose: H, emit: g }) {
-    const N = v, X = N.width || 800, K = N.height || 500, V = N.initialColor || "#000000", $ = N.initialBrushSize || 5, B = g, D = j(!1), O = j(0), I = j(0), d = j(null), W = j(!1), F = j($), st = j(V), R = j(null), L = j(null);
-    Nt(() => {
-      L.value && (d.value = L.value.getContext("2d"), et(), Gt(() => {
-        L.value && B("mounted", L.value);
+  setup(A, { expose: V, emit: _ }) {
+    const N = A, m = N.width || 800, a2 = N.height || 500, q = N.initialColor || "#000000", I = N.initialBrushSize || 5, R = _, B = l2(!1), X = l2(0), Y = l2(0), z = l2(null), b = l2(!1), k = l2(I), d2 = l2(q), j = l2(null), U = l2(null);
+    _0(() => {
+      U.value && (z.value = U.value.getContext("2d"), y2(), ce(() => {
+        U.value && R("mounted", U.value);
       }));
     });
-    function et() {
-      d.value && (d.value.fillStyle = "#ffffff", d.value.fillRect(0, 0, X, K), at(), f());
+    function y2() {
+      z.value && (z.value.fillStyle = "#ffffff", z.value.fillRect(0, 0, m, a2), g2(), _2());
     }
-    function at() {
-      d.value && (W.value ? (d.value.globalCompositeOperation = "destination-out", d.value.strokeStyle = "rgba(0,0,0,1)") : (d.value.globalCompositeOperation = "source-over", d.value.strokeStyle = st.value), d.value.lineWidth = F.value, d.value.lineJoin = "round", d.value.lineCap = "round");
+    function g2() {
+      z.value && (b.value ? (z.value.globalCompositeOperation = "destination-out", z.value.strokeStyle = "rgba(0,0,0,1)") : (z.value.globalCompositeOperation = "source-over", z.value.strokeStyle = d2.value), z.value.lineWidth = k.value, z.value.lineJoin = "round", z.value.lineCap = "round");
     }
-    function ct(o) {
-      D.value = !0;
-      const { offsetX: c, offsetY: m } = U(o);
-      O.value = c, I.value = m, d.value && (d.value.beginPath(), d.value.moveTo(O.value, I.value), d.value.arc(O.value, I.value, F.value / 2, 0, Math.PI * 2), d.value.fill(), B("drawing-start", {
-        x: c,
-        y: m,
-        tool: W.value ? "eraser" : "pen"
+    function E2(O) {
+      B.value = !0;
+      const { offsetX: t2, offsetY: i2 } = J(O);
+      X.value = t2, Y.value = i2, z.value && (z.value.beginPath(), z.value.moveTo(X.value, Y.value), z.value.arc(X.value, Y.value, k.value / 2, 0, Math.PI * 2), z.value.fill(), R("drawing-start", {
+        x: t2,
+        y: i2,
+        tool: b.value ? "eraser" : "pen"
       }));
     }
-    function pt(o) {
-      if (!D.value || !d.value) return;
-      const { offsetX: c, offsetY: m } = U(o);
-      d.value.beginPath(), d.value.moveTo(O.value, I.value), d.value.lineTo(c, m), d.value.stroke(), O.value = c, I.value = m, B("drawing", {
-        x: c,
-        y: m,
-        tool: W.value ? "eraser" : "pen"
+    function x2(O) {
+      if (!B.value || !z.value) return;
+      const { offsetX: t2, offsetY: i2 } = J(O);
+      z.value.beginPath(), z.value.moveTo(X.value, Y.value), z.value.lineTo(t2, i2), z.value.stroke(), X.value = t2, Y.value = i2, R("drawing", {
+        x: t2,
+        y: i2,
+        tool: b.value ? "eraser" : "pen"
       });
     }
-    function S() {
-      D.value && (D.value = !1, f(), B("drawing-end"));
+    function F() {
+      B.value && (B.value = !1, _2(), R("drawing-end"));
     }
-    function U(o) {
-      let c = 0, m = 0;
-      if ("touches" in o) {
-        if (o.preventDefault(), L.value) {
-          const w = L.value.getBoundingClientRect();
-          c = o.touches[0].clientX - w.left, m = o.touches[0].clientY - w.top;
+    function J(O) {
+      let t2 = 0, i2 = 0;
+      if ("touches" in O) {
+        if (O.preventDefault(), U.value) {
+          const Z2 = U.value.getBoundingClientRect();
+          t2 = O.touches[0].clientX - Z2.left, i2 = O.touches[0].clientY - Z2.top;
         }
       } else
-        c = o.offsetX, m = o.offsetY;
-      return { offsetX: c, offsetY: m };
+        t2 = O.offsetX, i2 = O.offsetY;
+      return { offsetX: t2, offsetY: i2 };
     }
-    function zt(o) {
-      o.preventDefault();
-      const m = {
-        touches: [o.touches[0]]
+    function P2(O) {
+      O.preventDefault();
+      const i2 = {
+        touches: [O.touches[0]]
       };
-      ct(m);
+      E2(i2);
     }
-    function h(o) {
-      if (o.preventDefault(), !D.value) return;
-      const m = {
-        touches: [o.touches[0]]
+    function K2(O) {
+      if (O.preventDefault(), !B.value) return;
+      const i2 = {
+        touches: [O.touches[0]]
       };
-      pt(m);
+      x2(i2);
     }
-    function s(o) {
-      W.value = o === "eraser", at();
+    function q2(O) {
+      b.value = O === "eraser", g2();
     }
-    function l(o) {
-      st.value = o, at();
+    function J2(O) {
+      d2.value = O, g2();
     }
-    function u(o) {
-      F.value = o, at();
+    function z2(O) {
+      k.value = O, g2();
     }
-    function z() {
-      d.value && (d.value.fillStyle = "#ffffff", d.value.fillRect(0, 0, X, K), at(), f(), B("canvas-clear"));
+    function S2() {
+      z.value && (z.value.fillStyle = "#ffffff", z.value.fillRect(0, 0, m, a2), g2(), _2(), R("canvas-clear"));
     }
-    function f() {
-      L.value && (R.value = L.value.toDataURL("image/png"), R.value && B("state-save", R.value));
+    function _2() {
+      U.value && (j.value = U.value.toDataURL("image/png"), j.value && R("state-save", j.value));
     }
-    async function C() {
-      if (!L.value)
+    async function Q2() {
+      if (!U.value)
         throw new Error("Canvas is unable to get current data");
-      return R.value ? R.value : L.value.toDataURL("image/png");
+      return j.value ? j.value : U.value.toDataURL("image/png");
     }
-    return H({
-      setTool: s,
-      setColor: l,
-      setBrushSize: u,
-      clearCanvas: z,
-      getCurrentCanvasData: C
-    }), (o, c) => (nt(), mt("div", Zt, [
-      rt("div", te, [
-        rt("canvas", {
+    return V({
+      setTool: q2,
+      setColor: J2,
+      setBrushSize: z2,
+      clearCanvas: S2,
+      getCurrentCanvasData: Q2
+    }), (O, t2) => (A2(), O2("div", de, [
+      w2("div", me, [
+        w2("canvas", {
           ref_key: "canvas",
-          ref: L,
-          width: Y(X),
-          height: Y(K),
-          onMousedown: ct,
-          onMousemove: pt,
-          onMouseup: S,
-          onMouseleave: S,
-          onTouchstart: zt,
-          onTouchmove: h,
-          onTouchend: S
-        }, null, 40, ee)
+          ref: U,
+          width: s2(m),
+          height: s2(a2),
+          onMousedown: E2,
+          onMousemove: x2,
+          onMouseup: F,
+          onMouseleave: F,
+          onTouchstart: P2,
+          onTouchmove: K2,
+          onTouchend: F
+        }, null, 40, we)
       ])
     ]));
   }
-}), re = /* @__PURE__ */ _t(ie, [["__scopeId", "data-v-ca1239fc"]]), se = { class: "drawing-app" }, ae = /* @__PURE__ */ bt({
+}), be = /* @__PURE__ */ p0(ve, [["__scopeId", "data-v-ca1239fc"]]), ye = { class: "drawing-app" }, xe = /* @__PURE__ */ U2({
   __name: "DrawingApp",
   props: {
     width: {},
@@ -206,178 +206,1194 @@ const jt = { class: "toolbar" }, Ut = { class: "color-picker" }, Kt = { class: "
     availableColors: {}
   },
   emits: ["tool-change", "color-change", "brush-size-change", "drawing-start", "drawing", "drawing-end", "state-save", "mounted"],
-  setup(v, { expose: H, emit: g }) {
-    const N = v, X = N.width || 800, K = N.height || 500, V = N.initialColor || "#000000", $ = N.initialBrushSize || 5, B = N.availableColors || ["#000000", "#ff0000", "#0000ff", "#00ff00", "#ffff00", "#ff00ff", "#00ffff"], D = g, O = j(null), I = j(null);
-    function d(S) {
-      var U;
-      (U = O.value) == null || U.setTool(S), D("tool-change", S);
+  setup(A, { expose: V, emit: _ }) {
+    const N = A, m = N.width || 800, a2 = N.height || 500, q = N.initialColor || "#000000", I = N.initialBrushSize || 5, R = N.availableColors || ["#000000", "#ff0000", "#0000ff", "#00ff00", "#ffff00", "#ff00ff", "#00ffff"], B = _, X = l2(null), Y = l2(null);
+    function z(F) {
+      var J;
+      (J = X.value) == null || J.setTool(F), B("tool-change", F);
     }
-    function W(S) {
-      var U;
-      (U = O.value) == null || U.setColor(S), D("color-change", S);
+    function b(F) {
+      var J;
+      (J = X.value) == null || J.setColor(F), B("color-change", F);
     }
-    function F(S) {
-      var U;
-      (U = O.value) == null || U.setBrushSize(S), D("brush-size-change", S);
+    function k(F) {
+      var J;
+      (J = X.value) == null || J.setBrushSize(F), B("brush-size-change", F);
     }
-    function st() {
-      var S;
-      (S = O.value) == null || S.clearCanvas();
+    function d2() {
+      var F;
+      (F = X.value) == null || F.clearCanvas();
     }
-    function R(S) {
-      D("drawing-start", S);
+    function j(F) {
+      B("drawing-start", F);
     }
-    function L(S) {
-      D("drawing", S);
+    function U(F) {
+      B("drawing", F);
     }
-    function et() {
-      D("drawing-end");
+    function y2() {
+      B("drawing-end");
     }
-    function at(S) {
-      I.value = S, D("state-save", S);
+    function g2(F) {
+      Y.value = F, B("state-save", F);
     }
-    function ct(S) {
-      D("mounted", S);
+    function E2(F) {
+      B("mounted", F);
     }
-    async function pt() {
-      if (I.value)
-        return I.value;
-      if (O.value)
+    async function x2() {
+      if (Y.value)
+        return Y.value;
+      if (X.value)
         try {
-          return await O.value.getCurrentCanvasData();
-        } catch (S) {
-          throw console.error("unable to get canvas data:", S), new Error("unable to get canvas data");
+          return await X.value.getCurrentCanvasData();
+        } catch (F) {
+          throw console.error("unable to get canvas data:", F), new Error("unable to get canvas data");
         }
       throw new Error("get canvas data failed");
     }
-    return H({
-      getCanvasData: pt
-    }), (S, U) => (nt(), mt("div", se, [
-      wt(Qt, {
-        colors: Y(B),
-        initialColor: Y(V),
-        initialBrushSize: Y($),
-        onToolChange: d,
-        onColorChange: W,
-        onBrushSizeChange: F,
-        onCanvasClear: st
+    return V({
+      getCanvasData: x2
+    }), (F, J) => (A2(), O2("div", ye, [
+      j2(Ce, {
+        colors: s2(R),
+        initialColor: s2(q),
+        initialBrushSize: s2(I),
+        onToolChange: z,
+        onColorChange: b,
+        onBrushSizeChange: k,
+        onCanvasClear: d2
       }, null, 8, ["colors", "initialColor", "initialBrushSize"]),
-      wt(re, {
+      j2(be, {
         ref_key: "drawingBoard",
-        ref: O,
-        width: Y(X),
-        height: Y(K),
-        initialColor: Y(V),
-        initialBrushSize: Y($),
-        onDrawingStart: R,
-        onDrawing: L,
-        onDrawingEnd: et,
-        onStateSave: at,
-        onMounted: ct
+        ref: X,
+        width: s2(m),
+        height: s2(a2),
+        initialColor: s2(q),
+        initialBrushSize: s2(I),
+        onDrawingStart: j,
+        onDrawing: U,
+        onDrawingEnd: y2,
+        onStateSave: g2,
+        onMounted: E2
       }, null, 8, ["width", "height", "initialColor", "initialBrushSize"])
     ]));
   }
-}), oe = /* @__PURE__ */ _t(ae, [["__scopeId", "data-v-39bbf58b"]]), le = /* @__PURE__ */ bt({
+}), ze = /* @__PURE__ */ p0(xe, [["__scopeId", "data-v-39bbf58b"]]), ke = /* @__PURE__ */ U2({
   __name: "VueExampleComponent",
   props: {
     widget: {}
   },
-  setup(v) {
-    const { t: H } = Dt(), g = j(null), N = j(null);
-    v.widget.node;
-    function X(V) {
-      N.value = V, console.log("canvas state saved:", V.substring(0, 50) + "...");
+  setup(A) {
+    const { t: V } = H0(), _ = l2(null), N = l2(null);
+    A.widget.node;
+    function m(q) {
+      N.value = q, console.log("canvas state saved:", q.substring(0, 50) + "...");
     }
-    async function K(V, $) {
-      var B;
+    async function a2(q, I) {
+      var R;
       try {
-        if (!((B = window.app) != null && B.api))
+        if (!((R = window.app) != null && R.api))
           throw new Error("ComfyUI API not available");
-        const D = await fetch(V).then((F) => F.blob()), O = `${$}_${Date.now()}.png`, I = new File([D], O), d = new FormData();
-        return d.append("image", I), d.append("subfolder", "threed"), d.append("type", "temp"), console.log("Vue Component: Using window.app.api.fetchApi"), (await window.app.api.fetchApi("/upload/image", {
+        const B = await fetch(q).then((k) => k.blob()), X = `${I}_${Date.now()}.png`, Y = new File([B], X), z = new FormData();
+        return z.append("image", Y), z.append("subfolder", "threed"), z.append("type", "temp"), console.log("Vue Component: Using window.app.api.fetchApi"), (await window.app.api.fetchApi("/upload/image", {
           method: "POST",
-          body: d
+          body: z
         })).json();
-      } catch (D) {
-        throw console.error("Vue Component: Error uploading image:", D), D;
+      } catch (B) {
+        throw console.error("Vue Component: Error uploading image:", B), B;
       }
     }
-    return Nt(() => {
-      v.widget.serializeValue = async (V, $) => {
+    return _0(() => {
+      A.widget.serializeValue = async (q, I) => {
         try {
-          console.log("Vue Component: inside vue serializeValue"), console.log("node", V), console.log("index", $);
-          const B = N.value;
-          return B ? {
-            image: `threed/${(await K(B, "test_vue_basic")).name} [temp]`
+          console.log("Vue Component: inside vue serializeValue"), console.log("node", q), console.log("index", I);
+          const R = N.value;
+          return R ? {
+            image: `threed/${(await a2(R, "test_vue_basic")).name} [temp]`
           } : (console.warn("Vue Component: No canvas data available"), { image: null });
-        } catch (B) {
-          return console.error("Vue Component: Error in serializeValue:", B), { image: null };
+        } catch (R) {
+          return console.error("Vue Component: Error in serializeValue:", R), { image: null };
         }
       };
-    }), (V, $) => (nt(), mt("div", null, [
-      rt("h1", null, gt(Y(H)("vue-basic.title")), 1),
-      rt("div", null, [
-        wt(oe, {
+    }), (q, I) => (A2(), O2("div", null, [
+      w2("h1", null, D2(s2(V)("vue-basic.title")), 1),
+      w2("div", null, [
+        j2(ze, {
           ref_key: "drawingAppRef",
-          ref: g,
+          ref: _,
           width: 300,
           height: 300,
-          onStateSave: X
+          onStateSave: m
         }, null, 512)
       ])
     ]));
   }
-}), Pt = Xt;
-Pt.registerExtension({
+}), S0 = "data:image/svg+xml,%3csvg%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20filter='url(%23filter0_g_41_638)'%3e%3cpath%20d='M16.4923%2029.9976C19.8936%2030.0574%2022.3055%2028.99%2023.666%2028.0934C25.0266%2027.1967%2026.2635%2026.9576%2027.2529%2026.7783C28.2424%2026.5989%2028.2424%2025.6425%2028.2424%2025.224C28.2424%2024.8056%2028.0569%2023.4905%2025.0266%2020.0234C22.8326%2017.5132%2020.8447%2016.511%2019.9061%2016.2546C19.7676%2016.2168%2019.6745%2016.0821%2019.7076%2015.9467L20.3977%2013.1248C20.4273%2013.0034%2020.5485%2012.9245%2020.676%2012.9435L21.1332%2013.0115C21.2094%2013.0228%2021.2758%2013.0678%2021.3128%2013.1333L21.5254%2013.51C21.583%2013.6123%2021.7086%2013.6594%2021.8226%2013.6217L23.6641%2013.0128C23.8198%2012.9613%2023.8811%2012.7798%2023.7867%2012.6494L23.6614%2012.4765C23.5926%2012.3814%2023.605%2012.2529%2023.685%2012.1665C24.1611%2011.6518%2024.788%2010.6656%2024.1608%209.32325C23.4913%207.89039%2021.9206%207.7568%2021.1462%208.03732C21.0952%208.05577%2021.04%208.06127%2020.9871%208.049L19.7745%207.76771C19.6373%207.73587%2019.5004%207.82128%2019.4738%207.95525L19.0045%2010.3247C18.9821%2010.4373%2018.8802%2010.5188%2018.7615%2010.5188L13.4809%2010.5188C13.3622%2010.5188%2013.2603%2010.4373%2013.238%2010.3246L12.7686%207.95522C12.742%207.82125%2012.6051%207.73585%2012.4679%207.76768L11.2553%208.04897C11.2024%208.06124%2011.1472%208.05574%2011.0962%208.03729C10.3218%207.75678%208.75109%207.89037%208.08163%209.32322C7.45447%2010.6655%208.08134%2011.6517%208.55745%2012.1664C8.63745%2012.2529%208.64987%2012.3814%208.58104%2012.4764L8.45577%2012.6494C8.36136%2012.7798%208.42258%2012.9613%208.57835%2013.0128L10.4198%2013.6217C10.5338%2013.6594%2010.6594%2013.6122%2010.7171%2013.51L10.9296%2013.1333C10.9666%2013.0678%2011.033%2013.0228%2011.1092%2013.0114L11.5664%2012.9434C11.6939%2012.9245%2011.8151%2013.0034%2011.8448%2013.1248L12.5348%2015.9467C12.5679%2016.0821%2012.4748%2016.2167%2012.3363%2016.2546C11.3977%2016.511%209.40978%2017.5132%207.21583%2020.0234C4.18553%2023.4905%204%2024.8056%204%2025.224C4%2025.6425%204%2026.5989%204.98949%2026.7782C5.97897%2026.9576%207.21583%2027.1967%208.57638%2028.0933C9.93692%2028.99%2012.3488%2030.0573%2015.7501%2029.9976L16.4923%2029.9976Z'%20fill='%238BC3F3'/%3e%3cpath%20d='M11.5489%208.89827C11.6709%209.6838%2011.7976%2010.844%2012.2357%2012.5711C12.5129%2013.6637%2012.7815%2014.3615%2012.9786%2014.867C13.1818%2015.3883%2013.2764%2015.637%2013.2764%2015.8988V16.2574H18.966V15.8988C18.966%2015.637%2019.0607%2015.3883%2019.2638%2014.867C19.4609%2014.3615%2019.7295%2013.6637%2020.0067%2012.5711C20.4448%2010.8441%2020.5715%209.6838%2020.6935%208.89827L19.9596%208.79179C19.8342%209.59904%2019.7135%2010.7142%2019.2858%2012.4003C19.0189%2013.4526%2018.7619%2014.12%2018.5693%2014.6141C18.4367%2014.9544%2018.3183%2015.2477%2018.2608%2015.5401H13.9816C13.9241%2015.2477%2013.8057%2014.9544%2013.6731%2014.6141C13.4805%2014.12%2013.2235%2013.4526%2012.9566%2012.4003C12.5289%2010.7142%2012.4082%209.59904%2012.2828%208.79179L11.5489%208.89827Z'%20fill='white'/%3e%3cpath%20d='M13.1194%2016.7655H19.2321C19.2934%2016.7655%2019.3521%2016.7856%2019.3988%2016.8239C20.5865%2017.799%2022.5426%2019.9034%2022.8636%2022.0079C23.2257%2024.3825%2021.7502%2025.2291%2020.5713%2025.8607C19.6282%2026.366%2017.6897%2026.8082%2016.6418%2026.8082H15.7151C14.6115%2026.8082%2012.7287%2026.366%2011.7856%2025.8607C10.6067%2025.2291%209.13122%2024.3825%209.49335%2022.0079C9.81466%2019.901%2011.775%2017.7941%2012.9622%2016.8205C13.0063%2016.7844%2013.0616%2016.7655%2013.1194%2016.7655Z'%20fill='%23FCFCFA'/%3e%3cpath%20d='M13.1056%2017.3293C13.2104%2017.2446%2013.3665%2017.2581%2013.4541%2017.3593C13.5418%2017.4606%2013.5279%2017.6115%2013.4231%2017.6962C12.9377%2018.0885%2012.2944%2018.7359%2011.7393%2019.5099C11.1829%2020.2859%2010.7283%2021.1712%2010.5964%2022.0409C10.4519%2022.9939%2010.7052%2023.6151%2011.0933%2024.0643C11.494%2024.528%2012.0505%2024.825%2012.5604%2025.0998C12.935%2025.3017%2013.5132%2025.4985%2014.1226%2025.6451C14.7311%2025.7914%2015.3458%2025.8816%2015.7883%2025.8816H16.5778C16.9962%2025.8816%2017.6108%2025.7916%2018.2263%2025.6449C18.8426%2025.4981%2019.432%2025.3012%2019.8057%2025.0998C20.3157%2024.825%2020.8721%2024.528%2021.2728%2024.0643C21.661%2023.6151%2021.9142%2022.9939%2021.7697%2022.0409C21.6405%2021.1886%2021.2023%2020.3213%2020.6615%2019.5564C20.1219%2018.7933%2019.492%2018.149%2019.0022%2017.7445C18.8984%2017.6587%2018.8862%2017.5078%2018.9749%2017.4074C19.0637%2017.3071%2019.2198%2017.2952%2019.3236%2017.3809C19.8458%2017.8122%2020.5051%2018.4878%2021.0699%2019.2866C21.6334%2020.0835%2022.115%2021.02%2022.2592%2021.9715C22.4233%2023.0539%2022.1345%2023.8131%2021.6525%2024.3709C21.183%2024.9143%2020.5411%2025.2509%2020.0466%2025.5175C19.6167%2025.7491%2018.9783%2025.9583%2018.3447%2026.1093C17.7101%2026.2604%2017.0523%2026.3598%2016.5778%2026.3598H15.7883C15.2905%2026.3598%2014.6327%2026.2606%2014.0031%2026.1092C13.3743%2025.9579%2012.7486%2025.7487%2012.3196%2025.5175C11.8251%2025.2509%2011.1831%2024.9143%2010.7136%2024.3709C10.2316%2023.8131%209.94279%2023.0539%2010.1069%2021.9715C10.2541%2021.0006%2010.7535%2020.0451%2011.3326%2019.2375C11.913%2018.4281%2012.5865%2017.749%2013.1056%2017.3293Z'%20fill='%238BC3F3'/%3e%3cpath%20d='M16.4923%2029.9976C19.8936%2030.0574%2022.3055%2028.99%2023.666%2028.0934C25.0266%2027.1967%2026.2635%2026.9576%2027.2529%2026.7783C28.2424%2026.5989%2028.2424%2025.6425%2028.2424%2025.224C28.2424%2024.8056%2028.0569%2023.4905%2025.0266%2020.0234C22.8326%2017.5132%2020.8447%2016.511%2019.9061%2016.2546C19.7676%2016.2168%2019.6745%2016.0821%2019.7076%2015.9467L20.3977%2013.1248C20.4273%2013.0034%2020.5485%2012.9245%2020.676%2012.9435L21.1332%2013.0115C21.2094%2013.0228%2021.2758%2013.0678%2021.3128%2013.1333L21.5254%2013.51C21.583%2013.6123%2021.7086%2013.6594%2021.8226%2013.6217L23.6641%2013.0128C23.8198%2012.9613%2023.8811%2012.7798%2023.7867%2012.6494L23.6614%2012.4765C23.5926%2012.3814%2023.605%2012.2529%2023.685%2012.1665C24.1611%2011.6518%2024.788%2010.6656%2024.1608%209.32325C23.4913%207.89039%2021.9206%207.7568%2021.1462%208.03732C21.0952%208.05577%2021.04%208.06127%2020.9871%208.049L19.7745%207.76771C19.6373%207.73587%2019.5004%207.82128%2019.4738%207.95525L19.0045%2010.3247C18.9821%2010.4373%2018.8802%2010.5188%2018.7615%2010.5188L13.4809%2010.5188C13.3622%2010.5188%2013.2603%2010.4373%2013.238%2010.3246L12.7686%207.95522C12.742%207.82125%2012.6051%207.73585%2012.4679%207.76768L11.2553%208.04897C11.2024%208.06124%2011.1472%208.05574%2011.0962%208.03729C10.3218%207.75678%208.75109%207.89037%208.08163%209.32322C7.45447%2010.6655%208.08134%2011.6517%208.55745%2012.1664C8.63745%2012.2529%208.64987%2012.3814%208.58104%2012.4764L8.45577%2012.6494C8.36136%2012.7798%208.42258%2012.9613%208.57835%2013.0128L10.4198%2013.6217C10.5338%2013.6594%2010.6594%2013.6122%2010.7171%2013.51L10.9296%2013.1333C10.9666%2013.0678%2011.033%2013.0228%2011.1092%2013.0114L11.5664%2012.9434C11.6939%2012.9245%2011.8151%2013.0034%2011.8448%2013.1248L12.5348%2015.9467C12.5679%2016.0821%2012.4748%2016.2167%2012.3363%2016.2546C11.3977%2016.511%209.40978%2017.5132%207.21583%2020.0234C4.18553%2023.4905%204%2024.8056%204%2025.224C4%2025.6425%204%2026.5989%204.98949%2026.7782C5.97897%2026.9576%207.21583%2027.1967%208.57638%2028.0933C9.93692%2028.99%2012.3488%2030.0573%2015.7501%2029.9976L16.4923%2029.9976Z'%20fill='%238BC3F3'/%3e%3cpath%20d='M10.6911%208.40132C10.3946%208.31279%2010.0502%208.26312%209.71798%208.35962C9.18732%208.51375%208.67177%208.87323%208.37262%209.52894C7.82258%2010.7346%208.76992%2011.7914%209.18459%2012.2306C9.18641%2012.2325%209.1871%2012.2344%209.1872%2012.2355C9.18724%2012.236%209.18707%2012.2364%209.18707%2012.2364L8.78104%2012.805L9.27578%2012.941L10.5102%2013.3283L10.6626%2012.9832L9.44896%2012.5698L9.51575%2012.4522L9.71613%2012.1582C9.71613%2012.1582%209.58948%2012.0545%209.51575%2011.9819C8.85368%2011.3295%208.40008%2010.4513%208.66725%209.74574C8.82677%209.32448%209.26838%208.92263%209.73592%208.68746L9.73893%208.68658C10.1614%208.56389%2010.3338%208.51381%2010.6626%208.51108C10.7244%208.51056%2010.7502%208.41894%2010.6911%208.40132Z'%20fill='white'/%3e%3cpath%20d='M4.72061%2025.2726C4.72061%2024.8058%204.85666%2024.2159%205.18544%2023.6472C5.54515%2023.0251%206.2959%2022.1754%206.2959%2022.1754C6.2959%2022.1754%206.04088%2022.8119%205.81119%2023.2475C5.58151%2023.6832%205.5473%2023.8071%205.43915%2024.2005C5.24268%2024.9153%205.32649%2025.094%205.32649%2025.2726C5.32649%2025.5414%205.56884%2025.7491%205.56884%2025.7491C5.56884%2025.7491%205.8795%2026.0732%206.30347%2026.1535C7.18073%2026.3197%208.31143%2026.5468%209.55225%2027.4014C10.7135%2028.2013%2013.1528%2029.1439%2016.1212%2029.1439V29.5624C13.0704%2029.6184%2010.5066%2028.6407%209.27405%2027.7917C8.12103%2026.9976%207.07547%2026.785%206.21176%2026.6214C5.76527%2026.5368%205.39175%2026.4127%205.12864%2026.1969C4.84994%2025.9684%204.72061%2025.659%204.72061%2025.2726Z'%20fill='white'/%3e%3cpath%20d='M11.2478%2012.3619C11.4347%2012.3619%2011.5834%2012.2302%2011.6223%2012.1926C11.6465%2012.4183%2011.6097%2012.4886%2011.5398%2012.5312C11.4471%2012.5876%2011.272%2012.6441%2011.0968%2012.5876C10.9567%2012.5425%2010.8391%2012.3619%2010.7807%2012.3054C10.8586%2012.3243%2011.061%2012.3619%2011.2478%2012.3619Z'%20fill='white'/%3e%3cpath%20d='M21.5298%208.40132C21.8263%208.31279%2022.1707%208.26312%2022.5029%208.35962C23.0336%208.51375%2023.5492%208.87323%2023.8483%209.52894C24.3983%2010.7346%2023.451%2011.7914%2023.0363%2012.2306C23.0345%2012.2325%2023.0338%2012.2344%2023.0337%2012.2355C23.0337%2012.236%2023.0339%2012.2364%2023.0339%2012.2364L23.4399%2012.805L22.9451%2012.941L21.7107%2013.3283L21.5583%2012.9832L22.772%2012.5698L22.7052%2012.4522L22.5048%2012.1582C22.5048%2012.1582%2022.6314%2012.0545%2022.7052%2011.9819C23.3672%2011.3295%2023.8208%2010.4513%2023.5537%209.74574C23.3942%209.32448%2022.9525%208.92263%2022.485%208.68746L22.482%208.68658C22.0596%208.56389%2021.8871%208.51381%2021.5583%208.51108C21.4965%208.51056%2021.4708%208.41894%2021.5298%208.40132Z'%20fill='white'/%3e%3cpath%20d='M27.5003%2025.2726C27.5003%2024.8058%2027.3643%2024.2159%2027.0355%2023.6472C26.6758%2023.0251%2025.925%2022.1754%2025.925%2022.1754C25.925%2022.1754%2026.18%2022.8119%2026.4097%2023.2475C26.6394%2023.6832%2026.6736%2023.8071%2026.7818%2024.2005C26.9782%2024.9153%2026.8944%2025.094%2026.8944%2025.2726C26.8944%2025.5414%2026.6521%2025.7491%2026.6521%2025.7491C26.6521%2025.7491%2026.3414%2026.0732%2025.9175%2026.1535C25.0402%2026.3197%2023.9095%2026.5468%2022.6687%2027.4014C21.5074%2028.2013%2019.0897%2029.1439%2016.1212%2029.1439V29.5624C19.1721%2029.6184%2021.7143%2028.6407%2022.9469%2027.7917C24.0999%2026.9976%2025.1455%2026.785%2026.0092%2026.6214C26.4557%2026.5368%2026.8292%2026.4127%2027.0923%2026.1969C27.371%2025.9684%2027.5003%2025.659%2027.5003%2025.2726Z'%20fill='white'/%3e%3cpath%20d='M20.9731%2012.3619C20.7862%2012.3619%2020.6375%2012.2302%2020.5986%2012.1926C20.5744%2012.4183%2020.6113%2012.4886%2020.6811%2012.5312C20.7738%2012.5876%2020.9489%2012.6441%2021.1241%2012.5876C21.2642%2012.5425%2021.3818%2012.3619%2021.4402%2012.3054C21.3623%2012.3243%2021.1599%2012.3619%2020.9731%2012.3619Z'%20fill='white'/%3e%3cpath%20d='M11.5489%208.89827C11.6709%209.6838%2011.7976%2010.844%2012.2357%2012.5711C12.5129%2013.6637%2012.7815%2014.3615%2012.9786%2014.867C13.1818%2015.3883%2013.2764%2015.637%2013.2764%2015.8988V16.2574H18.966V15.8988C18.966%2015.637%2019.0607%2015.3883%2019.2638%2014.867C19.4609%2014.3615%2019.7295%2013.6637%2020.0067%2012.5711C20.4448%2010.8441%2020.5715%209.6838%2020.6935%208.89827L19.9596%208.79179C19.8342%209.59904%2019.7135%2010.7142%2019.2858%2012.4003C19.0189%2013.4526%2018.7619%2014.12%2018.5693%2014.6141C18.4367%2014.9544%2018.3183%2015.2477%2018.2608%2015.5401H13.9816C13.9241%2015.2477%2013.8057%2014.9544%2013.6731%2014.6141C13.4805%2014.12%2013.2235%2013.4526%2012.9566%2012.4003C12.5289%2010.7142%2012.4082%209.59904%2012.2828%208.79179L11.5489%208.89827Z'%20fill='white'/%3e%3cpath%20d='M13.1194%2016.7655H19.2321C19.2934%2016.7655%2019.3521%2016.7856%2019.3988%2016.8239C20.5865%2017.799%2022.5426%2019.9034%2022.8636%2022.0079C23.2257%2024.3825%2021.7502%2025.2291%2020.5713%2025.8607C19.6282%2026.366%2017.6897%2026.8082%2016.6418%2026.8082H15.7151C14.6115%2026.8082%2012.7287%2026.366%2011.7856%2025.8607C10.6067%2025.2291%209.13122%2024.3825%209.49335%2022.0079C9.81466%2019.901%2011.775%2017.7941%2012.9622%2016.8205C13.0063%2016.7844%2013.0616%2016.7655%2013.1194%2016.7655Z'%20fill='%23FCFCFA'/%3e%3cpath%20d='M13.1056%2017.3293C13.2104%2017.2446%2013.3665%2017.2581%2013.4541%2017.3593C13.5418%2017.4606%2013.5279%2017.6115%2013.4231%2017.6962C12.9377%2018.0885%2012.2944%2018.7359%2011.7393%2019.5099C11.1829%2020.2859%2010.7283%2021.1712%2010.5964%2022.0409C10.4519%2022.9939%2010.7052%2023.6151%2011.0933%2024.0643C11.494%2024.528%2012.0505%2024.825%2012.5604%2025.0998C12.935%2025.3017%2013.5132%2025.4985%2014.1226%2025.6451C14.7311%2025.7914%2015.3458%2025.8816%2015.7883%2025.8816H16.5778C16.9962%2025.8816%2017.6108%2025.7916%2018.2263%2025.6449C18.8426%2025.4981%2019.432%2025.3012%2019.8057%2025.0998C20.3157%2024.825%2020.8721%2024.528%2021.2728%2024.0643C21.661%2023.6151%2021.9142%2022.9939%2021.7697%2022.0409C21.6405%2021.1886%2021.2023%2020.3213%2020.6615%2019.5564C20.1219%2018.7933%2019.492%2018.149%2019.0022%2017.7445C18.8984%2017.6587%2018.8862%2017.5078%2018.9749%2017.4074C19.0637%2017.3071%2019.2198%2017.2952%2019.3236%2017.3809C19.8458%2017.8122%2020.5051%2018.4878%2021.0699%2019.2866C21.6334%2020.0835%2022.115%2021.02%2022.2592%2021.9715C22.4233%2023.0539%2022.1345%2023.8131%2021.6525%2024.3709C21.183%2024.9143%2020.5411%2025.2509%2020.0466%2025.5175C19.6167%2025.7491%2018.9783%2025.9583%2018.3447%2026.1093C17.7101%2026.2604%2017.0523%2026.3598%2016.5778%2026.3598H15.7883C15.2905%2026.3598%2014.6327%2026.2606%2014.0031%2026.1092C13.3743%2025.9579%2012.7486%2025.7487%2012.3196%2025.5175C11.8251%2025.2509%2011.1831%2024.9143%2010.7136%2024.3709C10.2316%2023.8131%209.94279%2023.0539%2010.1069%2021.9715C10.2541%2021.0006%2010.7535%2020.0451%2011.3326%2019.2375C11.913%2018.4281%2012.5865%2017.749%2013.1056%2017.3293Z'%20fill='%238BC3F3'/%3e%3cpath%20d='M16.6711%203.25992C16.6711%203.25992%2017.6803%202.19932%2019.1802%202.38558C20.6802%202.57183%2019.9223%205.46703%2019.9223%205.46703C19.9223%205.46703%2019.3139%206.64234%2016.6711%204.23447V3.25992ZM15.5714%203.26819C15.5714%203.26819%2014.5622%202.20759%2013.0622%202.39385C11.6954%202.56377%2012.0784%204.98485%2012.2881%205.41139C12.3085%205.45242%2012.9283%206.65061%2015.5714%204.24274V3.26819Z'%20fill='%23FCFCFA'/%3e%3cpath%20d='M16.6711%203.25992C16.6711%203.25992%2017.6803%202.19932%2019.1802%202.38558C20.6793%202.57179%2019.9231%205.464%2019.9223%205.46703L19.9149%205.47963C19.8384%205.59989%2019.1488%206.49191%2016.6711%204.23447V3.25992ZM13.0622%202.39385C14.5622%202.20759%2015.5714%203.26819%2015.5714%203.26819V4.24274C13.0932%206.50035%2012.3937%205.58789%2012.2992%205.43142L12.2881%205.41139C12.0801%204.98814%2011.7014%202.60142%2013.0305%202.39819L13.0622%202.39385ZM19.1172%202.85994C18.5046%202.78387%2017.9857%202.96074%2017.6078%203.16852C17.4195%203.27208%2017.2714%203.38076%2017.1717%203.46227C17.1697%203.4639%2017.1677%203.46556%2017.1658%203.46717V4.0256C18.3677%205.08788%2019.0188%205.27145%2019.2953%205.27555C19.3896%205.27695%2019.4418%205.25771%2019.4676%205.24403C19.4678%205.24309%2019.4681%205.24217%2019.4683%205.24123C19.4847%205.1678%2019.507%205.06134%2019.5293%204.93265C19.5744%204.67289%2019.618%204.33303%2019.6189%203.99489C19.6198%203.64776%2019.5751%203.349%2019.4785%203.14342C19.3935%202.96271%2019.2872%202.88106%2019.1172%202.85994ZM14.6347%203.17681C14.2686%202.97551%2013.7702%202.80323%2013.1824%202.86181L13.1253%202.86811C12.9613%202.8885%2012.8532%202.96538%2012.7642%203.11516C12.6638%203.28409%2012.5995%203.53455%2012.5775%203.8395C12.5561%204.13778%2012.5778%204.45054%2012.6179%204.71432C12.6378%204.84537%2012.6615%204.95983%2012.6849%205.04987C12.6966%205.09482%2012.7077%205.13161%2012.7173%205.15997C12.7221%205.17403%2012.7262%205.1851%2012.7295%205.19336C12.7299%205.1943%2012.7302%205.1952%2012.7306%205.19604C12.7478%205.2151%2012.8086%205.26607%2012.95%205.26714C13.2249%205.26922%2013.8742%205.09578%2015.0766%204.03389V3.47534C15.0747%203.47374%2015.0727%203.47207%2015.0707%203.47044C14.971%203.38894%2014.8229%203.28036%2014.6347%203.17681ZM15.2074%203.59221L15.2082%203.59291C15.2084%203.59315%2015.2086%203.5935%2015.2086%203.5935C15.2084%203.59328%2015.2081%203.5929%2015.2074%203.59221Z'%20fill='%238BC3F3'/%3e%3cpath%20d='M15.8162%203.16618H16.4365C16.6233%203.16618%2016.7166%203.25643%2016.7166%203.43694V4.09096C16.7166%204.27147%2016.6233%204.36173%2016.4365%204.36173H15.8162C15.6295%204.36173%2015.5361%204.27147%2015.5361%204.09096V3.43694C15.5361%203.25643%2015.6295%203.16618%2015.8162%203.16618Z'%20fill='%23FCFCFA'/%3e%3cpath%20d='M16.4366%204.12635L16.4365%204.36173H15.8162L15.8162%204.12635H16.4366ZM16.4732%204.09098V3.43693C16.4732%203.42195%2016.4718%203.41121%2016.4705%203.40389C16.463%203.40268%2016.4519%203.40155%2016.4366%203.40155H15.8162C15.8008%203.40155%2015.7897%203.40279%2015.7822%203.404C15.7809%203.41132%2015.7796%203.42203%2015.7796%203.43693V4.09098C15.7796%204.10579%2015.7809%204.11647%2015.7822%204.12378C15.7897%204.12499%2015.8008%204.12635%2015.8162%204.12635L15.8162%204.36173L15.7823%204.36067C15.6291%204.35079%2015.5474%204.27182%2015.5372%204.12378L15.5361%204.09096V3.43694C15.5361%203.25643%2015.6295%203.16618%2015.8162%203.16618H16.4365L16.4704%203.16723C16.6346%203.17779%2016.7166%203.26771%2016.7166%203.43694V4.09096L16.7156%204.12378C16.7054%204.27185%2016.6236%204.35082%2016.4704%204.36067L16.4365%204.36173L16.4366%204.12635C16.4519%204.12635%2016.463%204.1251%2016.4705%204.1239C16.4718%204.11658%2016.4732%204.10588%2016.4732%204.09098Z'%20fill='%238BC3F3'/%3e%3cpath%20d='M16.1875%204.4215C17.6985%204.42151%2018.7854%205.24416%2019.0748%206.01354C19.1215%206.13765%2019.0553%206.27489%2018.9269%206.32002C18.7985%206.36515%2018.6565%206.3011%2018.6098%206.177C18.4045%205.6313%2017.5314%204.89973%2016.1875%204.89972C15.5262%204.89972%2014.9027%205.10801%2014.4138%205.38285C13.9145%205.66351%2013.5954%205.99016%2013.5024%206.19241C13.4469%206.31305%2013.3008%206.36734%2013.176%206.31372C13.0511%206.26007%2012.995%206.11879%2013.0505%205.99813C13.2048%205.66241%2013.6276%205.27169%2014.1651%204.96954C14.713%204.66155%2015.4215%204.4215%2016.1875%204.4215Z'%20fill='%238BC3F3'/%3e%3cpath%20d='M16.6711%203.25992C16.6711%203.25992%2017.6803%202.19932%2019.1802%202.38558C20.6802%202.57183%2019.9223%205.46703%2019.9223%205.46703C19.9223%205.46703%2019.3139%206.64234%2016.6711%204.23447V3.25992ZM15.5714%203.26819C15.5714%203.26819%2014.5622%202.20759%2013.0622%202.39385C11.6954%202.56377%2012.0784%204.98485%2012.2881%205.41139C12.3085%205.45242%2012.9283%206.65061%2015.5714%204.24274V3.26819Z'%20fill='%23FCFCFA'/%3e%3cpath%20d='M16.6711%203.25992C16.6711%203.25992%2017.6803%202.19932%2019.1802%202.38558C20.6793%202.57179%2019.9231%205.464%2019.9223%205.46703L19.9149%205.47963C19.8384%205.59989%2019.1488%206.49191%2016.6711%204.23447V3.25992ZM13.0622%202.39385C14.5622%202.20759%2015.5714%203.26819%2015.5714%203.26819V4.24274C13.0932%206.50035%2012.3937%205.58789%2012.2992%205.43142L12.2881%205.41139C12.0801%204.98814%2011.7014%202.60142%2013.0305%202.39819L13.0622%202.39385ZM19.1172%202.85994C18.5046%202.78387%2017.9857%202.96074%2017.6078%203.16852C17.4195%203.27208%2017.2714%203.38076%2017.1717%203.46227C17.1697%203.4639%2017.1677%203.46556%2017.1658%203.46717V4.0256C18.3677%205.08788%2019.0188%205.27145%2019.2953%205.27555C19.3896%205.27695%2019.4418%205.25771%2019.4676%205.24403C19.4678%205.24309%2019.4681%205.24217%2019.4683%205.24123C19.4847%205.1678%2019.507%205.06134%2019.5293%204.93265C19.5744%204.67289%2019.618%204.33303%2019.6189%203.99489C19.6198%203.64776%2019.5751%203.349%2019.4785%203.14342C19.3935%202.96271%2019.2872%202.88106%2019.1172%202.85994ZM14.6347%203.17681C14.2686%202.97551%2013.7702%202.80323%2013.1824%202.86181L13.1253%202.86811C12.9613%202.8885%2012.8532%202.96538%2012.7642%203.11516C12.6638%203.28409%2012.5995%203.53455%2012.5775%203.8395C12.5561%204.13778%2012.5778%204.45054%2012.6179%204.71432C12.6378%204.84537%2012.6615%204.95983%2012.6849%205.04987C12.6966%205.09482%2012.7077%205.13161%2012.7173%205.15997C12.7221%205.17403%2012.7262%205.1851%2012.7295%205.19336C12.7299%205.1943%2012.7302%205.1952%2012.7306%205.19604C12.7478%205.2151%2012.8086%205.26607%2012.95%205.26714C13.2249%205.26922%2013.8742%205.09578%2015.0766%204.03389V3.47534C15.0747%203.47374%2015.0727%203.47207%2015.0707%203.47044C14.971%203.38894%2014.8229%203.28036%2014.6347%203.17681ZM15.2074%203.59221L15.2082%203.59291C15.2084%203.59315%2015.2086%203.5935%2015.2086%203.5935C15.2084%203.59328%2015.2081%203.5929%2015.2074%203.59221Z'%20fill='%238BC3F3'/%3e%3cpath%20d='M15.8162%203.16618H16.4365C16.6233%203.16618%2016.7166%203.25643%2016.7166%203.43694V4.09096C16.7166%204.27147%2016.6233%204.36173%2016.4365%204.36173H15.8162C15.6295%204.36173%2015.5361%204.27147%2015.5361%204.09096V3.43694C15.5361%203.25643%2015.6295%203.16618%2015.8162%203.16618Z'%20fill='%23FCFCFA'/%3e%3cpath%20d='M16.4366%204.12635L16.4365%204.36173H15.8162L15.8162%204.12635H16.4366ZM16.4732%204.09098V3.43693C16.4732%203.42195%2016.4718%203.41121%2016.4705%203.40389C16.463%203.40268%2016.4519%203.40155%2016.4366%203.40155H15.8162C15.8008%203.40155%2015.7897%203.40279%2015.7822%203.404C15.7809%203.41132%2015.7796%203.42203%2015.7796%203.43693V4.09098C15.7796%204.10579%2015.7809%204.11647%2015.7822%204.12378C15.7897%204.12499%2015.8008%204.12635%2015.8162%204.12635L15.8162%204.36173L15.7823%204.36067C15.6291%204.35079%2015.5474%204.27182%2015.5372%204.12378L15.5361%204.09096V3.43694C15.5361%203.25643%2015.6295%203.16618%2015.8162%203.16618H16.4365L16.4704%203.16723C16.6346%203.17779%2016.7166%203.26771%2016.7166%203.43694V4.09096L16.7156%204.12378C16.7054%204.27185%2016.6236%204.35082%2016.4704%204.36067L16.4365%204.36173L16.4366%204.12635C16.4519%204.12635%2016.463%204.1251%2016.4705%204.1239C16.4718%204.11658%2016.4732%204.10588%2016.4732%204.09098Z'%20fill='%238BC3F3'/%3e%3cpath%20d='M16.1875%204.4215C17.6985%204.42151%2018.7854%205.24416%2019.0748%206.01354C19.1215%206.13765%2019.0553%206.27489%2018.9269%206.32002C18.7985%206.36515%2018.6565%206.3011%2018.6098%206.177C18.4045%205.6313%2017.5314%204.89973%2016.1875%204.89972C15.5262%204.89972%2014.9027%205.10801%2014.4138%205.38285C13.9145%205.66351%2013.5954%205.99016%2013.5024%206.19241C13.4469%206.31305%2013.3008%206.36734%2013.176%206.31372C13.0511%206.26007%2012.995%206.11879%2013.0505%205.99813C13.2048%205.66241%2013.6276%205.27169%2014.1651%204.96954C14.713%204.66155%2015.4215%204.4215%2016.1875%204.4215Z'%20fill='%238BC3F3'/%3e%3c/g%3e%3cdefs%3e%3cfilter%20id='filter0_g_41_638'%20x='3'%20y='1.36363'%20width='26.2424'%20height='29.6364'%20filterUnits='userSpaceOnUse'%20color-interpolation-filters='sRGB'%3e%3cfeFlood%20flood-opacity='0'%20result='BackgroundImageFix'/%3e%3cfeBlend%20mode='normal'%20in='SourceGraphic'%20in2='BackgroundImageFix'%20result='shape'/%3e%3cfeTurbulence%20type='fractalNoise'%20baseFrequency='1%201'%20numOctaves='3'%20seed='4891'%20/%3e%3cfeDisplacementMap%20in='shape'%20scale='2'%20xChannelSelector='R'%20yChannelSelector='G'%20result='displacedImage'%20width='100%25'%20height='100%25'%20/%3e%3cfeMerge%20result='effect1_texture_41_638'%3e%3cfeMergeNode%20in='displacedImage'/%3e%3c/feMerge%3e%3c/filter%3e%3c/defs%3e%3c/svg%3e", Le = "data:image/svg+xml,%3csvg%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cpath%20d='M4.66667%206.89543H26C26.7072%206.89543%2027.3855%207.17638%2027.8856%207.67648C28.3857%208.17658%2028.6667%208.85486%2028.6667%209.5621V25.5621C28.6667%2026.2693%2028.3857%2026.9476%2027.8856%2027.4477C27.3855%2027.9478%2026.7072%2028.2288%2026%2028.2288H4.66667C3.95942%2028.2288%203.28115%2027.9478%202.78105%2027.4477C2.28095%2026.9476%202%2026.2693%202%2025.5621V9.5621C2%208.85486%202.28095%208.17658%202.78105%207.67648C3.28115%207.17638%203.95942%206.89543%204.66667%206.89543ZM4.66667%209.55999V25.5621H10V9.55999H4.66667ZM12.6667%209.5621V25.5621H26V9.5621H12.6667Z'%20fill='%238BC3F3'/%3e%3c/svg%3e", Ae = "data:image/svg+xml,%3csvg%20width='33'%20height='32'%20viewBox='0%200%2033%2032'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cpath%20fill-rule='evenodd'%20clip-rule='evenodd'%20d='M9.73332%2028C9.73332%2028.3536%209.59284%2028.6928%209.34279%2028.9428C9.09274%2029.1929%208.75361%2029.3333%208.39998%2029.3333C8.04636%2029.3333%207.70722%2029.1929%207.45717%2028.9428C7.20713%2028.6928%207.06665%2028.3536%207.06665%2028V4C7.06665%203.64638%207.20713%203.30724%207.45717%203.05719C7.70722%202.80714%208.04636%202.66667%208.39998%202.66667C8.75361%202.66667%209.09274%202.80714%209.34279%203.05719C9.59284%203.30724%209.73332%203.64638%209.73332%204V28ZM15.0667%2012C14.3594%2012%2013.6811%2011.719%2013.181%2011.219C12.6809%2010.7189%2012.4%2010.0406%2012.4%209.33333C12.4%208.62609%2012.6809%207.94781%2013.181%207.44771C13.6811%206.94762%2014.3594%206.66667%2015.0667%206.66667H23.0667C23.7739%206.66667%2024.4522%206.94762%2024.9523%207.44771C25.4524%207.94781%2025.7333%208.62609%2025.7333%209.33333C25.7333%2010.0406%2025.4524%2010.7189%2024.9523%2011.219C24.4522%2011.719%2023.7739%2012%2023.0667%2012H15.0667ZM15.0667%2016H20.4C21.1072%2016%2021.7855%2016.281%2022.2856%2016.781C22.7857%2017.2811%2023.0667%2017.9594%2023.0667%2018.6667C23.0667%2019.3739%2022.7857%2020.0522%2022.2856%2020.5523C21.7855%2021.0524%2021.1072%2021.3333%2020.4%2021.3333H15.0667C14.3594%2021.3333%2013.6811%2021.0524%2013.181%2020.5523C12.6809%2020.0522%2012.4%2019.3739%2012.4%2018.6667C12.4%2017.9594%2012.6809%2017.2811%2013.181%2016.781C13.6811%2016.281%2014.3594%2016%2015.0667%2016Z'%20fill='%238BC3F3'/%3e%3c/svg%3e", Ee = "data:image/svg+xml,%3csvg%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cpath%20fill-rule='evenodd'%20clip-rule='evenodd'%20d='M22.6667%2028C22.6667%2028.3536%2022.5262%2028.6928%2022.2761%2028.9428C22.0261%2029.1929%2021.687%2029.3333%2021.3333%2029.3333C20.9797%2029.3333%2020.6406%2029.1929%2020.3905%2028.9428C20.1405%2028.6928%2020%2028.3536%2020%2028V4C20%203.64638%2020.1405%203.30724%2020.3905%203.05719C20.6406%202.80714%2020.9797%202.66667%2021.3333%202.66667C21.687%202.66667%2022.0261%202.80714%2022.2761%203.05719C22.5262%203.30724%2022.6667%203.64638%2022.6667%204V28ZM14.6667%206.66667C15.3739%206.66667%2016.0522%206.94762%2016.5523%207.44771C17.0524%207.94781%2017.3333%208.62609%2017.3333%209.33333C17.3333%2010.0406%2017.0524%2010.7189%2016.5523%2011.219C16.0522%2011.719%2015.3739%2012%2014.6667%2012H6.66667C5.95942%2012%205.28115%2011.719%204.78105%2011.219C4.28095%2010.7189%204%2010.0406%204%209.33333C4%208.62609%204.28095%207.94781%204.78105%207.44771C5.28115%206.94762%205.95942%206.66667%206.66667%206.66667H14.6667ZM14.6667%2016C15.3739%2016%2016.0522%2016.281%2016.5523%2016.781C17.0524%2017.2811%2017.3333%2017.9594%2017.3333%2018.6667C17.3333%2019.3739%2017.0524%2020.0522%2016.5523%2020.5523C16.0522%2021.0524%2015.3739%2021.3333%2014.6667%2021.3333H9.33333C8.62609%2021.3333%207.94781%2021.0524%207.44772%2020.5523C6.94762%2020.0522%206.66667%2019.3739%206.66667%2018.6667C6.66667%2017.9594%206.94762%2017.2811%207.44772%2016.781C7.94781%2016.281%208.62609%2016%209.33333%2016H14.6667Z'%20fill='%238BC3F3'/%3e%3c/svg%3e", Me = "data:image/svg+xml,%3csvg%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cpath%20fill-rule='evenodd'%20clip-rule='evenodd'%20d='M6.39992%204H25.5999C26.1893%204%2026.6666%204.59733%2026.6666%205.33333C26.6666%206.06933%2026.1893%206.66667%2025.5999%206.66667H6.39992C5.81059%206.66667%205.33325%206.06933%205.33325%205.33333C5.33325%204.59733%205.81059%204%206.39992%204ZM9.33325%2012C9.33325%2011.2928%209.6142%2010.6145%2010.1143%2010.1144C10.6144%209.61428%2011.2927%209.33333%2011.9999%209.33333C12.7072%209.33333%2013.3854%209.61428%2013.8855%2010.1144C14.3856%2010.6145%2014.6666%2011.2928%2014.6666%2012V25.3333C14.6666%2026.0406%2014.3856%2026.7189%2013.8855%2027.219C13.3854%2027.719%2012.7072%2028%2011.9999%2028C11.2927%2028%2010.6144%2027.719%2010.1143%2027.219C9.6142%2026.7189%209.33325%2026.0406%209.33325%2025.3333V12ZM17.3333%2012C17.3333%2011.2928%2017.6142%2010.6145%2018.1143%2010.1144C18.6144%209.61428%2019.2927%209.33333%2019.9999%209.33333C20.7072%209.33333%2021.3854%209.61428%2021.8855%2010.1144C22.3856%2010.6145%2022.6666%2011.2928%2022.6666%2012V20C22.6666%2020.7072%2022.3856%2021.3855%2021.8855%2021.8856C21.3854%2022.3857%2020.7072%2022.6667%2019.9999%2022.6667C19.2927%2022.6667%2018.6144%2022.3857%2018.1143%2021.8856C17.6142%2021.3855%2017.3333%2020.7072%2017.3333%2020V12Z'%20fill='%238BC3F3'/%3e%3c/svg%3e", Se = "data:image/svg+xml,%3csvg%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cpath%20fill-rule='evenodd'%20clip-rule='evenodd'%20d='M6.39992%2025.3333H25.5999C26.1893%2025.3333%2026.6666%2025.9307%2026.6666%2026.6667C26.6666%2027.4027%2026.1893%2028%2025.5999%2028H6.39992C5.81059%2028%205.33325%2027.4027%205.33325%2026.6667C5.33325%2025.9307%205.81059%2025.3333%206.39992%2025.3333ZM14.6666%2020C14.6666%2020.7072%2014.3856%2021.3855%2013.8855%2021.8856C13.3854%2022.3857%2012.7072%2022.6667%2011.9999%2022.6667C11.2927%2022.6667%2010.6144%2022.3857%2010.1143%2021.8856C9.6142%2021.3855%209.33325%2020.7072%209.33325%2020V6.66667C9.33325%205.95942%209.6142%205.28115%2010.1143%204.78105C10.6144%204.28095%2011.2927%204%2011.9999%204C12.7072%204%2013.3854%204.28095%2013.8855%204.78105C14.3856%205.28115%2014.6666%205.95942%2014.6666%206.66667V20ZM22.6666%2020C22.6666%2020.7072%2022.3856%2021.3855%2021.8855%2021.8856C21.3854%2022.3857%2020.7072%2022.6667%2019.9999%2022.6667C19.2927%2022.6667%2018.6144%2022.3857%2018.1143%2021.8856C17.6142%2021.3855%2017.3333%2020.7072%2017.3333%2020V12C17.3333%2011.2928%2017.6142%2010.6145%2018.1143%2010.1144C18.6144%209.61428%2019.2927%209.33333%2019.9999%209.33333C20.7072%209.33333%2021.3854%209.61428%2021.8855%2010.1144C22.3856%2010.6145%2022.6666%2011.2928%2022.6666%2012V20Z'%20fill='%238BC3F3'/%3e%3c/svg%3e", _e = "data:image/svg+xml,%3csvg%20width='33'%20height='32'%20viewBox='0%200%2033%2032'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cpath%20fill-rule='evenodd'%20clip-rule='evenodd'%20d='M23.4668%2017.3333V20C23.4668%2020.7072%2023.1858%2021.3855%2022.6857%2021.8856C22.1857%2022.3857%2021.5074%2022.6667%2020.8001%2022.6667C20.0929%2022.6667%2019.4146%2022.3857%2018.9145%2021.8856C18.4144%2021.3855%2018.1335%2020.7072%2018.1335%2020V17.3333H15.4668V23.6187C15.4668%2025.3027%2014.2735%2026.6667%2012.8001%2026.6667C11.3268%2026.6667%2010.1335%2025.3027%2010.1335%2023.6187V17.3333H4.80013C4.44651%2017.3333%204.10737%2017.1929%203.85732%2016.9428C3.60727%2016.6928%203.4668%2016.3536%203.4668%2016C3.4668%2015.6464%203.60727%2015.3072%203.85732%2015.0572C4.10737%2014.8071%204.44651%2014.6667%204.80013%2014.6667H10.1335V8.38133C10.1335%206.69733%2011.3268%205.33333%2012.8001%205.33333C14.2735%205.33333%2015.4668%206.69733%2015.4668%208.38133V14.6667H18.1335V12C18.1335%2011.2928%2018.4144%2010.6145%2018.9145%2010.1144C19.4146%209.61428%2020.0929%209.33333%2020.8001%209.33333C21.5074%209.33333%2022.1857%209.61428%2022.6857%2010.1144C23.1858%2010.6145%2023.4668%2011.2928%2023.4668%2012V14.6667H28.8001C29.1538%2014.6667%2029.4929%2014.8071%2029.7429%2015.0572C29.993%2015.3072%2030.1335%2015.6464%2030.1335%2016C30.1335%2016.3536%2029.993%2016.6928%2029.7429%2016.9428C29.4929%2017.1929%2029.1538%2017.3333%2028.8001%2017.3333H23.4668Z'%20fill='%238BC3F3'/%3e%3c/svg%3e", He = "data:image/svg+xml,%3csvg%20width='33'%20height='32'%20viewBox='0%200%2033%2032'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cpath%20fill-rule='evenodd'%20clip-rule='evenodd'%20d='M14.8665%2017.3333V14.6667H8.5812C6.8972%2014.6667%205.5332%2013.4733%205.5332%2012C5.5332%2010.5267%206.8972%209.33333%208.5812%209.33333H14.8665V4C14.8665%203.64638%2015.007%203.30724%2015.2571%203.05719C15.5071%202.80714%2015.8462%202.66667%2016.1999%202.66667C16.5535%202.66667%2016.8926%202.80714%2017.1427%203.05719C17.3927%203.30724%2017.5332%203.64638%2017.5332%204V9.33333H23.8185C25.5025%209.33333%2026.8665%2010.5267%2026.8665%2012C26.8665%2013.4733%2025.5025%2014.6667%2023.8185%2014.6667H17.5332V17.3333H21.5332C22.2404%2017.3333%2022.9187%2017.6143%2023.4188%2018.1144C23.9189%2018.6145%2024.1999%2019.2928%2024.1999%2020C24.1999%2020.7072%2023.9189%2021.3855%2023.4188%2021.8856C22.9187%2022.3857%2022.2404%2022.6667%2021.5332%2022.6667H17.5332V28C17.5332%2028.3536%2017.3927%2028.6928%2017.1427%2028.9428C16.8926%2029.1929%2016.5535%2029.3333%2016.1999%2029.3333C15.8462%2029.3333%2015.5071%2029.1929%2015.2571%2028.9428C15.007%2028.6928%2014.8665%2028.3536%2014.8665%2028V22.6667H10.8665C10.1593%2022.6667%209.48102%2022.3857%208.98092%2021.8856C8.48082%2021.3855%208.19987%2020.7072%208.19987%2020C8.19987%2019.2928%208.48082%2018.6145%208.98092%2018.1144C9.48102%2017.6143%2010.1593%2017.3333%2010.8665%2017.3333H14.8665Z'%20fill='%238BC3F3'/%3e%3c/svg%3e", Ve = "data:image/svg+xml,%3csvg%20width='33'%20height='32'%20viewBox='0%200%2033%2032'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cpath%20d='M3.80005%2024.7791V6.22093C3.80005%205.54663%204.41923%205%205.18303%205C5.94683%205%206.56601%205.54663%206.56601%206.22093V24.7791C6.56601%2025.4534%205.94683%2026%205.18303%2026C4.41923%2026%203.80005%2025.4534%203.80005%2024.7791Z'%20fill='%238BC3F3'/%3e%3cpath%20d='M7.49597%2016.1488L10.3015%2018.9352C10.6394%2019.2708%2011.2681%2019.0598%2011.2681%2018.6107V17.6976H22.332V18.6107C22.332%2019.0598%2022.9607%2019.2708%2023.2986%2018.9352L26.1041%2016.1488C26.4767%2015.7787%2026.4767%2015.221%2026.1041%2014.851L23.2986%2012.0646C22.9607%2011.729%2022.332%2011.94%2022.332%2012.3891V13.3022H11.2681V12.3891C11.2681%2011.94%2010.6394%2011.729%2010.3015%2012.0646L7.49597%2014.851C7.12335%2015.221%207.12335%2015.7787%207.49597%2016.1488Z'%20fill='%238BC3F3'/%3e%3cpath%20d='M27.0341%2024.7791V6.22093C27.0341%205.54663%2027.6533%205%2028.4171%205C29.1809%205%2029.8%205.54663%2029.8%206.22093V24.7791C29.8%2025.4534%2029.1809%2026%2028.4171%2026C27.6533%2026%2027.0341%2025.4534%2027.0341%2024.7791Z'%20fill='%238BC3F3'/%3e%3c/svg%3e", Be = "data:image/svg+xml,%3csvg%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cpath%20d='M3%2024.7791V6.22093C3%205.54663%203.61918%205%204.38298%205C5.14678%205%205.76596%205.54663%205.76596%206.22093V24.7791C5.76596%2025.4534%205.14678%2026%204.38298%2026C3.61918%2026%203%2025.4534%203%2024.7791Z'%20fill='%238BC3F3'/%3e%3cpath%20d='M26.234%2024.7791V6.22093C26.234%205.54663%2026.8532%205%2027.617%205C28.3808%205%2029%205.54663%2029%206.22093V24.7791C29%2025.4534%2028.3808%2026%2027.617%2026C26.8532%2026%2026.234%2025.4534%2026.234%2024.7791Z'%20fill='%238BC3F3'/%3e%3cpath%20d='M15.0141%2016.2491L12.2086%2019.0355C11.8706%2019.3711%2011.2419%2019.1601%2011.2419%2018.711V17.7979H6.71L6.71%2013.4025H11.2419V12.4894C11.2419%2012.0403%2011.8706%2011.8293%2012.2086%2012.1649L15.0141%2014.9513C15.3867%2015.3213%2015.3867%2015.879%2015.0141%2016.2491Z'%20fill='%238BC3F3'/%3e%3cpath%20d='M16.9895%2016.2491L19.795%2019.0355C20.133%2019.3711%2020.7617%2019.1601%2020.7617%2018.711V17.7979H25.2936L25.2936%2013.4025H20.7617V12.4894C20.7617%2012.0403%2020.133%2011.8293%2019.795%2012.1649L16.9895%2014.9513C16.6169%2015.3213%2016.6169%2015.879%2016.9895%2016.2491Z'%20fill='%238BC3F3'/%3e%3c/svg%3e", Fe = "data:image/svg+xml,%3csvg%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cpath%20d='M7.22093%203H25.7791C26.4534%203%2027%203.61918%2027%204.38298C27%205.14678%2026.4534%205.76596%2025.7791%205.76596H7.22093C6.54663%205.76596%206%205.14678%206%204.38298C6%203.61918%206.54663%203%207.22093%203Z'%20fill='%238BC3F3'/%3e%3cpath%20d='M15.8512%206.69592L13.0648%209.50143C12.7292%209.83937%2012.9402%2010.4681%2013.3893%2010.4681H14.3024V21.5319H13.3893C12.9402%2021.5319%2012.7292%2022.1606%2013.0648%2022.4986L15.8512%2025.3041C16.2213%2025.6767%2016.779%2025.6767%2017.149%2025.3041L19.9354%2022.4986C20.271%2022.1606%2020.06%2021.5319%2019.6109%2021.5319H18.6978V10.4681H19.6109C20.06%2010.4681%2020.271%209.83937%2019.9354%209.50143L17.149%206.69592C16.779%206.3233%2016.2213%206.3233%2015.8512%206.69592Z'%20fill='%238BC3F3'/%3e%3cpath%20d='M7.22093%2026.234H25.7791C26.4534%2026.234%2027%2026.8532%2027%2027.617C27%2028.3808%2026.4534%2029%2025.7791%2029H7.22093C6.54663%2029%206%2028.3808%206%2027.617C6%2026.8532%206.54663%2026.234%207.22093%2026.234Z'%20fill='%238BC3F3'/%3e%3c/svg%3e", Ne = "data:image/svg+xml,%3csvg%20width='33'%20height='32'%20viewBox='0%200%2033%2032'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cpath%20d='M7.82103%203H26.3792C27.0535%203%2027.6001%203.61918%2027.6001%204.38298C27.6001%205.14678%2027.0535%205.76596%2026.3792%205.76596H7.82103C7.14673%205.76596%206.6001%205.14678%206.6001%204.38298C6.6001%203.61918%207.14673%203%207.82103%203Z'%20fill='%238BC3F3'/%3e%3cpath%20d='M7.82103%2026.234H26.3792C27.0535%2026.234%2027.6001%2026.8532%2027.6001%2027.617C27.6001%2028.3808%2027.0535%2029%2026.3792%2029H7.82103C7.14673%2029%206.6001%2028.3808%206.6001%2027.617C6.6001%2026.8532%207.14673%2026.234%207.82103%2026.234Z'%20fill='%238BC3F3'/%3e%3cpath%20d='M16.351%2015.0141L13.5646%2012.2086C13.229%2011.8706%2013.44%2011.2419%2013.8891%2011.2419H14.8022V6.71L19.1976%206.71V11.2419H20.1107C20.5598%2011.2419%2020.7708%2011.8706%2020.4352%2012.2086L17.6488%2015.0141C17.2787%2015.3867%2016.7211%2015.3867%2016.351%2015.0141Z'%20fill='%238BC3F3'/%3e%3cpath%20d='M16.351%2016.9895L13.5646%2019.795C13.229%2020.133%2013.44%2020.7617%2013.8891%2020.7617H14.8022V25.2936L19.1976%2025.2936V20.7617H20.1107C20.5598%2020.7617%2020.7708%2020.133%2020.4352%2019.795L17.6488%2016.9895C17.2787%2016.6169%2016.7211%2016.6169%2016.351%2016.9895Z'%20fill='%238BC3F3'/%3e%3c/svg%3e", De = "data:image/svg+xml,%3csvg%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cpath%20fill-rule='evenodd'%20clip-rule='evenodd'%20d='M19.5201%206.18689C19.2052%205.87191%2019.4282%205.33334%2019.8737%205.33334H25.6666C26.2189%205.33334%2026.6666%205.78105%2026.6666%206.33334V12.1262C26.6666%2012.5717%2026.128%2012.7948%2025.813%2012.4798L23.9999%2010.6667L18.6666%2016L15.9999%2013.3333L21.3333%208L19.5201%206.18689ZM12.4797%2025.8131C12.7947%2026.1281%2012.5716%2026.6667%2012.1261%2026.6667H6.33325C5.78097%2026.6667%205.33325%2026.219%205.33325%2025.6667V19.8738C5.33325%2019.4283%205.87182%2019.2052%206.18681%2019.5202L7.99992%2021.3333L13.3333%2016L15.9999%2018.6667L10.6666%2024L12.4797%2025.8131Z'%20fill='%238BC3F3'/%3e%3c/svg%3e", Oe = "data:image/svg+xml,%3csvg%20width='33'%20height='32'%20viewBox='0%200%2033%2032'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cpath%20d='M14.8666%2016H9.07372C8.62827%2016%208.40519%2016.5386%208.72017%2016.8535L10.5333%2018.6667L5.19995%2024L7.86662%2026.6667L13.2%2021.3333L15.0131%2023.1464C15.328%2023.4614%2015.8666%2023.2383%2015.8666%2022.7929V17C15.8666%2016.4477%2015.4189%2016%2014.8666%2016Z'%20fill='%238BC3F3'/%3e%3cpath%20d='M17.2%2015.6667H22.9929C23.4384%2015.6667%2023.6615%2015.1281%2023.3465%2014.8131L21.5334%2013L26.8667%207.66667L24.2%205L18.8667%2010.3333L17.0536%208.52022C16.7386%208.20524%2016.2%208.42832%2016.2%208.87377V14.6667C16.2%2015.219%2016.6477%2015.6667%2017.2%2015.6667Z'%20fill='%238BC3F3'/%3e%3c/svg%3e", Pe = "data:image/svg+xml,%3csvg%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cpath%20fill-rule='evenodd'%20clip-rule='evenodd'%20d='M15.9999%2016C15.9999%2016.1427%2015.9692%2016.288%2015.9039%2016.4213C15.8398%2016.5595%2015.7376%2016.6766%2015.6092%2016.7587L6.46256%2022.5587C6.09456%2022.7907%205.6319%2022.6387%205.42923%2022.22C5.36471%2022.089%205.33183%2021.9447%205.33323%2021.7987V10.2013C5.33323%209.72132%205.67323%209.33333%206.09323%209.33333C6.22441%209.33264%206.35289%209.37067%206.46256%209.44266L15.6092%2015.2413C15.7325%2015.3252%2015.8328%2015.4385%2015.901%2015.571C15.9692%2015.7035%2016.0032%2015.851%2015.9999%2016V10.2C15.9999%209.71999%2016.3399%209.33199%2016.7599%209.33199C16.8911%209.33131%2017.0196%209.36934%2017.1292%209.44133L26.2759%2015.24C26.6426%2015.472%2026.7746%2016%2026.5706%2016.42C26.5065%2016.5582%2026.4042%2016.6752%2026.2759%2016.7573L17.1292%2022.5573C16.7612%2022.7893%2016.2986%2022.6373%2016.0959%2022.2187C16.0314%2022.0877%2015.9985%2021.9433%2015.9999%2021.7973V16Z'%20fill='%238BC3F3'/%3e%3c/svg%3e", Ze = "data:image/svg+xml,%3csvg%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cpath%20d='M16%2016H21.8C21.9467%2016%2022.0934%2016.0333%2022.2214%2016.096C22.64%2016.2987%2022.792%2016.7627%2022.5587%2017.1293L16.76%2026.276C16.6814%2026.4%2016.564%2026.5027%2016.4227%2026.5707C16.004%2026.7747%2015.476%2026.6427%2015.2427%2026.276L9.4427%2017.1293C9.37118%2017.0195%209.33361%2016.891%209.33469%2016.76C9.33469%2016.34%209.7227%2016%2010.2027%2016H16ZM16%2016C15.6934%2016%2015.3987%2015.8587%2015.24%2015.6093L9.44003%206.46266C9.36898%206.3527%209.33188%206.22424%209.33336%206.09333C9.33336%205.67333%209.72136%205.33333%2010.2014%205.33333H21.7987C21.9454%205.33333%2022.092%205.36666%2022.22%205.42933C22.6387%205.63199%2022.7907%206.096%2022.5574%206.46266L16.7587%2015.6093C16.68%2015.7333%2016.5627%2015.836%2016.4214%2015.904C16.288%2015.9693%2016.1427%2016%2016.0014%2016'%20fill='%238BC3F3'/%3e%3c/svg%3e", V0 = ie;
+V0.registerExtension({
   name: "vue-basic",
-  getCustomWidgets(v) {
+  getCustomWidgets(A) {
     return {
-      CUSTOM_VUE_COMPONENT_BASIC(H) {
-        const g = {
+      CUSTOM_VUE_COMPONENT_BASIC(V) {
+        const _ = {
           name: "custom_vue_component_basic",
           type: "vue-basic"
-        }, N = new It({
-          node: H,
-          name: g.name,
-          component: le,
-          inputSpec: g,
+        }, N = new re({
+          node: V,
+          name: _.name,
+          component: ke,
+          inputSpec: _,
           options: {}
         });
-        return Wt(H, N), { widget: N };
+        return se(V, N), { widget: N };
       }
     };
   },
-  nodeCreated(v) {
-    if (v.constructor.comfyClass !== "vue-basic") return;
-    const [H, g] = v.size;
-    v.setSize([Math.max(H, 300), Math.max(g, 520)]);
+  nodeCreated(A) {
+    if (A.constructor.comfyClass !== "vue-basic") return;
+    const [V, _] = A.size;
+    A.setSize([Math.max(V, 300), Math.max(_, 520)]);
   }
 });
-Pt.registerExtension({
+V0.registerExtension({
   name: "housekeeper-alignment",
   async setup() {
     try {
-      ne();
+      Te();
     } catch {
     }
   },
-  nodeCreated(v) {
-    v.constructor.comfyClass === "housekeeper-alignment" && (v.setSize([200, 100]), v.title && (v.title = "🎯 Alignment Panel Active"));
+  nodeCreated(A) {
+    A.constructor.comfyClass === "housekeeper-alignment" && (A.setSize([200, 100]), A.title && (A.title = "🎯 Alignment Panel Active"));
   }
 });
-function ne() {
-  let v = null, H = !1, g = [], N = [];
-  const X = /* @__PURE__ */ new WeakMap(), K = /* @__PURE__ */ new WeakMap();
-  function V(h) {
-    var u;
-    if (g.length < 2) return;
-    $();
-    const s = (u = window.app) == null ? void 0 : u.canvas;
-    if (!s) return;
-    B(h, g).forEach((z, f) => {
-      if (z && g[f]) {
-        const C = document.createElement("div");
-        C.style.cssText = `
+function Te() {
+  let A = null, V = null, _ = null, N = !1, m = [], a2 = [], q = [], I = 0;
+  const R = "housekeeper-recent-colors", B = 9, X = ["#353535", "#3f5159", "#593930", "#335533", "#333355", "#335555", "#553355", "#665533", "#000000"];
+  let Y = D0(), z = null, b = null, k = null;
+  const d2 = /* @__PURE__ */ new WeakMap(), j = /* @__PURE__ */ new WeakMap();
+  let U = null, y2 = !1;
+  const g2 = 48, E2 = 24;
+  function x2() {
+    return document.querySelector("#comfy-menu, .comfyui-menu, .litegraph-menu, .comfyui-toolbar");
+  }
+  function F() {
+    const i = x2();
+    if (!i)
+      return g2;
+    const t = i.getBoundingClientRect();
+    return !t || t.width === 0 && t.height === 0 ? g2 : Math.max(g2, Math.ceil(t.bottom + 8));
+  }
+  function J() {
+    const i = F(), t = window.innerHeight || document.documentElement.clientHeight || 0, a = Math.max(t - i - E2, 280);
+    document.documentElement.style.setProperty("--hk-top-offset", `${i}px`), document.documentElement.style.setProperty("--hk-panel-max-height", `${a}px`);
+  }
+  function P2() {
+    if (y2 || (y2 = !0, window.addEventListener("resize", J), window.addEventListener("orientationchange", J)), typeof ResizeObserver < "u") {
+      const i = x2();
+      i && (U ? U.disconnect() : U = new ResizeObserver(() => J()), U.observe(i));
+    }
+  }
+  const K2 = [
+    { type: "left", icon: Ae, label: "Align left edges", group: "basic" },
+    { type: "height-center", icon: He, label: "Center horizontally", group: "basic" },
+    { type: "right", icon: Ee, label: "Align right edges", group: "basic" },
+    { type: "top", icon: Me, label: "Align top edges", group: "basic" },
+    { type: "width-center", icon: _e, label: "Center vertically", group: "basic" },
+    { type: "bottom", icon: Se, label: "Align bottom edges", group: "basic" }
+  ], q2 = [
+    { type: "width-max", icon: Ve, label: "Match widest width", group: "size" },
+    { type: "width-min", icon: Be, label: "Match narrowest width", group: "size" },
+    { type: "height-max", icon: Fe, label: "Match tallest height", group: "size" },
+    { type: "height-min", icon: Ne, label: "Match shortest height", group: "size" },
+    { type: "size-max", icon: De, label: "Match largest size", group: "size" },
+    { type: "size-min", icon: Oe, label: "Match smallest size", group: "size" }
+  ], J2 = [
+    { type: "horizontal-flow", icon: Pe, label: "Distribute horizontally", group: "flow" },
+    { type: "vertical-flow", icon: Ze, label: "Distribute vertically", group: "flow" }
+  ], z2 = [
+    ["#553333", "#593930", "#335533", "#333355", "#3f5159", "#335555", "#553355", "#665533", "#000000"],
+    ["#ff6f61", "#ff9a76", "#ffc36a", "#ffe29a", "#ffd6d1", "#ffa69e", "#ff7b89", "#ef5d60", "#c03a53"],
+    ["#003f5c", "#2f4b7c", "#376996", "#3f7cac", "#49a3c7", "#56cfe1", "#72efdd", "#80ffdb", "#c0fdfb"],
+    ["#2a6041", "#3b7d4f", "#4f945c", "#66ad71", "#81c784", "#a5d6a7", "#dcedc8", "#93b48b", "#6d8b74"],
+    ["#150050", "#3f0071", "#610094", "#7b2cbf", "#c77dff", "#ff61d2", "#ff97c1", "#ffcbf2", "#ffe5f1"],
+    ["#f6d1c1", "#f5b5c4", "#e9a6c1", "#d4a5e3", "#b4a0e5", "#9fc9eb", "#a7d7c5", "#d5e2b8", "#f1e3a0"],
+    ["#3d0c02", "#7f2b0a", "#b3541e", "#d89a54", "#f2d0a9", "#c2956b", "#8c5a45", "#5a3d2b", "#2f1b10"],
+    ["#0f0f3d", "#1b1b7d", "#3a0ca3", "#7209b7", "#f72585", "#ff0677", "#ff6d00", "#ff9f1c", "#ffbf69"],
+    ["#051937", "#004d7a", "#008793", "#00bf72", "#a8eb12", "#dce35b", "#ffd23f", "#ff9b71", "#ef476f"],
+    ["#0d1b2a", "#1b263b", "#274060", "#335c81", "#406e8e", "#4f83a1", "#5f9bbf", "#6faad1", "#8fc0e6"],
+    ["#2b193d", "#412271", "#6a4c93", "#9b5de5", "#f15bb5", "#f9a1bc", "#feeafa", "#ffd6e0", "#ffe5f1"]
+  ], S2 = 4.5, _2 = "#AAAAAA";
+  function Q2() {
+    const i = "housekeeper-alignment-styles";
+    if (document.getElementById(i)) return;
+    const t = document.createElement("style");
+    t.id = i, t.textContent = `
+@import url('https://fonts.googleapis.com/css2?family=Gloria+Hallelujah&display=swap');
+
+:root {
+    --hk-accent: #8BC3F3;
+    --hk-panel-bg: rgba(24, 26, 32, 0.95);
+    --hk-panel-border: rgba(139, 195, 243, 0.35);
+    --hk-handle-bg: rgba(32, 35, 42, 0.92);
+    --hk-text-strong: #E8F3FF;
+    --hk-text-muted: rgba(232, 243, 255, 0.74);
+    --hk-top-offset: 48px;
+    --hk-panel-max-height: calc(100vh - 96px);
+    --hk-panel-width: clamp(270px, 18vw, min(270px, calc(100vw - 24px)));
+    --hk-button-size: clamp(34px, 7vw, 40px);
+    --hk-icon-size: clamp(16px, 4vw, 20px);
+    --hk-button-gap: clamp(4px, 1vw, 8px);
+    --hk-header-font-size: clamp(18px, 2vw, 22px);
+    --hk-body-font-size: clamp(12px, 1.4vw, 14px);
+    --hk-subtitle-font-size: clamp(11px, 1.3vw, 13px);
+}
+
+
+.housekeeper-wrapper {
+    position: fixed;
+    top: var(--hk-top-offset);
+    right: 0;
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: flex-start;
+    gap: 8px;
+    padding-right: 4px;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.housekeeper-handle,
+.housekeeper-panel {
+    pointer-events: auto;
+}
+
+.housekeeper-handle {
+    border: 1px solid var(--hk-panel-border);
+    background: var(--hk-handle-bg);
+    color: var(--hk-accent);
+    border-radius: clamp(8px, 1.5vw, 12px) 0 0 clamp(8px, 1.5vw, 12px);
+    padding: clamp(6px, 1.2vh, 10px) clamp(2px, 0.5vw, 4px) clamp(4px, 0.8vh, 6px) clamp(6px, 1.2vw, 9px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(6px, 1.2vh, 8px);
+    cursor: pointer;
+    width: clamp(32px, 4vw, 48px);
+    max-width: 44px;
+    min-height: clamp(100px, 18vh, 140px);
+    max-height: 140px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+    font-family: 'Gloria Hallelujah', cursive;
+    font-size: clamp(10px, 1.4vw, 12px);
+    letter-spacing: 0.08em;
+    background-image: linear-gradient(160deg, rgba(139, 195, 243, 0.12), rgba(139, 195, 243, 0.05));
+    margin-right: -4px;
+}
+
+.housekeeper-handle img {
+    width: clamp(18px, 2.5vw, 24px);
+    height: clamp(18px, 2.5vw, 24px);
+    max-width: 24px;
+    max-height: 24px;
+}
+
+.housekeeper-handle span {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    transition: transform 0.3s ease;
+}
+
+.housekeeper-wrapper.collapsed .housekeeper-handle span {
+    transform: rotate(0deg);
+}
+
+.housekeeper-handle:focus-visible {
+    outline: 2px solid var(--hk-accent);
+    outline-offset: 2px;
+}
+
+.housekeeper-wrapper.hk-has-selection .housekeeper-handle {
+    box-shadow: 0 0 14px rgba(139, 195, 243, 0.35);
+}
+
+.housekeeper-panel {
+    width: var(--hk-panel-width);
+    background: var(--hk-panel-bg);
+    border: 1px solid var(--hk-panel-border);
+    border-radius: 10px;
+    padding: clamp(8px, 1vw, 10px) clamp(10px, 1.2vw, 14px);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+    color: var(--hk-text-strong);
+    font-family: 'Gloria Hallelujah', cursive;
+    transform: translateX(110%);
+    opacity: 0;
+    max-height: var(--hk-panel-max-height);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+}
+
+.housekeeper-wrapper.expanded .housekeeper-panel {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.housekeeper-wrapper.collapsed .housekeeper-panel {
+    pointer-events: none;
+}
+
+.housekeeper-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 0 8px 0;
+}
+
+// .housekeeper-content > * + * {
+//     margin-top: clamp(6px, 1vw, 12px);
+// }
+
+.housekeeper-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--hk-accent);
+}
+
+.housekeeper-header-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: var(--hk-header-font-size);
+    margin: 0;
+}
+
+.housekeeper-header-title img {
+    width: 24px;
+    height: 24px;
+}
+
+.housekeeper-close {
+    background: transparent;
+    border: none;
+    color: var(--hk-accent);
+    font-size: 24px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    transition: transform 0.2s ease;
+}
+
+.housekeeper-close img {
+    width: 24px;
+    height: 24px;
+}
+
+.housekeeper-close:hover {
+    opacity: 0.7;
+}
+
+.housekeeper-divider {
+    height: 1px;
+    background: rgba(139, 195, 243, 0.25);
+    width: 100%;
+    margin: 2px 0 4px;
+}
+
+.housekeeper-divider.housekeeper-divider-spaced {
+    margin: clamp(10px, 1.5vw, 16px) 0 clamp(6px, 1vw, 12px);
+}
+
+.housekeeper-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.housekeeper-section-primary {
+    margin-top: 0 !important;
+}
+
+.housekeeper-divider + .housekeeper-section-primary {
+    margin-top: 0 !important;
+}
+
+.housekeeper-subtitle {
+    font-size: var(--hk-subtitle-font-size);
+    margin: 0;
+    color: var(--hk-text-muted);
+}
+
+.housekeeper-palette-header,
+.housekeeper-custom-inline,
+.housekeeper-color-section-title {
+    font-size: var(--hk-subtitle-font-size);
+    color: var(--hk-text-muted);
+}
+
+.housekeeper-button-grid {
+    display: flex;
+    flex-wrap: wrap;
+    // gap: var(--hk-button-gap);
+    // padding: clamp(4px, 0.8vw, 6px);
+    border-radius: 8px;
+    border: 1px solid rgba(139, 195, 243, 0.35);
+    background: rgba(22, 24, 29, 0.6);
+    justify-content: flex-start;
+    align-items: center;
+    width: 100%;
+    --hk-button-unit: calc(100% / 6);
+}
+
+.hk-button {
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    flex: 0 0 var(--hk-button-unit);
+    aspect-ratio: 1 / 1;
+    max-width: var(--hk-button-unit);
+    padding: clamp(2px, 0.6vw, 4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    cursor: pointer;
+}
+
+.hk-button img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.hk-button:hover:not(:disabled),
+.hk-button:focus-visible {
+    transform: translateY(-1px);
+    background: rgba(139, 195, 243, 0.18);
+    outline: none;
+}
+
+.hk-button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+.housekeeper-info {
+    background: rgba(34, 37, 45, 0.9);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: var(--hk-body-font-size);
+    color: var(--hk-text-muted);
+    text-align: left;
+    line-height: 1.4;
+}
+
+.housekeeper-info small {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+.housekeeper-wrapper.expanded .housekeeper-handle {
+    display: none;
+}
+
+.housekeeper-wrapper.collapsed .housekeeper-handle {
+    opacity: 0.85;
+}
+
+.housekeeper-color-strip,
+.housekeeper-color-footer,
+.housekeeper-color-recent {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 4px;
+    width: 100%;
+    justify-content: flex-start;
+}
+
+.housekeeper-color-recent {
+    justify-content: center;
+}
+
+.housekeeper-custom-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 12px;
+    color: var(--hk-text-muted);
+}
+
+.hk-custom-toggle {
+    border: 1px solid rgba(139, 195, 243, 0.35);
+    background: rgba(139, 195, 243, 0.12);
+    color: var(--hk-accent);
+    border-radius: 8px;
+    padding: 4px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.hk-custom-toggle:hover {
+    background: rgba(139, 195, 243, 0.22);
+    transform: translateY(-1px);
+}
+
+.hk-custom-toggle:focus-visible {
+    outline: 2px solid var(--hk-accent);
+    outline-offset: 2px;
+}
+
+.housekeeper-custom-inline {
+    display: flex;
+    align-items: center;
+    gap: clamp(4px, 0.8vw, 6px);
+    margin-top: clamp(8px, 1.5vh, 12px);
+}
+
+.housekeeper-custom-inline span {
+    color: var(--hk-text-muted);
+    font-size: var(--hk-body-font-size);
+    white-space: nowrap;
+}
+
+.hk-custom-inline-picker {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.hk-custom-inline-picker::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.hk-custom-inline-picker::-webkit-color-swatch {
+    border: none;
+    border-radius: 4px;
+}
+
+.hk-custom-inline-picker::-moz-color-swatch {
+    border: none;
+    border-radius: 4px;
+}
+
+.hk-custom-hex-inline {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(139, 195, 243, 0.35);
+    padding: 4px 6px;
+    color: var(--hk-text-strong);
+    font-family: 'Gloria Hallelujah', cursive;
+    letter-spacing: 0.04em;
+    width: clamp(60px, 12vw, 80px);
+    flex: 1;
+    min-width: 60px;
+}
+
+.hk-custom-hex-inline::placeholder {
+    color: rgba(232, 243, 255, 0.45);
+}
+
+.hk-custom-preview-inline {
+    width: 42px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid rgba(139, 195, 243, 0.35);
+}
+
+.hk-custom-apply-inline {
+    border: 1px solid rgba(139, 195, 243, 0.35);
+    background: rgba(139, 195, 243, 0.12);
+    color: var(--hk-accent);
+    border-radius: 6px;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    line-height: 1;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.hk-custom-apply-inline:hover {
+    background: rgba(139, 195, 243, 0.25);
+    transform: translateY(-1px);
+}
+
+.hk-custom-apply-inline:focus-visible {
+    outline: 2px solid var(--hk-accent);
+    outline-offset: 2px;
+}
+
+.housekeeper-palette-header {
+    display: flex;
+    align-items: center;
+    justify-content: left;
+    gap: 6px;
+    width: 100%;
+    margin: 4px 0;
+    color: var(--hk-text-muted);
+}
+
+.housekeeper-palette-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+}
+
+.housekeeper-color-strip {
+    flex: 1;
+    flex-wrap: nowrap;
+    justify-content: center;
+    min-width: 0;
+}
+
+.housekeeper-color-footer {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+
+.housekeeper-color-carousel {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+}
+
+.hk-palette-arrow {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    border-radius: 6px;
+    border: 1px solid rgba(139, 195, 243, 0.35);
+    background: rgba(139, 195, 243, 0.12);
+    color: var(--hk-accent);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+    font-size: 11px;
+    padding: 0;
+}
+
+.hk-palette-arrow:hover {
+    background: rgba(139, 195, 243, 0.25);
+    transform: translateY(-1px);
+}
+
+.hk-palette-arrow:focus-visible {
+    outline: 2px solid var(--hk-accent);
+    outline-offset: 2px;
+}
+
+.hk-color-chip {
+    flex: 0 0 16px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: none;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    background: transparent;
+}
+
+.hk-color-chip:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+}
+
+.hk-color-chip:focus-visible {
+    outline: 2px solid var(--hk-accent);
+    outline-offset: 2px;
+}
+
+.housekeeper-color-custom-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: var(--hk-body-font-size);
+    color: var(--hk-text-muted);
+    margin-top: 14px;
+}
+
+.hk-toggle-placeholder {
+    width: 38px;
+    height: 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(139, 195, 243, 0.35);
+    background: rgba(139, 195, 243, 0.08);
+    position: relative;
+}
+
+.hk-toggle-placeholder::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgba(139, 195, 243, 0.85);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.housekeeper-color-picker-placeholder {
+    margin-top: 16px;
+    border: 1px solid rgba(139, 195, 243, 0.25);
+    border-radius: 14px;
+    background: linear-gradient(135deg, #ffffff 0%, #ff0000 50%, #000000 100%);
+    height: clamp(160px, 32vh, 220px);
+    position: relative;
+    overflow: hidden;
+}
+
+.housekeeper-color-picker-toolbar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 54px;
+    background: rgba(16, 17, 21, 0.92);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
+    color: var(--hk-text-muted);
+    font-size: var(--hk-body-font-size);
+}
+
+.housekeeper-color-picker-toolbar .hk-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.65);
+}
+
+.housekeeper-color-picker-toolbar .hk-slider-placeholder {
+    flex: 1;
+    height: 12px;
+    border-radius: 8px;
+    background: linear-gradient(90deg, red, yellow, lime, cyan, blue, magenta, red);
+    box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.35);
+}
+
+.hk-rgb-placeholder {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--hk-subtitle-font-size);
+}
+
+.hk-rgb-placeholder .hk-rgb-pill {
+    width: 36px;
+    height: 22px;
+    border-radius: 6px;
+    border: 1px solid rgba(139, 195, 243, 0.35);
+    background: rgba(139, 195, 243, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--hk-text-muted);
+    font-family: 'Gloria Hallelujah', cursive;
+    letter-spacing: 0.04em;
+}
+`, document.head.appendChild(t);
+  }
+  Q2(), P2(), J();
+  function O() {
+    const i = document.createElement("section");
+    return i.className = "housekeeper-section", i;
+  }
+  function t2(i) {
+    const t = document.createElement("p");
+    return t.className = "housekeeper-subtitle", t.textContent = i, t;
+  }
+  function i2(i, t) {
+    const a = document.createElement("div");
+    return a.className = `housekeeper-button-grid housekeeper-button-grid-${t}`, i.forEach((o) => {
+      a.appendChild(Z2(o));
+    }), a;
+  }
+  function Z2(i) {
+    const t = document.createElement("button");
+    t.type = "button", t.className = "hk-button", t.dataset.alignmentType = i.type, t.title = i.label, t.setAttribute("aria-label", i.label);
+    const a = document.createElement("img");
+    return a.src = i.icon, a.alt = "", a.draggable = !1, t.appendChild(a), t.addEventListener("mouseenter", () => y0(i.type)), t.addEventListener("mouseleave", () => R2()), t.addEventListener("focus", () => y0(i.type)), t.addEventListener("blur", () => R2()), t.addEventListener("click", () => k2(i.type)), t;
+  }
+  function h0(i) {
+    const t = i.replace("#", "");
+    if (t.length === 3) {
+      const a = parseInt(t[0] + t[0], 16), o = parseInt(t[1] + t[1], 16), l = parseInt(t[2] + t[2], 16);
+      return { r: a, g: o, b: l };
+    }
+    return t.length === 6 ? {
+      r: parseInt(t.slice(0, 2), 16),
+      g: parseInt(t.slice(2, 4), 16),
+      b: parseInt(t.slice(4, 6), 16)
+    } : null;
+  }
+  function B0(i, t, a) {
+    const o = (l) => Math.max(0, Math.min(255, Math.round(l))).toString(16).padStart(2, "0");
+    return `#${o(i)}${o(t)}${o(a)}`;
+  }
+  function e0(i) {
+    const t = h0(i);
+    if (!t) return null;
+    const a = t.r / 255, o = t.g / 255, l = t.b / 255, n = Math.max(a, o, l), h = Math.min(a, o, l), f = n - h;
+    let c = 0;
+    f !== 0 && (n === a ? c = (o - l) / f % 6 : n === o ? c = (l - a) / f + 2 : c = (a - o) / f + 4), c = Math.round(c * 60), c < 0 && (c += 360);
+    const y = (n + h) / 2, w = f === 0 ? 0 : f / (1 - Math.abs(2 * y - 1));
+    return { h: c, s: w, l: y };
+  }
+  function u0(i, t, a) {
+    const o = (1 - Math.abs(2 * a - 1)) * t, l = o * (1 - Math.abs(i / 60 % 2 - 1)), n = a - o / 2;
+    let h = 0, f = 0, c = 0;
+    return 0 <= i && i < 60 ? (h = o, f = l, c = 0) : 60 <= i && i < 120 ? (h = l, f = o, c = 0) : 120 <= i && i < 180 ? (h = 0, f = o, c = l) : 180 <= i && i < 240 ? (h = 0, f = l, c = o) : 240 <= i && i < 300 ? (h = l, f = 0, c = o) : (h = o, f = 0, c = l), B0((h + n) * 255, (f + n) * 255, (c + n) * 255);
+  }
+  function T2(i, t) {
+    const a = e0(i);
+    if (!a) return i;
+    const o = Math.max(0, Math.min(1, a.l + t));
+    return u0(a.h, a.s, o);
+  }
+  function H2(i) {
+    const t = h0(i);
+    return t ? F0(t) : 0;
+  }
+  function F0(i) {
+    const t = (a) => {
+      const o = a / 255;
+      return o <= 0.03928 ? o / 12.92 : Math.pow((o + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * t(i.r) + 0.7152 * t(i.g) + 0.0722 * t(i.b);
+  }
+  function f0(i, t) {
+    const a = Math.max(i, t), o = Math.min(i, t);
+    return (a + 0.05) / (o + 0.05);
+  }
+  function v2(i) {
+    if (typeof i != "string") return null;
+    let t = i.trim();
+    return t ? (t.startsWith("#") || (t = `#${t}`), /^#([0-9a-fA-F]{3})$/.test(t) && (t = `#${t[1]}${t[1]}${t[2]}${t[2]}${t[3]}${t[3]}`), /^#([0-9a-fA-F]{6})$/.test(t) ? t.toLowerCase() : null) : null;
+  }
+  function N0() {
+    var a;
+    const i = [], t = (a = window.LGraphCanvas) == null ? void 0 : a.node_colors;
+    if (t)
+      for (const o of Object.keys(t)) {
+        const l = t[o], n = (l == null ? void 0 : l.bgcolor) || (l == null ? void 0 : l.color) || (l == null ? void 0 : l.groupcolor), h = v2(n);
+        if (h && !i.includes(h) && i.push(h), i.length >= B) break;
+      }
+    return i.length || X.forEach((o) => {
+      const l = v2(o);
+      l && !i.includes(l) && i.length < B && i.push(l);
+    }), i.slice(0, B);
+  }
+  function D0() {
+    var i;
+    try {
+      const t = (i = window.localStorage) == null ? void 0 : i.getItem(R);
+      if (t) {
+        const a = JSON.parse(t);
+        if (Array.isArray(a)) {
+          const o = a.map((l) => v2(l)).filter((l) => !!l);
+          if (o.length)
+            return o.slice(0, B);
+        }
+      }
+    } catch {
+    }
+    return N0();
+  }
+  function O0(i) {
+    var t;
+    try {
+      (t = window.localStorage) == null || t.setItem(R, JSON.stringify(i));
+    } catch {
+    }
+  }
+  function g0() {
+    z && (z.replaceChildren(), Y.forEach((i) => {
+      const t = v0(i);
+      z.appendChild(t);
+    }));
+  }
+  function C0(i) {
+    v2(i);
+  }
+  function d0(i) {
+    const t = v2(i);
+    t && (b && (b.value = t), k && (k.value = t.toUpperCase()), C0(t));
+  }
+  function P0(i) {
+    const t = v2(i);
+    t && (Y = [t, ...Y.filter((a) => a !== t)], Y.length > B && (Y.length = B), O0(Y), g0(), d0(t));
+  }
+  function t0(i) {
+    const t = v2(i);
+    t && (w0(t), V2());
+  }
+  function Z0(i) {
+    const t = H2(i), a = H2(_2);
+    let o = f0(t, a);
+    if (o >= S2) return i;
+    const l = e0(i);
+    if (!l) return i;
+    const n = t > a ? -1 : 1;
+    let h = l.l, f = n > 0 ? 0.98 : 0.02, c = i, y = o;
+    for (let w = 0; w < 12; w++) {
+      const x = h + (f - h) * 0.5, $ = u0(l.h, l.s, Math.max(0.02, Math.min(0.98, x))), r2 = H2($), P = f0(r2, a);
+      P >= S2 ? (c = $, y = P, n > 0 ? h = x : f = x) : n > 0 ? f = x : h = x;
+    }
+    return y >= S2 ? c : i;
+  }
+  function m0(i, t, a, o = 6) {
+    let l = t, n = 0;
+    for (; Math.abs(H2(i) - H2(l)) < 0.08 && n < o; ) {
+      const h = T2(l, a);
+      if (h === l) break;
+      l = h, n += 1;
+    }
+    return l;
+  }
+  function M2(i) {
+    const a = i.startsWith("#") ? i : `#${i}`;
+    let o = Z0(a);
+    const l = e0(o);
+    let n;
+    l && l.l < 0.4 ? n = T2(o, 0.12) : n = T2(o, -0.16);
+    let h = T2(o, 0.12);
+    return n = m0(o, n, l && l.l < 0.4 ? 0.08 : -0.08), h = m0(o, h, 0.08), {
+      color: n,
+      bgcolor: o,
+      groupcolor: h
+    };
+  }
+  function w0(i) {
+    var n, h, f;
+    const t = [...m, ...a2];
+    if (!t.length) {
+      L2("Select nodes or groups to apply color", "warning");
+      return;
+    }
+    const a = M2(i), o = /* @__PURE__ */ new Set();
+    t.forEach((c) => {
+      c != null && c.graph && o.add(c.graph);
+    }), o.forEach((c) => {
+      var y;
+      return (y = c == null ? void 0 : c.beforeChange) == null ? void 0 : y.call(c);
+    }), t.forEach((c) => {
+      i0(c, a);
+    }), o.forEach((c) => {
+      var y;
+      return (y = c == null ? void 0 : c.afterChange) == null ? void 0 : y.call(c);
+    }), P0(a.bgcolor);
+    const l = ((n = window.LGraphCanvas) == null ? void 0 : n.active_canvas) ?? ((h = window.app) == null ? void 0 : h.canvas);
+    (f = l == null ? void 0 : l.setDirty) == null || f.call(l, !0, !0);
+  }
+  function i0(i, t) {
+    typeof i.setColorOption == "function" ? i.setColorOption(t) : (i.color = t.color, i.bgcolor = t.bgcolor, i.groupcolor = t.groupcolor);
+  }
+  function I2(i) {
+    var t;
+    e2.active && ((t = e2.colorOption) == null ? void 0 : t.bgcolor) === i.bgcolor || (e2.active = !0, e2.colorOption = i, e2.nodes.clear(), e2.groups.clear(), m.forEach((a) => {
+      e2.nodes.set(a, {
+        color: a.color,
+        bgcolor: a.bgcolor,
+        groupcolor: a.groupcolor
+      });
+    }), a2.forEach((a) => {
+      e2.groups.set(a, {
+        color: a.color
+      });
+    }));
+  }
+  function r0(i) {
+    var a, o, l;
+    m.forEach((n) => i0(n, i)), a2.forEach((n) => i0(n, i));
+    const t = ((a = window.LGraphCanvas) == null ? void 0 : a.active_canvas) ?? ((o = window.app) == null ? void 0 : o.canvas);
+    (l = t == null ? void 0 : t.setDirty) == null || l.call(t, !0, !0);
+  }
+  function V2() {
+    var a, o, l;
+    if (!e2.active) return;
+    let i;
+    for (const n of e2.nodes.values())
+      if (n.bgcolor) {
+        i = n.bgcolor;
+        break;
+      }
+    if (!i) {
+      for (const n of e2.groups.values())
+        if (n.color) {
+          i = n.color;
+          break;
+        }
+    }
+    e2.nodes.forEach((n, h) => {
+      h && (typeof h.setColorOption == "function" ? h.setColorOption({
+        color: n.color ?? h.color,
+        bgcolor: n.bgcolor ?? h.bgcolor,
+        groupcolor: n.groupcolor ?? h.groupcolor
+      }) : (h.color = n.color, h.bgcolor = n.bgcolor, h.groupcolor = n.groupcolor));
+    }), e2.groups.forEach((n, h) => {
+      h && (typeof h.setColorOption == "function" ? h.setColorOption({
+        color: n.color ?? h.color,
+        bgcolor: n.color ?? h.bgcolor,
+        groupcolor: n.color ?? h.groupcolor
+      }) : h.color = n.color);
+    }), e2.active = !1, e2.colorOption = null;
+    const t = ((a = window.LGraphCanvas) == null ? void 0 : a.active_canvas) ?? ((o = window.app) == null ? void 0 : o.canvas);
+    (l = t == null ? void 0 : t.setDirty) == null || l.call(t, !0, !0);
+  }
+  function T0(i, t) {
+    const a = (o) => {
+      o == null || o.preventDefault(), w0(t), e2.active = !1, e2.colorOption = null, e2.nodes.clear(), e2.groups.clear();
+    };
+    i.addEventListener("click", a), i.addEventListener("keydown", (o) => {
+      (o.key === "Enter" || o.key === " ") && (o.preventDefault(), a());
+    }), i.addEventListener("mouseenter", () => {
+      const o = M2(t);
+      I2(o), r0(o);
+    }), i.addEventListener("focus", () => {
+      const o = M2(t);
+      I2(o), r0(o);
+    }), i.addEventListener("mouseleave", () => V2()), i.addEventListener("blur", () => V2());
+  }
+  function v0(i, t = !0) {
+    const a = M2(i), o = a.bgcolor.toUpperCase(), l = document.createElement(t ? "button" : "div");
+    return t && (l.type = "button", l.setAttribute("aria-label", `Apply color ${o}`), l.title = `Apply color ${o}`), l.className = "hk-color-chip", l.style.background = a.bgcolor, l.style.borderColor = a.color, l.dataset.colorHex = a.bgcolor, t && T0(l, i), l;
+  }
+  function b0(i, t) {
+    if (!z2.length) return;
+    const a = z2.length, o = (t % a + a) % a;
+    I = o;
+    const l = z2[o];
+    i.replaceChildren(), l.forEach((n) => {
+      const h = v0(n);
+      i.appendChild(h);
+    }), i.setAttribute("aria-label", `Color harmony palette ${o + 1} of ${a}`);
+  }
+  function I0() {
+    A && (J(), N = !0, A.classList.remove("collapsed"), A.classList.add("expanded"), setTimeout(() => {
+      V == null || V.focus();
+    }, 0));
+  }
+  function R0() {
+    A && (N = !1, A.classList.remove("expanded"), A.classList.add("collapsed"), _ == null || _.focus());
+  }
+  function s0(i) {
+    (typeof i == "boolean" ? i : !N) ? I0() : R0();
+  }
+  function $0() {
+    if (V) return;
+    A = document.createElement("div"), A.className = "housekeeper-wrapper collapsed", _ = document.createElement("button"), _.type = "button", _.className = "housekeeper-handle", _.title = "Toggle Housekeeper panel (Ctrl+Shift+H)";
+    const i = document.createElement("img");
+    i.src = S0, i.alt = "", i.draggable = !1, _.appendChild(i);
+    const t = document.createElement("span");
+    t.textContent = "Housekeeper", _.appendChild(t), _.addEventListener("click", () => s0()), V = document.createElement("div"), V.className = "housekeeper-panel", V.setAttribute("role", "region"), V.setAttribute("aria-label", "Housekeeper alignment tools"), V.tabIndex = -1;
+    const a = document.createElement("div");
+    a.className = "housekeeper-content";
+    const o = document.createElement("div");
+    o.className = "housekeeper-header";
+    const l = document.createElement("div");
+    l.className = "housekeeper-header-title";
+    const n = document.createElement("img");
+    n.src = S0, n.alt = "", n.draggable = !1, l.appendChild(n);
+    const h = document.createElement("span");
+    h.textContent = "Housekeeper", l.appendChild(h);
+    const f = document.createElement("button");
+    f.type = "button", f.className = "housekeeper-close", f.setAttribute("aria-label", "Hide Housekeeper panel");
+    const c = document.createElement("img");
+    c.src = Le, c.alt = "", c.draggable = !1, f.appendChild(c), f.addEventListener("click", () => s0(!1)), o.appendChild(l), o.appendChild(f);
+    const y = document.createElement("div");
+    y.className = "housekeeper-divider";
+    const w = O();
+    w.classList.add("housekeeper-section-primary"), w.appendChild(t2("Basic Alignment")), w.appendChild(i2(K2, "basic")), w.appendChild(t2("Size Adjustment")), w.appendChild(i2(q2, "size")), w.appendChild(t2("Flow Alignment")), w.appendChild(i2(J2, "flow"));
+    const x = O(), $ = document.createElement("div");
+    $.className = "housekeeper-palette-header", $.classList.add("housekeeper-color-section-title");
+    const r2 = document.createElement("span");
+    r2.textContent = "Preset palettes", $.appendChild(r2), x.appendChild($);
+    const P = document.createElement("div");
+    P.className = "housekeeper-palette-row";
+    const u = document.createElement("button");
+    u.type = "button", u.className = "hk-palette-arrow hk-palette-arrow-prev", u.innerHTML = "&#9664;", P.appendChild(u);
+    const v = document.createElement("div");
+    v.className = "housekeeper-color-strip", v.setAttribute("role", "group"), P.appendChild(v);
+    const s = document.createElement("button");
+    s.type = "button", s.className = "hk-palette-arrow hk-palette-arrow-next", s.innerHTML = "&#9654;", P.appendChild(s), x.appendChild(P);
+    const E = () => {
+      const W = z2.length, c2 = (I - 1 + W) % W, f2 = (I + 1) % W;
+      u.setAttribute("aria-label", `Show color set ${c2 + 1} of ${W}`), s.setAttribute("aria-label", `Show color set ${f2 + 1} of ${W}`);
+    }, Z = (W) => {
+      const c2 = z2.length;
+      c2 && (I = (I + W + c2) % c2, b0(v, I), E());
+    };
+    u.addEventListener("click", () => Z(-1)), s.addEventListener("click", () => Z(1)), b0(v, I), E();
+    const o2 = document.createElement("div");
+    o2.className = "housekeeper-custom-inline";
+    const b2 = document.createElement("span");
+    b2.textContent = "Custom", o2.appendChild(b2), b = document.createElement("input"), b.type = "color", b.className = "hk-custom-inline-picker", o2.appendChild(b), k = document.createElement("input"), k.type = "text", k.placeholder = "#RRGGBB", k.maxLength = 7, k.className = "hk-custom-hex-inline", o2.appendChild(k);
+    const Q = document.createElement("button");
+    Q.type = "button", Q.className = "hk-custom-apply-inline", Q.textContent = "✓", Q.setAttribute("aria-label", "Apply custom color"), Q.title = "Apply custom color", o2.appendChild(Q), x.appendChild(o2);
+    const n2 = t2("Recent colors");
+    n2.classList.add("housekeeper-color-section-title"), x.appendChild(n2), z = document.createElement("div"), z.className = "housekeeper-color-recent", g0(), x.appendChild(z);
+    const g = Y[0] || X[0];
+    d0(g);
+    const S = (W, c2) => {
+      const f2 = v2(W);
+      if (!f2 || (c2 === "color" && k && (k.value = f2.toUpperCase()), c2 === "text" && b && (b.value = f2), C0(f2), !m.length && !a2.length)) return;
+      const m2 = M2(f2);
+      I2(m2), r0(m2);
+    };
+    b == null || b.addEventListener("input", () => S(b.value, "color")), b == null || b.addEventListener("change", () => t0(b.value)), b == null || b.addEventListener("click", () => I2(M2(b.value))), b == null || b.addEventListener("blur", () => V2()), k == null || k.addEventListener("input", () => S(k.value, "text")), k == null || k.addEventListener("keydown", (W) => {
+      W.key === "Enter" && (W.preventDefault(), t0(k.value));
+    }), k == null || k.addEventListener("blur", () => V2());
+    const G = () => t0((k == null ? void 0 : k.value) || (b == null ? void 0 : b.value) || g);
+    Q.addEventListener("click", () => G()), o2.addEventListener("keydown", (W) => {
+      (W.metaKey || W.ctrlKey) && W.key.toLowerCase() === "enter" && (W.preventDefault(), G());
+    }), o2.addEventListener("dblclick", () => G()), a.appendChild(o), a.appendChild(y), a.appendChild(w);
+    const D = document.createElement("div");
+    D.className = "housekeeper-divider housekeeper-divider-spaced", a.appendChild(D), a.appendChild(x), V.appendChild(a), A.appendChild(_), A.appendChild(V), document.body.appendChild(A), P2(), J();
+  }
+  function y0(i) {
+    var o;
+    if (m.length < 1 || m.length < 2 && i !== "size-min") return;
+    R2();
+    const t = (o = window.app) == null ? void 0 : o.canvas;
+    if (!t) return;
+    W0(i, m).forEach((l, n) => {
+      if (l && m[n]) {
+        const h = document.createElement("div");
+        h.style.cssText = `
                     position: fixed;
                     background: rgba(74, 144, 226, 0.3);
                     border: 2px dashed rgba(74, 144, 226, 0.7);
@@ -386,193 +1402,231 @@ function ne() {
                     pointer-events: none;
                     transition: all 0.2s ease;
                 `;
-        const o = (z.x + s.ds.offset[0]) * s.ds.scale, c = (z.y + s.ds.offset[1]) * s.ds.scale, m = s.canvas.parentElement, w = s.canvas.getBoundingClientRect(), M = m ? m.getBoundingClientRect() : null;
-        M && w.top - M.top, w.top;
-        const q = document.querySelector("nav");
-        let J = 31;
-        q && (J = q.getBoundingClientRect().height);
-        const G = J * s.ds.scale, a = w.left + o, b = w.top + c - G, e = z.width * s.ds.scale, A = z.height * s.ds.scale;
-        C.style.left = a + "px", C.style.top = b + "px", C.style.width = e + "px", C.style.height = A + "px", document.body.appendChild(C), N.push(C);
+        const f = (l.x + t.ds.offset[0]) * t.ds.scale, c = (l.y + t.ds.offset[1]) * t.ds.scale, y = t.canvas.parentElement, w = t.canvas.getBoundingClientRect(), x = y ? y.getBoundingClientRect() : null;
+        x && w.top - x.top, w.top;
+        const $ = document.querySelector("nav");
+        let r2 = 31;
+        $ && (r2 = $.getBoundingClientRect().height);
+        const P = r2 * t.ds.scale, u = w.left + f, v = w.top + c - P, s = l.width * t.ds.scale, E = l.height * t.ds.scale;
+        h.style.left = u + "px", h.style.top = v + "px", h.style.width = s + "px", h.style.height = E + "px", document.body.appendChild(h), q.push(h);
       }
     });
   }
-  function $() {
-    N.forEach((h) => {
-      h.parentNode && h.parentNode.removeChild(h);
-    }), N = [];
+  function R2() {
+    q.forEach((i) => {
+      i.parentNode && i.parentNode.removeChild(i);
+    }), q = [];
   }
-  function B(h, s) {
-    if (s.length < 2) return [];
-    const l = [], u = Math.min(...s.map((o) => o.pos[0])), z = Math.max(...s.map((o) => {
+  function W0(i, t) {
+    if (t.length < 2) return [];
+    const a = [], o = Math.min(...t.map((f) => f.pos[0])), l = Math.max(...t.map((f) => {
       let c = 150;
-      return o.size && Array.isArray(o.size) && o.size[0] ? c = o.size[0] : typeof o.width == "number" ? c = o.width : o.properties && typeof o.properties.width == "number" && (c = o.properties.width), o.pos[0] + c;
-    })), f = Math.min(...s.map((o) => o.pos[1])), C = Math.max(...s.map((o) => {
+      return f.size && Array.isArray(f.size) && f.size[0] ? c = f.size[0] : typeof f.width == "number" ? c = f.width : f.properties && typeof f.properties.width == "number" && (c = f.properties.width), f.pos[0] + c;
+    })), n = Math.min(...t.map((f) => f.pos[1])), h = Math.max(...t.map((f) => {
       let c = 100;
-      return o.size && Array.isArray(o.size) && o.size[1] ? c = o.size[1] : typeof o.height == "number" ? c = o.height : o.properties && typeof o.properties.height == "number" && (c = o.properties.height), o.pos[1] + c;
+      return f.size && Array.isArray(f.size) && f.size[1] ? c = f.size[1] : typeof f.height == "number" ? c = f.height : f.properties && typeof f.properties.height == "number" && (c = f.properties.height), f.pos[1] + c;
     }));
-    switch (h) {
+    switch (i) {
       case "left":
-        const o = [...s].sort((t, p) => t.pos[1] - p.pos[1]);
-        let c = o[0].pos[1];
-        const m = /* @__PURE__ */ new Map();
-        o.forEach((t) => {
-          let p = 100, y = 150;
-          t.size && Array.isArray(t.size) ? (t.size[1] && (p = t.size[1]), t.size[0] && (y = t.size[0])) : (typeof t.height == "number" && (p = t.height), typeof t.width == "number" && (y = t.width), t.properties && (typeof t.properties.height == "number" && (p = t.properties.height), typeof t.properties.width == "number" && (y = t.properties.width))), m.set(t.id, {
-            x: u,
+        const f = [...t].sort((e, p) => e.pos[1] - p.pos[1]);
+        let c = f[0].pos[1];
+        const y = /* @__PURE__ */ new Map();
+        f.forEach((e) => {
+          let p = 100, d = 150;
+          e.size && Array.isArray(e.size) ? (e.size[1] && (p = e.size[1]), e.size[0] && (d = e.size[0])) : (typeof e.height == "number" && (p = e.height), typeof e.width == "number" && (d = e.width), e.properties && (typeof e.properties.height == "number" && (p = e.properties.height), typeof e.properties.width == "number" && (d = e.properties.width))), y.set(e.id, {
+            x: o,
             y: c,
-            width: y,
+            width: d,
             height: p
           }), c += p + 30;
-        }), s.forEach((t) => {
-          l.push(m.get(t.id));
+        }), t.forEach((e) => {
+          a.push(y.get(e.id));
         });
         break;
       case "right":
-        const w = [...s].sort((t, p) => t.pos[1] - p.pos[1]);
-        let M = w[0].pos[1];
-        const q = /* @__PURE__ */ new Map();
-        w.forEach((t) => {
-          let p = 100, y = 150;
-          t.size && Array.isArray(t.size) ? (t.size[1] && (p = t.size[1]), t.size[0] && (y = t.size[0])) : (typeof t.height == "number" && (p = t.height), typeof t.width == "number" && (y = t.width), t.properties && (typeof t.properties.height == "number" && (p = t.properties.height), typeof t.properties.width == "number" && (y = t.properties.width))), q.set(t.id, {
-            x: z - y,
-            y: M,
-            width: y,
+        const w = [...t].sort((e, p) => e.pos[1] - p.pos[1]);
+        let x = w[0].pos[1];
+        const $ = /* @__PURE__ */ new Map();
+        w.forEach((e) => {
+          let p = 100, d = 150;
+          e.size && Array.isArray(e.size) ? (e.size[1] && (p = e.size[1]), e.size[0] && (d = e.size[0])) : (typeof e.height == "number" && (p = e.height), typeof e.width == "number" && (d = e.width), e.properties && (typeof e.properties.height == "number" && (p = e.properties.height), typeof e.properties.width == "number" && (d = e.properties.width))), $.set(e.id, {
+            x: l - d,
+            y: x,
+            width: d,
             height: p
-          }), M += p + 30;
-        }), s.forEach((t) => {
-          l.push(q.get(t.id));
+          }), x += p + 30;
+        }), t.forEach((e) => {
+          a.push($.get(e.id));
         });
         break;
       case "top":
-        const J = [...s].sort((t, p) => t.pos[0] - p.pos[0]);
-        let G = J[0].pos[0];
-        const a = /* @__PURE__ */ new Map();
-        J.forEach((t) => {
-          let p = 100, y = 150;
-          t.size && Array.isArray(t.size) ? (t.size[1] && (p = t.size[1]), t.size[0] && (y = t.size[0])) : (typeof t.height == "number" && (p = t.height), typeof t.width == "number" && (y = t.width), t.properties && (typeof t.properties.height == "number" && (p = t.properties.height), typeof t.properties.width == "number" && (y = t.properties.width))), a.set(t.id, {
-            x: G,
-            y: f,
-            width: y,
+        const r2 = [...t].sort((e, p) => e.pos[0] - p.pos[0]);
+        let P = r2[0].pos[0];
+        const u = /* @__PURE__ */ new Map();
+        r2.forEach((e) => {
+          let p = 100, d = 150;
+          e.size && Array.isArray(e.size) ? (e.size[1] && (p = e.size[1]), e.size[0] && (d = e.size[0])) : (typeof e.height == "number" && (p = e.height), typeof e.width == "number" && (d = e.width), e.properties && (typeof e.properties.height == "number" && (p = e.properties.height), typeof e.properties.width == "number" && (d = e.properties.width))), u.set(e.id, {
+            x: P,
+            y: n,
+            width: d,
             height: p
-          }), G += y + 30;
-        }), s.forEach((t) => {
-          l.push(a.get(t.id));
+          }), P += d + 30;
+        }), t.forEach((e) => {
+          a.push(u.get(e.id));
         });
         break;
       case "bottom":
-        const b = [...s].sort((t, p) => t.pos[0] - p.pos[0]);
-        let e = u;
-        const A = /* @__PURE__ */ new Map();
-        b.forEach((t) => {
-          let p = 100, y = 150;
-          t.size && Array.isArray(t.size) ? (t.size[1] && (p = t.size[1]), t.size[0] && (y = t.size[0])) : (typeof t.height == "number" && (p = t.height), typeof t.width == "number" && (y = t.width), t.properties && (typeof t.properties.height == "number" && (p = t.properties.height), typeof t.properties.width == "number" && (y = t.properties.width))), A.set(t.id, {
-            x: e,
-            y: C - p,
-            width: y,
+        const v = [...t].sort((e, p) => e.pos[0] - p.pos[0]);
+        let s = o;
+        const E = /* @__PURE__ */ new Map();
+        v.forEach((e) => {
+          let p = 100, d = 150;
+          e.size && Array.isArray(e.size) ? (e.size[1] && (p = e.size[1]), e.size[0] && (d = e.size[0])) : (typeof e.height == "number" && (p = e.height), typeof e.width == "number" && (d = e.width), e.properties && (typeof e.properties.height == "number" && (p = e.properties.height), typeof e.properties.width == "number" && (d = e.properties.width))), E.set(e.id, {
+            x: s,
+            y: h - p,
+            width: d,
             height: p
-          }), e += y + 30;
-        }), s.forEach((t) => {
-          l.push(A.get(t.id));
+          }), s += d + 30;
+        }), t.forEach((e) => {
+          a.push(E.get(e.id));
+        });
+        break;
+      case "height-center":
+        const Z = Math.min(...t.map((e) => e.pos[0])), o2 = Math.max(...t.map((e) => {
+          let p = 150;
+          return e.size && Array.isArray(e.size) && e.size[0] ? p = e.size[0] : typeof e.width == "number" ? p = e.width : e.properties && typeof e.properties.width == "number" && (p = e.properties.width), e.pos[0] + p;
+        })), b2 = (Z + o2) / 2, Q = [...t].sort((e, p) => e.pos[1] - p.pos[1]);
+        let n2 = Q[0].pos[1];
+        const g = /* @__PURE__ */ new Map();
+        Q.forEach((e) => {
+          let p = 150, d = 100;
+          e.size && Array.isArray(e.size) ? (e.size[0] && (p = e.size[0]), e.size[1] && (d = e.size[1])) : (typeof e.width == "number" && (p = e.width), typeof e.height == "number" && (d = e.height), e.properties && (typeof e.properties.width == "number" && (p = e.properties.width), typeof e.properties.height == "number" && (d = e.properties.height))), g.set(e.id, {
+            x: b2 - p / 2,
+            y: n2,
+            width: p,
+            height: d
+          }), n2 += d + 30;
+        }), t.forEach((e) => {
+          a.push(g.get(e.id));
+        });
+        break;
+      case "width-center":
+        const S = Math.min(...t.map((e) => e.pos[1])), G = Math.max(...t.map((e) => {
+          let p = 100;
+          return e.size && Array.isArray(e.size) && e.size[1] ? p = e.size[1] : typeof e.height == "number" ? p = e.height : e.properties && typeof e.properties.height == "number" && (p = e.properties.height), e.pos[1] + p;
+        })), D = (S + G) / 2, W = [...t].sort((e, p) => e.pos[0] - p.pos[0]);
+        let c2 = W[0].pos[0];
+        const f2 = /* @__PURE__ */ new Map();
+        W.forEach((e) => {
+          let p = 150, d = 100;
+          e.size && Array.isArray(e.size) ? (e.size[0] && (p = e.size[0]), e.size[1] && (d = e.size[1])) : (typeof e.width == "number" && (p = e.width), typeof e.height == "number" && (d = e.height), e.properties && (typeof e.properties.width == "number" && (p = e.properties.width), typeof e.properties.height == "number" && (d = e.properties.height))), f2.set(e.id, {
+            x: c2,
+            y: D - d / 2,
+            width: p,
+            height: d
+          }), c2 += p + 30;
+        }), t.forEach((e) => {
+          a.push(f2.get(e.id));
         });
         break;
       case "horizontal-flow":
-        const P = s.filter((t) => {
-          if (!t) return !1;
-          const p = t.pos || t.position || typeof t.x == "number" && typeof t.y == "number", y = t.size || t.width || t.height || typeof t.width == "number" && typeof t.height == "number";
-          return !!p && !!y;
+        const m2 = t.filter((e) => {
+          if (!e) return !1;
+          const p = e.pos || e.position || typeof e.x == "number" && typeof e.y == "number", d = e.size || e.width || e.height || typeof e.width == "number" && typeof e.height == "number";
+          return !!p && !!d;
         });
-        if (P.length < 2) break;
-        const ot = Math.min(...P.map((t) => t.pos && (Array.isArray(t.pos) || t.pos.length !== void 0) ? t.pos[0] : t.position && (Array.isArray(t.position) || t.position.length !== void 0) ? t.position[0] : typeof t.x == "number" ? t.x : 0)), ut = Math.min(...P.map((t) => t.pos && (Array.isArray(t.pos) || t.pos.length !== void 0) ? t.pos[1] : t.position && (Array.isArray(t.position) || t.position.length !== void 0) ? t.position[1] : typeof t.y == "number" ? t.y : 0)), it = P.map((t) => ({
-          ...t,
-          pos: t.pos ? [...t.pos] : [t.x || 0, t.y || 0],
-          _calculatedSize: t.size && Array.isArray(t.size) ? [t.size[0], t.size[1]] : [t.width || 150, t.height || 100]
-        })), i = F(it), r = L(it, i), x = 30, _ = 30, E = 5, lt = {};
-        it.forEach((t) => {
+        if (m2.length < 2) break;
+        const G2 = Math.min(...m2.map((e) => e.pos && (Array.isArray(e.pos) || e.pos.length !== void 0) ? e.pos[0] : e.position && (Array.isArray(e.position) || e.position.length !== void 0) ? e.position[0] : typeof e.x == "number" ? e.x : 0)), r = Math.min(...m2.map((e) => e.pos && (Array.isArray(e.pos) || e.pos.length !== void 0) ? e.pos[1] : e.position && (Array.isArray(e.position) || e.position.length !== void 0) ? e.position[1] : typeof e.y == "number" ? e.y : 0)), L = m2.map((e) => ({
+          ...e,
+          pos: e.pos ? [...e.pos] : [e.x || 0, e.y || 0],
+          _calculatedSize: e.size && Array.isArray(e.size) ? [e.size[0], e.size[1]] : [e.width || 150, e.height || 100]
+        })), K = W2(L), M = Y2(L, K), C2 = 30, a0 = 30, o0 = 5, B2 = {};
+        L.forEach((e) => {
           var p;
-          if (t && t.id) {
-            const y = ((p = r[t.id]) == null ? void 0 : p.level) ?? 0;
-            lt[y] || (lt[y] = []), lt[y].push(t);
+          if (e && e.id) {
+            const d = ((p = M[e.id]) == null ? void 0 : p.level) ?? 0;
+            B2[d] || (B2[d] = []), B2[d].push(e);
           }
         });
-        const yt = /* @__PURE__ */ new Map();
-        Object.entries(lt).forEach(([t, p]) => {
-          const y = parseInt(t);
+        const z0 = /* @__PURE__ */ new Map();
+        Object.entries(B2).forEach(([e, p]) => {
+          const d = parseInt(e);
           if (p && p.length > 0) {
-            p.sort((n, T) => {
-              const tt = n && n.id && r[n.id] ? r[n.id].order : 0, k = T && T.id && r[T.id] ? r[T.id].order : 0;
-              return tt - k;
+            p.sort((C, T) => {
+              const u2 = C && C.id && M[C.id] ? M[C.id].order : 0, H = T && T.id && M[T.id] ? M[T.id].order : 0;
+              return u2 - H;
             });
-            let Q = ot;
-            if (y > 0)
-              for (let n = 0; n < y; n++) {
-                const T = lt[n] || [], tt = Math.max(...T.map(
-                  (k) => k && k._calculatedSize && k._calculatedSize[0] ? k._calculatedSize[0] : 150
+            let p2 = G2;
+            if (d > 0)
+              for (let C = 0; C < d; C++) {
+                const T = B2[C] || [], u2 = Math.max(...T.map(
+                  (H) => H && H._calculatedSize && H._calculatedSize[0] ? H._calculatedSize[0] : 150
                 ));
-                Q += tt + x + E;
+                p2 += u2 + C2 + o0;
               }
-            let Z = ut;
-            p.forEach((n) => {
-              n && n._calculatedSize && (yt.set(n.id, {
-                x: Q,
-                y: Z,
-                width: n._calculatedSize[0],
-                height: n._calculatedSize[1]
-              }), Z += n._calculatedSize[1] + _);
+            let h2 = r;
+            p.forEach((C) => {
+              C && C._calculatedSize && (z0.set(C.id, {
+                x: p2,
+                y: h2,
+                width: C._calculatedSize[0],
+                height: C._calculatedSize[1]
+              }), h2 += C._calculatedSize[1] + a0);
             });
           }
-        }), s.forEach((t) => {
-          const p = yt.get(t.id);
-          p && l.push(p);
+        }), t.forEach((e) => {
+          const p = z0.get(e.id);
+          p && a.push(p);
         });
         break;
       case "vertical-flow":
-        const vt = s.filter((t) => {
-          if (!t) return !1;
-          const p = t.pos || t.position || typeof t.x == "number" && typeof t.y == "number", y = t.size || t.width || t.height || typeof t.width == "number" && typeof t.height == "number";
-          return !!p && !!y;
+        const X2 = t.filter((e) => {
+          if (!e) return !1;
+          const p = e.pos || e.position || typeof e.x == "number" && typeof e.y == "number", d = e.size || e.width || e.height || typeof e.width == "number" && typeof e.height == "number";
+          return !!p && !!d;
         });
-        if (vt.length < 2) break;
-        const Tt = Math.min(...vt.map((t) => t.pos && (Array.isArray(t.pos) || t.pos.length !== void 0) ? t.pos[0] : t.position && (Array.isArray(t.position) || t.position.length !== void 0) ? t.position[0] : typeof t.x == "number" ? t.x : 0)), Bt = Math.min(...vt.map((t) => t.pos && (Array.isArray(t.pos) || t.pos.length !== void 0) ? t.pos[1] : t.position && (Array.isArray(t.position) || t.position.length !== void 0) ? t.position[1] : typeof t.y == "number" ? t.y : 0)), dt = vt.map((t) => ({
-          ...t,
-          pos: t.pos ? [...t.pos] : [t.x || 0, t.y || 0],
-          _calculatedSize: t.size && Array.isArray(t.size) ? [t.size[0], t.size[1]] : [t.width || 150, t.height || 100]
-        })), Lt = F(dt), ht = L(dt, Lt), Ht = 30, Ot = 30, Ft = 5, ft = {};
-        dt.forEach((t) => {
+        if (X2.length < 2) break;
+        const K0 = Math.min(...X2.map((e) => e.pos && (Array.isArray(e.pos) || e.pos.length !== void 0) ? e.pos[0] : e.position && (Array.isArray(e.position) || e.position.length !== void 0) ? e.position[0] : typeof e.x == "number" ? e.x : 0)), q0 = Math.min(...X2.map((e) => e.pos && (Array.isArray(e.pos) || e.pos.length !== void 0) ? e.pos[1] : e.position && (Array.isArray(e.position) || e.position.length !== void 0) ? e.position[1] : typeof e.y == "number" ? e.y : 0)), l0 = X2.map((e) => ({
+          ...e,
+          pos: e.pos ? [...e.pos] : [e.x || 0, e.y || 0],
+          _calculatedSize: e.size && Array.isArray(e.size) ? [e.size[0], e.size[1]] : [e.width || 150, e.height || 100]
+        })), J0 = W2(l0), F2 = Y2(l0, J0), Q0 = 30, ee = 30, te = 5, N2 = {};
+        l0.forEach((e) => {
           var p;
-          if (t && t.id) {
-            const y = ((p = ht[t.id]) == null ? void 0 : p.level) ?? 0;
-            ft[y] || (ft[y] = []), ft[y].push(t);
+          if (e && e.id) {
+            const d = ((p = F2[e.id]) == null ? void 0 : p.level) ?? 0;
+            N2[d] || (N2[d] = []), N2[d].push(e);
           }
         });
-        const At = /* @__PURE__ */ new Map();
-        Object.entries(ft).forEach(([t, p]) => {
-          const y = parseInt(t);
+        const k0 = /* @__PURE__ */ new Map();
+        Object.entries(N2).forEach(([e, p]) => {
+          const d = parseInt(e);
           if (p && p.length > 0) {
-            p.sort((n, T) => {
-              const tt = n && n.id && ht[n.id] ? ht[n.id].order : 0, k = T && T.id && ht[T.id] ? ht[T.id].order : 0;
-              return tt - k;
+            p.sort((C, T) => {
+              const u2 = C && C.id && F2[C.id] ? F2[C.id].order : 0, H = T && T.id && F2[T.id] ? F2[T.id].order : 0;
+              return u2 - H;
             });
-            let Q = Bt;
-            if (y > 0)
-              for (let n = 0; n < y; n++) {
-                const T = ft[n] || [], tt = Math.max(...T.map(
-                  (k) => k && k._calculatedSize && k._calculatedSize[1] ? k._calculatedSize[1] : 100
+            let p2 = q0;
+            if (d > 0)
+              for (let C = 0; C < d; C++) {
+                const T = N2[C] || [], u2 = Math.max(...T.map(
+                  (H) => H && H._calculatedSize && H._calculatedSize[1] ? H._calculatedSize[1] : 100
                 ));
-                Q += tt + Ht + Ft;
+                p2 += u2 + Q0 + te;
               }
-            let Z = Tt;
-            p.forEach((n) => {
-              n && n._calculatedSize && (At.set(n.id, {
-                x: Z,
-                y: Q,
-                width: n._calculatedSize[0],
-                height: n._calculatedSize[1]
-              }), Z += n._calculatedSize[0] + Ot);
+            let h2 = K0;
+            p.forEach((C) => {
+              C && C._calculatedSize && (k0.set(C.id, {
+                x: h2,
+                y: p2,
+                width: C._calculatedSize[0],
+                height: C._calculatedSize[1]
+              }), h2 += C._calculatedSize[0] + ee);
             });
           }
-        }), s.forEach((t) => {
-          const p = At.get(t.id);
-          p && l.push(p);
+        }), t.forEach((e) => {
+          const p = k0.get(e.id);
+          p && a.push(p);
         });
         break;
       case "width-max":
@@ -581,527 +1635,409 @@ function ne() {
       case "height-min":
       case "size-max":
       case "size-min":
-        s.forEach((t) => {
-          let p = 150, y = 100;
-          t.size && Array.isArray(t.size) ? (t.size[0] && (p = t.size[0]), t.size[1] && (y = t.size[1])) : (typeof t.width == "number" && (p = t.width), typeof t.height == "number" && (y = t.height), t.properties && (typeof t.properties.width == "number" && (p = t.properties.width), typeof t.properties.height == "number" && (y = t.properties.height)));
-          let Q = p, Z = y;
-          if (h === "width-max" || h === "size-max")
-            Q = Math.max(...s.map((n) => n.size && Array.isArray(n.size) && n.size[0] ? n.size[0] : typeof n.width == "number" ? n.width : n.properties && typeof n.properties.width == "number" ? n.properties.width : 150));
-          else if (h === "width-min")
-            Q = Math.min(...s.map((n) => n.size && Array.isArray(n.size) && n.size[0] ? n.size[0] : typeof n.width == "number" ? n.width : n.properties && typeof n.properties.width == "number" ? n.properties.width : 150));
-          else if (h === "size-min") {
-            const n = K.get(t) || t.computeSize;
-            if (n)
+        t.forEach((e) => {
+          let p = 150, d = 100;
+          e.size && Array.isArray(e.size) ? (e.size[0] && (p = e.size[0]), e.size[1] && (d = e.size[1])) : (typeof e.width == "number" && (p = e.width), typeof e.height == "number" && (d = e.height), e.properties && (typeof e.properties.width == "number" && (p = e.properties.width), typeof e.properties.height == "number" && (d = e.properties.height)));
+          let p2 = p, h2 = d;
+          if (i === "width-max" || i === "size-max")
+            p2 = Math.max(...t.map((C) => C.size && Array.isArray(C.size) && C.size[0] ? C.size[0] : typeof C.width == "number" ? C.width : C.properties && typeof C.properties.width == "number" ? C.properties.width : 150));
+          else if (i === "width-min")
+            p2 = Math.min(...t.map((C) => C.size && Array.isArray(C.size) && C.size[0] ? C.size[0] : typeof C.width == "number" ? C.width : C.properties && typeof C.properties.width == "number" ? C.properties.width : 150));
+          else if (i === "size-min") {
+            const C = j.get(e) || e.computeSize;
+            if (C)
               try {
-                const T = n.call(t);
-                T && T.length >= 2 && T[0] !== void 0 && T[1] !== void 0 ? (Q = T[0], Z = T[1] + 30) : typeof T == "number" ? (Q = p, Z = T + 30) : (Q = p, Z = y);
+                const T = C.call(e);
+                T && T.length >= 2 && T[0] !== void 0 && T[1] !== void 0 ? (p2 = T[0], h2 = T[1] + 30) : typeof T == "number" ? (p2 = p, h2 = T + 30) : (p2 = p, h2 = d);
               } catch {
-                Q = p, Z = y;
+                p2 = p, h2 = d;
               }
           }
-          if (h === "height-max" || h === "size-max")
-            Z = Math.max(...s.map((n) => n.size && Array.isArray(n.size) && n.size[1] ? n.size[1] : typeof n.height == "number" ? n.height : n.properties && typeof n.properties.height == "number" ? n.properties.height : 100));
-          else if (h === "height-min") {
-            const n = Math.min(...s.map((k) => k.size && k.size[1] !== void 0 ? k.size[1] : typeof k.height == "number" ? k.height : k.properties && typeof k.properties.height == "number" ? k.properties.height : 100)), T = K.get(t) || t.computeSize;
-            let tt = null;
+          if (i === "height-max" || i === "size-max")
+            h2 = Math.max(...t.map((C) => C.size && Array.isArray(C.size) && C.size[1] ? C.size[1] : typeof C.height == "number" ? C.height : C.properties && typeof C.properties.height == "number" ? C.properties.height : 100));
+          else if (i === "height-min") {
+            const C = Math.min(...t.map((H) => H.size && H.size[1] !== void 0 ? H.size[1] : typeof H.height == "number" ? H.height : H.properties && typeof H.properties.height == "number" ? H.properties.height : 100)), T = j.get(e) || e.computeSize;
+            let u2 = null;
             if (T)
               try {
-                const k = T.call(t);
-                k && k.length >= 2 && k[1] !== void 0 ? tt = k[1] + 30 : typeof k == "number" && (tt = k + 30);
+                const H = T.call(e);
+                H && H.length >= 2 && H[1] !== void 0 ? u2 = H[1] + 30 : typeof H == "number" && (u2 = H + 30);
               } catch {
               }
-            Z = tt && tt > n ? tt : n;
+            h2 = u2 && u2 > C ? u2 : C;
           }
-          l.push({
-            x: t.pos[0],
-            y: t.pos[1],
-            width: Q,
-            height: Z
+          a.push({
+            x: e.pos[0],
+            y: e.pos[1],
+            width: p2,
+            height: h2
           });
         });
         break;
     }
-    return l;
+    return a;
   }
-  function D(h, s = !1, l = !1) {
-    const u = document.createElement("button");
-    u.innerHTML = `
-            <span style="font-size: 16px; display: block;">${h.icon}</span>
-            <span style="font-size: 11px;">${h.label}</span>
-        `;
-    const z = l ? "#5b4a7e" : s ? "#4a5568" : "#505050", f = l ? "#6b5a8e" : s ? "#5a6578" : "#606060", C = l ? "#8b7ab8" : s ? "#718096" : "#666";
-    return u.style.cssText = `
-            background: linear-gradient(145deg, ${z}, #404040);
-            border: 1px solid ${C};
-            border-radius: 6px;
-            color: white;
-            padding: 12px 8px;
-            cursor: pointer;
-            font-family: inherit;
-            transition: all 0.2s ease;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            min-height: 44px;
-        `, u.addEventListener("mouseenter", () => {
-      u.style.background = `linear-gradient(145deg, ${f}, #505050)`, u.style.transform = "translateY(-1px)", u.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.2)", V(h.type);
-    }), u.addEventListener("mouseleave", () => {
-      u.style.background = `linear-gradient(145deg, ${z}, #404040)`, u.style.transform = "translateY(0)", u.style.boxShadow = "none", $();
-    }), u.addEventListener("click", () => et(h.type)), u;
-  }
-  function O() {
-    v = document.createElement("div"), v.className = "housekeeper-alignment-panel", v.style.cssText = `
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(40, 40, 40, 0.95);
-            border: 1px solid #555;
-            border-radius: 8px;
-            padding: 12px;
-            z-index: 1000;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            min-width: 220px;
-            backdrop-filter: blur(10px);
-            opacity: 0;
-            transform: translateX(20px);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: none;
-            font-family: Arial, sans-serif;
-            color: white;
-        `;
-    const h = document.createElement("div");
-    h.innerHTML = "🎯 Node Alignment", h.style.cssText = `
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            text-align: center;
-            border-bottom: 1px solid #555;
-            padding-bottom: 8px;
-        `, v.appendChild(h);
-    const s = document.createElement("div");
-    s.style.cssText = `
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 8px;
-        `;
-    const l = document.createElement("div");
-    l.style.cssText = `
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 12px;
-            border-top: 1px solid #555;
-            padding-top: 8px;
-        `;
-    const u = [
-      { type: "left", icon: "⇤", label: "Left" },
-      { type: "right", icon: "⇥", label: "Right" },
-      { type: "top", icon: "⇡", label: "Top" },
-      { type: "bottom", icon: "⇣", label: "Bottom" },
-      { type: "horizontal-flow", icon: "→", label: "H-Flow" },
-      { type: "vertical-flow", icon: "↓", label: "V-Flow" },
-      { type: "width-max", icon: "⟷", label: "W-Max" },
-      { type: "width-min", icon: "⟷", label: "W-Min" },
-      { type: "height-max", icon: "⟺", label: "H-Max" },
-      { type: "height-min", icon: "⟺", label: "H-Min" },
-      { type: "size-max", icon: "⇱", label: "Size-Max" },
-      { type: "size-min", icon: "↙", label: "Size-Min" }
-    ], z = u.slice(0, 4), f = u.slice(4, 6), C = u.slice(6);
-    z.forEach((m) => {
-      const w = D(m);
-      s.appendChild(w);
-    }), f.forEach((m) => {
-      const w = D(m, !0);
-      l.appendChild(w);
-    });
-    const o = document.createElement("div");
-    o.style.cssText = `
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 12px;
-            border-top: 1px solid #555;
-            padding-top: 8px;
-        `, C.forEach((m) => {
-      const w = D(m, !1, !0);
-      o.appendChild(w);
-    }), v.appendChild(s), v.appendChild(l), v.appendChild(o);
-    const c = document.createElement("div");
-    c.id = "alignment-info", c.style.cssText = `
-            background: rgba(60, 60, 60, 0.8);
-            border-radius: 6px;
-            padding: 10px;
-            font-size: 12px;
-            text-align: center;
-        `, c.innerHTML = `
-            Select multiple nodes to enable alignment<br>
-            <small style="opacity: 0.8;">
-                Basic: Ctrl+Shift+Arrows<br>
-                Flow: Ctrl+Alt+→/↓
-            </small>
-        `, v.appendChild(c), document.body.appendChild(v);
-  }
-  function I() {
-    var z;
-    if (!((z = window.app) != null && z.graph)) return;
-    g = Object.values(window.app.graph._nodes || {}).filter((f) => f && f.is_selected);
-    const s = g.length > 1;
-    s && !H ? d() : !s && H && W();
-    const l = document.getElementById("alignment-info");
-    l && (g.length === 0 ? l.innerHTML = `
-                    Select multiple nodes to enable alignment<br>
-                    <small style="opacity: 0.8;">
-                        Basic: Ctrl+Shift+Arrows<br>
-                        Flow: Ctrl+Alt+→/↓
-                    </small>
-                ` : g.length === 1 ? l.textContent = "Select additional nodes to align" : l.innerHTML = `
-                    ${g.length} nodes selected - ready to align<br>
-                    <small style="opacity: 0.8;">Try H-Flow/V-Flow for smart layout</small>
-                `);
-    const u = v == null ? void 0 : v.querySelectorAll("button");
-    u == null || u.forEach((f) => {
-      s ? (f.style.opacity = "1", f.style.pointerEvents = "auto") : (f.style.opacity = "0.5", f.style.pointerEvents = "none");
+  function $2() {
+    var n;
+    if (!((n = window.app) != null && n.graph)) return;
+    const i = window.app.graph;
+    m = Object.values(i._nodes || {}).filter((h) => h && h.is_selected), a2 = (Array.isArray(i._groups) ? i._groups : []).filter((h) => h && h.selected);
+    const o = m.length > 1;
+    m.length + a2.length, o || R2(), A && A.classList.toggle("hk-has-selection", o);
+    const l = V == null ? void 0 : V.querySelectorAll(".hk-button");
+    l == null || l.forEach((h) => {
+      const f = h.dataset.alignmentType === "size-min";
+      h.disabled = f ? m.length < 1 : !o;
     });
   }
-  function d() {
-    v && (H = !0, v.style.display = "block", setTimeout(() => {
-      v && (v.style.opacity = "1", v.style.transform = "translateX(0)");
-    }, 10));
-  }
-  function W() {
-    v && (H = !1, v.style.opacity = "0", v.style.transform = "translateX(20px)", setTimeout(() => {
-      v && (v.style.display = "none");
-    }, 300));
-  }
-  function F(h) {
-    const s = {}, l = h.filter((u) => u && (u.id !== void 0 || u.id !== null));
-    return l.forEach((u) => {
-      const z = u.id || `node_${l.indexOf(u)}`;
-      u.id = z, s[z] = { inputs: [], outputs: [] }, u.inputs && Array.isArray(u.inputs) && u.inputs.forEach((f, C) => {
-        f && f.link !== null && f.link !== void 0 && s[z].inputs.push({
-          index: C,
-          link: f.link,
-          sourceNode: st(f.link, l)
+  function W2(i) {
+    const t = {}, a = i.filter((o) => o && (o.id !== void 0 || o.id !== null));
+    return a.forEach((o) => {
+      const l = o.id || `node_${a.indexOf(o)}`;
+      o.id = l, t[l] = { inputs: [], outputs: [] }, o.inputs && Array.isArray(o.inputs) && o.inputs.forEach((n, h) => {
+        n && n.link !== null && n.link !== void 0 && t[l].inputs.push({
+          index: h,
+          link: n.link,
+          sourceNode: Y0(n.link, a)
         });
-      }), u.outputs && Array.isArray(u.outputs) && u.outputs.forEach((f, C) => {
-        f && f.links && Array.isArray(f.links) && f.links.length > 0 && f.links.forEach((o) => {
-          const c = R(o, l);
-          c && s[z].outputs.push({
-            index: C,
-            link: o,
+      }), o.outputs && Array.isArray(o.outputs) && o.outputs.forEach((n, h) => {
+        n && n.links && Array.isArray(n.links) && n.links.length > 0 && n.links.forEach((f) => {
+          const c = G0(f, a);
+          c && t[l].outputs.push({
+            index: h,
+            link: f,
             targetNode: c
           });
         });
       });
-    }), s;
+    }), t;
   }
-  function st(h, s) {
-    for (const l of s)
-      if (l && l.outputs && Array.isArray(l.outputs)) {
-        for (const u of l.outputs)
-          if (u && u.links && Array.isArray(u.links) && u.links.includes(h))
-            return l;
+  function Y0(i, t) {
+    for (const a of t)
+      if (a && a.outputs && Array.isArray(a.outputs)) {
+        for (const o of a.outputs)
+          if (o && o.links && Array.isArray(o.links) && o.links.includes(i))
+            return a;
       }
     return null;
   }
-  function R(h, s) {
-    for (const l of s)
-      if (l && l.inputs && Array.isArray(l.inputs)) {
-        for (const u of l.inputs)
-          if (u && u.link === h)
-            return l;
+  function G0(i, t) {
+    for (const a of t)
+      if (a && a.inputs && Array.isArray(a.inputs)) {
+        for (const o of a.inputs)
+          if (o && o.link === i)
+            return a;
       }
     return null;
   }
-  function L(h, s) {
-    const l = {}, u = /* @__PURE__ */ new Set(), z = h.filter((c) => c && c.id), f = z.filter((c) => {
-      const m = c.id;
-      return !s[m] || !s[m].inputs.length || s[m].inputs.every((w) => !w.sourceNode);
+  function Y2(i, t) {
+    const a = {}, o = /* @__PURE__ */ new Set(), l = i.filter((c) => c && c.id), n = l.filter((c) => {
+      const y = c.id;
+      return !t[y] || !t[y].inputs.length || t[y].inputs.every((w) => !w.sourceNode);
     });
-    f.length === 0 && z.length > 0 && f.push(z[0]);
-    const C = f.map((c) => ({ node: c, level: 0 }));
-    for (; C.length > 0; ) {
-      const { node: c, level: m } = C.shift();
-      !c || !c.id || u.has(c.id) || (u.add(c.id), l[c.id] = { level: m, order: 0 }, s[c.id] && s[c.id].outputs && s[c.id].outputs.forEach((w) => {
-        w && w.targetNode && w.targetNode.id && !u.has(w.targetNode.id) && C.push({ node: w.targetNode, level: m + 1 });
+    n.length === 0 && l.length > 0 && n.push(l[0]);
+    const h = n.map((c) => ({ node: c, level: 0 }));
+    for (; h.length > 0; ) {
+      const { node: c, level: y } = h.shift();
+      !c || !c.id || o.has(c.id) || (o.add(c.id), a[c.id] = { level: y, order: 0 }, t[c.id] && t[c.id].outputs && t[c.id].outputs.forEach((w) => {
+        w && w.targetNode && w.targetNode.id && !o.has(w.targetNode.id) && h.push({ node: w.targetNode, level: y + 1 });
       }));
     }
-    z.forEach((c) => {
-      c && c.id && !l[c.id] && (l[c.id] = { level: 0, order: 0 });
+    l.forEach((c) => {
+      c && c.id && !a[c.id] && (a[c.id] = { level: 0, order: 0 });
     });
-    const o = {};
-    return Object.entries(l).forEach(([c, m]) => {
-      o[m.level] || (o[m.level] = []);
-      const w = z.find((M) => M && M.id === c);
-      w && o[m.level].push(w);
-    }), Object.entries(o).forEach(([c, m]) => {
-      m && m.length > 0 && (m.sort((w, M) => {
-        const q = w && w.pos && w.pos[1] ? w.pos[1] : 0, J = M && M.pos && M.pos[1] ? M.pos[1] : 0;
-        return q - J;
-      }), m.forEach((w, M) => {
-        w && w.id && l[w.id] && (l[w.id].order = M);
+    const f = {};
+    return Object.entries(a).forEach(([c, y]) => {
+      f[y.level] || (f[y.level] = []);
+      const w = l.find((x) => x && x.id === c);
+      w && f[y.level].push(w);
+    }), Object.entries(f).forEach(([c, y]) => {
+      y && y.length > 0 && (y.sort((w, x) => {
+        const $ = w && w.pos && w.pos[1] ? w.pos[1] : 0, r2 = x && x.pos && x.pos[1] ? x.pos[1] : 0;
+        return $ - r2;
+      }), y.forEach((w, x) => {
+        w && w.id && a[w.id] && (a[w.id].order = x);
       }));
-    }), l;
+    }), a;
   }
-  function et(h) {
-    var s, l, u, z, f;
-    if (g.length < 2) {
-      S("Please select at least 2 nodes to align", "warning");
+  function k2(i) {
+    var t, a, o, l, n;
+    if (m.length < 1 || m.length < 2 && i !== "size-min") {
+      L2("Please select at least 2 nodes to align", "warning");
       return;
     }
     try {
-      const C = Math.min(...g.map((a) => a.pos[0])), o = Math.max(...g.map((a) => {
-        let b = 150;
-        return a.size && Array.isArray(a.size) && a.size[0] ? b = a.size[0] : typeof a.width == "number" ? b = a.width : a.properties && typeof a.properties.width == "number" && (b = a.properties.width), a.pos[0] + b;
-      })), c = Math.min(...g.map((a) => a.pos[1])), m = Math.max(...g.map((a) => {
-        let b = 100;
-        return a.size && Array.isArray(a.size) && a.size[1] ? b = a.size[1] : typeof a.height == "number" ? b = a.height : a.properties && typeof a.properties.height == "number" && (b = a.properties.height), a.pos[1] + b;
-      })), w = Math.max(...g.map((a) => {
-        const b = X.get(a);
-        if (b && b.width !== void 0) return b.width;
-        let e = 150;
-        return a.size && Array.isArray(a.size) && a.size[0] ? e = a.size[0] : typeof a.width == "number" ? e = a.width : a.properties && typeof a.properties.width == "number" && (e = a.properties.width), e;
-      })), M = Math.min(...g.map((a) => {
-        const b = X.get(a);
-        if (b && b.width !== void 0) return b.width;
-        let e = 150;
-        return a.size && Array.isArray(a.size) && a.size[0] ? e = a.size[0] : typeof a.width == "number" ? e = a.width : a.properties && typeof a.properties.width == "number" && (e = a.properties.width), e;
-      })), q = Math.max(...g.map((a) => {
-        const b = X.get(a);
-        return b && b.height !== void 0 ? b.height : a.size && a.size[1] !== void 0 ? a.size[1] : typeof a.height == "number" ? a.height : a.properties && typeof a.properties.height == "number" ? a.properties.height : 100;
-      })), J = Math.min(...g.map((a) => a.size && a.size[1] !== void 0 ? a.size[1] : typeof a.height == "number" ? a.height : a.properties && typeof a.properties.height == "number" ? a.properties.height : 100));
-      let G;
-      switch (h) {
+      const h = Math.min(...m.map((u) => u.pos[0])), f = Math.max(...m.map((u) => {
+        let v = 150;
+        return u.size && Array.isArray(u.size) && u.size[0] ? v = u.size[0] : typeof u.width == "number" ? v = u.width : u.properties && typeof u.properties.width == "number" && (v = u.properties.width), u.pos[0] + v;
+      })), c = Math.min(...m.map((u) => u.pos[1])), y = Math.max(...m.map((u) => {
+        let v = 100;
+        return u.size && Array.isArray(u.size) && u.size[1] ? v = u.size[1] : typeof u.height == "number" ? v = u.height : u.properties && typeof u.properties.height == "number" && (v = u.properties.height), u.pos[1] + v;
+      })), w = Math.max(...m.map((u) => {
+        const v = d2.get(u);
+        if (v && v.width !== void 0) return v.width;
+        let s = 150;
+        return u.size && Array.isArray(u.size) && u.size[0] ? s = u.size[0] : typeof u.width == "number" ? s = u.width : u.properties && typeof u.properties.width == "number" && (s = u.properties.width), s;
+      })), x = Math.min(...m.map((u) => {
+        const v = d2.get(u);
+        if (v && v.width !== void 0) return v.width;
+        let s = 150;
+        return u.size && Array.isArray(u.size) && u.size[0] ? s = u.size[0] : typeof u.width == "number" ? s = u.width : u.properties && typeof u.properties.width == "number" && (s = u.properties.width), s;
+      })), $ = Math.max(...m.map((u) => {
+        const v = d2.get(u);
+        return v && v.height !== void 0 ? v.height : u.size && u.size[1] !== void 0 ? u.size[1] : typeof u.height == "number" ? u.height : u.properties && typeof u.properties.height == "number" ? u.properties.height : 100;
+      })), r2 = Math.min(...m.map((u) => u.size && u.size[1] !== void 0 ? u.size[1] : typeof u.height == "number" ? u.height : u.properties && typeof u.properties.height == "number" ? u.properties.height : 100));
+      let P;
+      switch (i) {
         case "left":
-          G = C;
-          const a = [...g].sort((i, r) => i.pos[1] - r.pos[1]);
-          let b = a[0].pos[1];
-          a.forEach((i, r) => {
-            let _ = 100;
-            i.size && Array.isArray(i.size) && i.size[1] ? _ = i.size[1] : typeof i.height == "number" ? _ = i.height : i.properties && typeof i.properties.height == "number" && (_ = i.properties.height), i.pos[0] = G, i.pos[1] = b, typeof i.x == "number" && (i.x = i.pos[0]), typeof i.y == "number" && (i.y = i.pos[1]), b += _ + 30;
+          P = h;
+          const u = [...m].sort((r, L) => r.pos[1] - L.pos[1]);
+          let v = u[0].pos[1];
+          u.forEach((r, L) => {
+            let M = 100;
+            r.size && Array.isArray(r.size) && r.size[1] ? M = r.size[1] : typeof r.height == "number" ? M = r.height : r.properties && typeof r.properties.height == "number" && (M = r.properties.height), r.pos[0] = P, r.pos[1] = v, typeof r.x == "number" && (r.x = r.pos[0]), typeof r.y == "number" && (r.y = r.pos[1]), v += M + 30;
           });
           break;
         case "right":
-          G = o;
-          const e = [...g].sort((i, r) => i.pos[1] - r.pos[1]);
-          let A = e[0].pos[1];
-          e.forEach((i, r) => {
-            let _ = 100, E = 150;
-            i.size && Array.isArray(i.size) ? (i.size[1] && (_ = i.size[1]), i.size[0] && (E = i.size[0])) : (typeof i.height == "number" && (_ = i.height), typeof i.width == "number" && (E = i.width), i.properties && (typeof i.properties.height == "number" && (_ = i.properties.height), typeof i.properties.width == "number" && (E = i.properties.width))), i.pos[0] = G - E, i.pos[1] = A, typeof i.x == "number" && (i.x = i.pos[0]), typeof i.y == "number" && (i.y = i.pos[1]), A += _ + 30;
+          P = f;
+          const s = [...m].sort((r, L) => r.pos[1] - L.pos[1]);
+          let E = s[0].pos[1];
+          s.forEach((r, L) => {
+            let M = 100, C2 = 150;
+            r.size && Array.isArray(r.size) ? (r.size[1] && (M = r.size[1]), r.size[0] && (C2 = r.size[0])) : (typeof r.height == "number" && (M = r.height), typeof r.width == "number" && (C2 = r.width), r.properties && (typeof r.properties.height == "number" && (M = r.properties.height), typeof r.properties.width == "number" && (C2 = r.properties.width))), r.pos[0] = P - C2, r.pos[1] = E, typeof r.x == "number" && (r.x = r.pos[0]), typeof r.y == "number" && (r.y = r.pos[1]), E += M + 30;
           });
           break;
         case "top":
-          G = c;
-          const P = [...g].sort((i, r) => i.pos[0] - r.pos[0]);
-          let ot = P[0].pos[0];
-          P.forEach((i, r) => {
-            let _ = 150;
-            i.size && Array.isArray(i.size) && i.size[0] ? _ = i.size[0] : typeof i.width == "number" ? _ = i.width : i.properties && typeof i.properties.width == "number" && (_ = i.properties.width), i.pos[1] = G, i.pos[0] = ot, typeof i.x == "number" && (i.x = i.pos[0]), typeof i.y == "number" && (i.y = i.pos[1]), ot += _ + 30;
+          P = c;
+          const Z = [...m].sort((r, L) => r.pos[0] - L.pos[0]);
+          let o2 = Z[0].pos[0];
+          Z.forEach((r, L) => {
+            let M = 150;
+            r.size && Array.isArray(r.size) && r.size[0] ? M = r.size[0] : typeof r.width == "number" ? M = r.width : r.properties && typeof r.properties.width == "number" && (M = r.properties.width), r.pos[1] = P, r.pos[0] = o2, typeof r.x == "number" && (r.x = r.pos[0]), typeof r.y == "number" && (r.y = r.pos[1]), o2 += M + 30;
           });
           break;
         case "bottom":
-          G = m;
-          const ut = [...g].sort((i, r) => i.pos[0] - r.pos[0]);
-          let it = C;
-          ut.forEach((i, r) => {
-            let _ = 150, E = 100;
-            i.size && Array.isArray(i.size) ? (i.size[0] && (_ = i.size[0]), i.size[1] && (E = i.size[1])) : (typeof i.width == "number" && (_ = i.width), typeof i.height == "number" && (E = i.height), i.properties && (typeof i.properties.width == "number" && (_ = i.properties.width), typeof i.properties.height == "number" && (E = i.properties.height)));
-            const lt = G - E, yt = it;
-            i.pos[1] = lt, i.pos[0] = yt, typeof i.x == "number" && (i.x = i.pos[0]), typeof i.y == "number" && (i.y = i.pos[1]), it += _ + 30;
+          P = y;
+          const b2 = [...m].sort((r, L) => r.pos[0] - L.pos[0]);
+          let Q = h;
+          b2.forEach((r, L) => {
+            let M = 150, C2 = 100;
+            r.size && Array.isArray(r.size) ? (r.size[0] && (M = r.size[0]), r.size[1] && (C2 = r.size[1])) : (typeof r.width == "number" && (M = r.width), typeof r.height == "number" && (C2 = r.height), r.properties && (typeof r.properties.width == "number" && (M = r.properties.width), typeof r.properties.height == "number" && (C2 = r.properties.height)));
+            const a0 = P - C2, o0 = Q;
+            r.pos[1] = a0, r.pos[0] = o0, typeof r.x == "number" && (r.x = r.pos[0]), typeof r.y == "number" && (r.y = r.pos[1]), Q += M + 30;
+          });
+          break;
+        case "height-center":
+          const n2 = Math.min(...m.map((r) => r.pos[0])), g = Math.max(...m.map((r) => {
+            let L = 150;
+            return r.size && Array.isArray(r.size) && r.size[0] ? L = r.size[0] : typeof r.width == "number" ? L = r.width : r.properties && typeof r.properties.width == "number" && (L = r.properties.width), r.pos[0] + L;
+          })), S = (n2 + g) / 2, G = [...m].sort((r, L) => r.pos[1] - L.pos[1]);
+          let D = G[0].pos[1];
+          G.forEach((r) => {
+            let K = 150, M = 100;
+            r.size && Array.isArray(r.size) ? (r.size[0] && (K = r.size[0]), r.size[1] && (M = r.size[1])) : (typeof r.width == "number" && (K = r.width), typeof r.height == "number" && (M = r.height), r.properties && (typeof r.properties.width == "number" && (K = r.properties.width), typeof r.properties.height == "number" && (M = r.properties.height))), r.pos[0] = S - K / 2, r.pos[1] = D, typeof r.x == "number" && (r.x = r.pos[0]), typeof r.y == "number" && (r.y = r.pos[1]), D += M + 30;
+          });
+          break;
+        case "width-center":
+          const W = Math.min(...m.map((r) => r.pos[1])), c2 = Math.max(...m.map((r) => {
+            let L = 100;
+            return r.size && Array.isArray(r.size) && r.size[1] ? L = r.size[1] : typeof r.height == "number" ? L = r.height : r.properties && typeof r.properties.height == "number" && (L = r.properties.height), r.pos[1] + L;
+          })), f2 = (W + c2) / 2, m2 = [...m].sort((r, L) => r.pos[0] - L.pos[0]);
+          let G2 = m2[0].pos[0];
+          m2.forEach((r) => {
+            let K = 150, M = 100;
+            r.size && Array.isArray(r.size) ? (r.size[0] && (K = r.size[0]), r.size[1] && (M = r.size[1])) : (typeof r.width == "number" && (K = r.width), typeof r.height == "number" && (M = r.height), r.properties && (typeof r.properties.width == "number" && (K = r.properties.width), typeof r.properties.height == "number" && (M = r.properties.height))), r.pos[1] = f2 - M / 2, r.pos[0] = G2, typeof r.x == "number" && (r.x = r.pos[0]), typeof r.y == "number" && (r.y = r.pos[1]), G2 += K + 30;
           });
           break;
         case "width-max":
-          g.forEach((i) => {
-            i.size && (i.size[0] = w);
+          m.forEach((r) => {
+            r.size && (r.size[0] = w);
           });
           break;
         case "width-min":
-          g.forEach((i) => {
-            i.size && (i.size[0] = M);
+          m.forEach((r) => {
+            r.size && (r.size[0] = x);
           });
           break;
         case "height-max":
-          g.forEach((i) => {
-            i.size && (i.size[1] = q);
+          m.forEach((r) => {
+            r.size && (r.size[1] = $);
           });
           break;
         case "height-min":
-          g.forEach((i) => {
-            if (i.size) {
-              const r = K.get(i) || i.computeSize;
-              if (r) {
-                const x = r.call(i);
-                i.size[1] = Math.max(J, x[1]);
+          m.forEach((r) => {
+            if (r.size) {
+              const L = j.get(r) || r.computeSize;
+              if (L) {
+                const K = L.call(r);
+                r.size[1] = Math.max(r2, K[1]);
               }
             }
           });
           break;
         case "size-max":
-          g.forEach((i) => {
-            i.size && (i.size[0] = w, i.size[1] = q);
+          m.forEach((r) => {
+            r.size && (r.size[0] = w, r.size[1] = $);
           });
           break;
         case "size-min":
-          g.forEach((i) => {
-            if (i.size) {
-              const r = K.get(i) || i.computeSize;
-              if (r) {
-                const x = r.call(i);
-                i.size[0] = x[0], i.size[1] = x[1];
+          m.forEach((r) => {
+            if (r.size) {
+              const L = j.get(r) || r.computeSize;
+              if (L) {
+                const K = L.call(r);
+                r.size[0] = K[0], r.size[1] = K[1];
               }
             }
           });
           break;
         case "horizontal-flow":
-          ct();
+          X0();
           return;
         // Don't continue to the success message at the bottom
         case "vertical-flow":
-          pt();
+          j0();
           return;
       }
       try {
-        (l = (s = window.app) == null ? void 0 : s.canvas) != null && l.setDirtyCanvas ? window.app.canvas.setDirtyCanvas(!0, !0) : (z = (u = window.app) == null ? void 0 : u.graph) != null && z.setDirtyCanvas ? window.app.graph.setDirtyCanvas(!0, !0) : (f = window.app) != null && f.canvas && window.app.canvas.draw(!0, !0);
+        (a = (t = window.app) == null ? void 0 : t.canvas) != null && a.setDirtyCanvas ? window.app.canvas.setDirtyCanvas(!0, !0) : (l = (o = window.app) == null ? void 0 : o.graph) != null && l.setDirtyCanvas ? window.app.graph.setDirtyCanvas(!0, !0) : (n = window.app) != null && n.canvas && window.app.canvas.draw(!0, !0);
       } catch {
       }
     } catch {
-      S("Error during alignment", "error");
+      L2("Error during alignment", "error");
     }
   }
-  function at(h) {
+  function Ie(i) {
   }
-  function ct() {
-    var h, s, l, u, z;
+  function X0() {
+    var i, t, a, o, l;
     try {
-      const f = g.filter((e) => {
-        if (!e) return !1;
-        const A = e.pos || e.position || typeof e.x == "number" && typeof e.y == "number", P = e.size || e.width || e.height || typeof e.width == "number" && typeof e.height == "number";
-        return !!A && !!P;
+      const n = m.filter((s) => {
+        if (!s) return !1;
+        const E = s.pos || s.position || typeof s.x == "number" && typeof s.y == "number", Z = s.size || s.width || s.height || typeof s.width == "number" && typeof s.height == "number";
+        return !!E && !!Z;
       });
-      if (f.length < 2) {
-        S(`Not enough valid nodes: ${f.length}/${g.length} nodes are valid`, "warning");
+      if (n.length < 2) {
+        L2(`Not enough valid nodes: ${n.length}/${m.length} nodes are valid`, "warning");
         return;
       }
-      const C = Math.min(...f.map((e) => e.pos && (Array.isArray(e.pos) || e.pos.length !== void 0) ? e.pos[0] : e.position && (Array.isArray(e.position) || e.position.length !== void 0) ? e.position[0] : typeof e.x == "number" ? e.x : 0)), o = Math.min(...f.map((e) => e.pos && (Array.isArray(e.pos) || e.pos.length !== void 0) ? e.pos[1] : e.position && (Array.isArray(e.position) || e.position.length !== void 0) ? e.position[1] : typeof e.y == "number" ? e.y : 0)), c = C, m = o;
-      f.forEach((e) => {
-        e.pos || (e.position && Array.isArray(e.position) ? e.pos = e.position : typeof e.x == "number" && typeof e.y == "number" ? e.pos = [e.x, e.y] : e.pos = [0, 0]), e._calculatedSize || (e.size && Array.isArray(e.size) ? e._calculatedSize = [e.size[0], e.size[1]] : typeof e.width == "number" && typeof e.height == "number" ? e._calculatedSize = [e.width, e.height] : e._calculatedSize = [150, 100]), Array.isArray(e.pos) || (e.pos = [0, 0]);
+      const h = Math.min(...n.map((s) => s.pos && (Array.isArray(s.pos) || s.pos.length !== void 0) ? s.pos[0] : s.position && (Array.isArray(s.position) || s.position.length !== void 0) ? s.position[0] : typeof s.x == "number" ? s.x : 0)), f = Math.min(...n.map((s) => s.pos && (Array.isArray(s.pos) || s.pos.length !== void 0) ? s.pos[1] : s.position && (Array.isArray(s.position) || s.position.length !== void 0) ? s.position[1] : typeof s.y == "number" ? s.y : 0)), c = h, y = f;
+      n.forEach((s) => {
+        s.pos || (s.position && Array.isArray(s.position) ? s.pos = s.position : typeof s.x == "number" && typeof s.y == "number" ? s.pos = [s.x, s.y] : s.pos = [0, 0]), s._calculatedSize || (s.size && Array.isArray(s.size) ? s._calculatedSize = [s.size[0], s.size[1]] : typeof s.width == "number" && typeof s.height == "number" ? s._calculatedSize = [s.width, s.height] : s._calculatedSize = [150, 100]), Array.isArray(s.pos) || (s.pos = [0, 0]);
       });
-      const w = F(f), M = L(f, w), q = 30, J = 30, G = 30, a = 5, b = {};
-      f.forEach((e) => {
-        var A;
-        if (e && e.id) {
-          const P = ((A = M[e.id]) == null ? void 0 : A.level) ?? 0;
-          b[P] || (b[P] = []), b[P].push(e);
+      const w = W2(n), x = Y2(n, w), $ = 30, r2 = 30, P = 30, u = 5, v = {};
+      n.forEach((s) => {
+        var E;
+        if (s && s.id) {
+          const Z = ((E = x[s.id]) == null ? void 0 : E.level) ?? 0;
+          v[Z] || (v[Z] = []), v[Z].push(s);
         }
-      }), Object.entries(b).forEach(([e, A]) => {
-        const P = parseInt(e);
-        if (A && A.length > 0) {
-          A.sort((r, x) => {
-            const _ = r && r.id && M[r.id] ? M[r.id].order : 0, E = x && x.id && M[x.id] ? M[x.id].order : 0;
-            return _ - E;
+      }), Object.entries(v).forEach(([s, E]) => {
+        const Z = parseInt(s);
+        if (E && E.length > 0) {
+          E.sort((g, S) => {
+            const G = g && g.id && x[g.id] ? x[g.id].order : 0, D = S && S.id && x[S.id] ? x[S.id].order : 0;
+            return G - D;
           });
-          const ot = A.reduce((r, x, _) => {
-            const E = x && x._calculatedSize && x._calculatedSize[1] ? x._calculatedSize[1] : 100;
-            return r + E + (_ < A.length - 1 ? G : 0);
-          }, 0), ut = Math.max(...A.map(
-            (r) => r && r._calculatedSize && r._calculatedSize[0] ? r._calculatedSize[0] : 150
+          const o2 = E.reduce((g, S, G) => {
+            const D = S && S._calculatedSize && S._calculatedSize[1] ? S._calculatedSize[1] : 100;
+            return g + D + (G < E.length - 1 ? P : 0);
+          }, 0), b2 = Math.max(...E.map(
+            (g) => g && g._calculatedSize && g._calculatedSize[0] ? g._calculatedSize[0] : 150
           ));
-          let it = c;
-          if (P > 0)
-            for (let r = 0; r < P; r++) {
-              const x = b[r] || [], _ = Math.max(...x.map(
-                (E) => E && E._calculatedSize && E._calculatedSize[0] ? E._calculatedSize[0] : 150
+          let Q = c;
+          if (Z > 0)
+            for (let g = 0; g < Z; g++) {
+              const S = v[g] || [], G = Math.max(...S.map(
+                (D) => D && D._calculatedSize && D._calculatedSize[0] ? D._calculatedSize[0] : 150
               ));
-              it += _ + q + a;
+              Q += G + $ + u;
             }
-          let i = m;
-          A.forEach((r, x) => {
-            if (r && r.pos && r._calculatedSize) {
-              const _ = [r.pos[0], r.pos[1]], E = [r._calculatedSize[0], r._calculatedSize[1]];
-              r.pos[0] = it, r.pos[1] = i, i += r._calculatedSize[1] + G, typeof r.x == "number" && (r.x = r.pos[0]), typeof r.y == "number" && (r.y = r.pos[1]);
+          let n2 = y;
+          E.forEach((g, S) => {
+            if (g && g.pos && g._calculatedSize) {
+              const G = [g.pos[0], g.pos[1]], D = [g._calculatedSize[0], g._calculatedSize[1]];
+              g.pos[0] = Q, g.pos[1] = n2, n2 += g._calculatedSize[1] + P, typeof g.x == "number" && (g.x = g.pos[0]), typeof g.y == "number" && (g.y = g.pos[1]);
             }
           });
         }
       });
       try {
-        (s = (h = window.app) == null ? void 0 : h.canvas) != null && s.setDirtyCanvas ? window.app.canvas.setDirtyCanvas(!0, !0) : (u = (l = window.app) == null ? void 0 : l.graph) != null && u.setDirtyCanvas ? window.app.graph.setDirtyCanvas(!0, !0) : (z = window.app) != null && z.canvas && window.app.canvas.draw(!0, !0);
+        (t = (i = window.app) == null ? void 0 : i.canvas) != null && t.setDirtyCanvas ? window.app.canvas.setDirtyCanvas(!0, !0) : (o = (a = window.app) == null ? void 0 : a.graph) != null && o.setDirtyCanvas ? window.app.graph.setDirtyCanvas(!0, !0) : (l = window.app) != null && l.canvas && window.app.canvas.draw(!0, !0);
       } catch {
       }
     } catch {
-      S("Error in horizontal flow alignment", "error");
+      L2("Error in horizontal flow alignment", "error");
     }
   }
-  function pt() {
-    var h, s, l, u, z;
+  function j0() {
+    var i, t, a, o, l;
     try {
-      const f = g.filter((e) => {
-        if (!e) return !1;
-        const A = e.pos || e.position || typeof e.x == "number" && typeof e.y == "number", P = e.size || e.width || e.height || typeof e.width == "number" && typeof e.height == "number";
-        return !!A && !!P;
+      const n = m.filter((s) => {
+        if (!s) return !1;
+        const E = s.pos || s.position || typeof s.x == "number" && typeof s.y == "number", Z = s.size || s.width || s.height || typeof s.width == "number" && typeof s.height == "number";
+        return !!E && !!Z;
       });
-      if (f.length < 2) {
-        S(`Not enough valid nodes: ${f.length}/${g.length} nodes are valid`, "warning");
+      if (n.length < 2) {
+        L2(`Not enough valid nodes: ${n.length}/${m.length} nodes are valid`, "warning");
         return;
       }
-      const C = Math.min(...f.map((e) => e.pos && (Array.isArray(e.pos) || e.pos.length !== void 0) ? e.pos[0] : e.position && (Array.isArray(e.position) || e.position.length !== void 0) ? e.position[0] : typeof e.x == "number" ? e.x : 0)), o = Math.min(...f.map((e) => e.pos && (Array.isArray(e.pos) || e.pos.length !== void 0) ? e.pos[1] : e.position && (Array.isArray(e.position) || e.position.length !== void 0) ? e.position[1] : typeof e.y == "number" ? e.y : 0)), c = C, m = o;
-      f.forEach((e) => {
-        e.pos || (e.position && Array.isArray(e.position) ? e.pos = e.position : typeof e.x == "number" && typeof e.y == "number" ? e.pos = [e.x, e.y] : e.pos = [0, 0]), e._calculatedSize || (e.size && Array.isArray(e.size) ? e._calculatedSize = [e.size[0], e.size[1]] : typeof e.width == "number" && typeof e.height == "number" ? e._calculatedSize = [e.width, e.height] : e._calculatedSize = [150, 100]), Array.isArray(e.pos) || (e.pos = [0, 0]);
+      const h = Math.min(...n.map((s) => s.pos && (Array.isArray(s.pos) || s.pos.length !== void 0) ? s.pos[0] : s.position && (Array.isArray(s.position) || s.position.length !== void 0) ? s.position[0] : typeof s.x == "number" ? s.x : 0)), f = Math.min(...n.map((s) => s.pos && (Array.isArray(s.pos) || s.pos.length !== void 0) ? s.pos[1] : s.position && (Array.isArray(s.position) || s.position.length !== void 0) ? s.position[1] : typeof s.y == "number" ? s.y : 0)), c = h, y = f;
+      n.forEach((s) => {
+        s.pos || (s.position && Array.isArray(s.position) ? s.pos = s.position : typeof s.x == "number" && typeof s.y == "number" ? s.pos = [s.x, s.y] : s.pos = [0, 0]), s._calculatedSize || (s.size && Array.isArray(s.size) ? s._calculatedSize = [s.size[0], s.size[1]] : typeof s.width == "number" && typeof s.height == "number" ? s._calculatedSize = [s.width, s.height] : s._calculatedSize = [150, 100]), Array.isArray(s.pos) || (s.pos = [0, 0]);
       });
-      const w = F(f), M = L(f, w), q = 30, J = 30, G = 30, a = 5, b = {};
-      f.forEach((e) => {
-        var A;
-        if (e && e.id) {
-          const P = ((A = M[e.id]) == null ? void 0 : A.level) ?? 0;
-          b[P] || (b[P] = []), b[P].push(e);
+      const w = W2(n), x = Y2(n, w), $ = 30, r2 = 30, P = 30, u = 5, v = {};
+      n.forEach((s) => {
+        var E;
+        if (s && s.id) {
+          const Z = ((E = x[s.id]) == null ? void 0 : E.level) ?? 0;
+          v[Z] || (v[Z] = []), v[Z].push(s);
         }
-      }), Object.entries(b).forEach(([e, A]) => {
-        const P = parseInt(e);
-        if (A && A.length > 0) {
-          A.sort((r, x) => {
-            const _ = r && r.id && M[r.id] ? M[r.id].order : 0, E = x && x.id && M[x.id] ? M[x.id].order : 0;
-            return _ - E;
+      }), Object.entries(v).forEach(([s, E]) => {
+        const Z = parseInt(s);
+        if (E && E.length > 0) {
+          E.sort((g, S) => {
+            const G = g && g.id && x[g.id] ? x[g.id].order : 0, D = S && S.id && x[S.id] ? x[S.id].order : 0;
+            return G - D;
           });
-          const ot = A.reduce((r, x, _) => {
-            const E = x && x._calculatedSize && x._calculatedSize[0] ? x._calculatedSize[0] : 150;
-            return r + E + J;
-          }, 0), ut = Math.max(...A.map(
-            (r) => r && r._calculatedSize && r._calculatedSize[1] ? r._calculatedSize[1] : 100
+          const o2 = E.reduce((g, S, G) => {
+            const D = S && S._calculatedSize && S._calculatedSize[0] ? S._calculatedSize[0] : 150;
+            return g + D + r2;
+          }, 0), b2 = Math.max(...E.map(
+            (g) => g && g._calculatedSize && g._calculatedSize[1] ? g._calculatedSize[1] : 100
           ));
-          let it = m;
-          if (P > 0)
-            for (let r = 0; r < P; r++) {
-              const x = b[r] || [], _ = Math.max(...x.map(
-                (E) => E && E._calculatedSize && E._calculatedSize[1] ? E._calculatedSize[1] : 100
+          let Q = y;
+          if (Z > 0)
+            for (let g = 0; g < Z; g++) {
+              const S = v[g] || [], G = Math.max(...S.map(
+                (D) => D && D._calculatedSize && D._calculatedSize[1] ? D._calculatedSize[1] : 100
               ));
-              it += _ + q + a;
+              Q += G + $ + u;
             }
-          let i = c;
-          A.forEach((r, x) => {
-            if (r && r.pos && r._calculatedSize) {
-              const _ = [r.pos[0], r.pos[1]], E = [r._calculatedSize[0], r._calculatedSize[1]];
-              r.pos[0] = i, r.pos[1] = it, i += r._calculatedSize[0] + J, typeof r.x == "number" && (r.x = r.pos[0]), typeof r.y == "number" && (r.y = r.pos[1]);
+          let n2 = c;
+          E.forEach((g, S) => {
+            if (g && g.pos && g._calculatedSize) {
+              const G = [g.pos[0], g.pos[1]], D = [g._calculatedSize[0], g._calculatedSize[1]];
+              g.pos[0] = n2, g.pos[1] = Q, n2 += g._calculatedSize[0] + r2, typeof g.x == "number" && (g.x = g.pos[0]), typeof g.y == "number" && (g.y = g.pos[1]);
             }
           });
         }
       });
       try {
-        (s = (h = window.app) == null ? void 0 : h.canvas) != null && s.setDirtyCanvas ? window.app.canvas.setDirtyCanvas(!0, !0) : (u = (l = window.app) == null ? void 0 : l.graph) != null && u.setDirtyCanvas ? window.app.graph.setDirtyCanvas(!0, !0) : (z = window.app) != null && z.canvas && window.app.canvas.draw(!0, !0);
+        (t = (i = window.app) == null ? void 0 : i.canvas) != null && t.setDirtyCanvas ? window.app.canvas.setDirtyCanvas(!0, !0) : (o = (a = window.app) == null ? void 0 : a.graph) != null && o.setDirtyCanvas ? window.app.graph.setDirtyCanvas(!0, !0) : (l = window.app) != null && l.canvas && window.app.canvas.draw(!0, !0);
       } catch {
       }
     } catch {
-      S("Error in vertical flow alignment", "error");
+      L2("Error in vertical flow alignment", "error");
     }
   }
-  function S(h, s = "info") {
-    const l = document.createElement("div");
-    l.textContent = h, l.style.cssText = `
+  function L2(i, t = "info") {
+    const a = document.createElement("div");
+    a.textContent = i, a.style.cssText = `
             position: fixed;
             top: 60px;
             right: 10px;
-            background: ${s === "success" ? "#4CAF50" : s === "warning" ? "#FF9800" : s === "error" ? "#F44336" : "#2196F3"};
+            background: ${t === "success" ? "#4CAF50" : t === "warning" ? "#FF9800" : t === "error" ? "#F44336" : "#2196F3"};
             color: white;
             padding: 12px 16px;
             border-radius: 6px;
@@ -1113,55 +2049,65 @@ function ne() {
             opacity: 0;
             transform: translateX(20px);
             transition: all 0.3s ease;
-        `, document.body.appendChild(l), setTimeout(() => {
-      l.style.opacity = "1", l.style.transform = "translateX(0)";
+        `, document.body.appendChild(a), setTimeout(() => {
+      a.style.opacity = "1", a.style.transform = "translateX(0)";
     }, 10), setTimeout(() => {
-      l.style.opacity = "0", l.style.transform = "translateX(20px)", setTimeout(() => {
-        l.parentNode && l.parentNode.removeChild(l);
+      a.style.opacity = "0", a.style.transform = "translateX(20px)", setTimeout(() => {
+        a.parentNode && a.parentNode.removeChild(a);
       }, 300);
     }, 3e3);
   }
-  function U() {
-    var h;
-    if (!((h = window.app) != null && h.canvas)) {
-      setTimeout(U, 100);
+  function x0() {
+    var i;
+    if (!((i = window.app) != null && i.canvas)) {
+      setTimeout(x0, 100);
       return;
     }
     window.app.canvas.canvas && (window.app.canvas.canvas.addEventListener("click", () => {
-      setTimeout(I, 10);
+      setTimeout($2, 10);
     }), window.app.canvas.canvas.addEventListener("mouseup", () => {
-      setTimeout(I, 10);
-    }), document.addEventListener("keydown", (s) => {
-      (s.ctrlKey || s.metaKey) && setTimeout(I, 10);
-    })), setInterval(I, 500);
+      setTimeout($2, 10);
+    }), document.addEventListener("keydown", (t) => {
+      (t.ctrlKey || t.metaKey) && setTimeout($2, 10);
+    })), setInterval($2, 500);
   }
-  function zt(h) {
-    if (h.ctrlKey || h.metaKey) {
-      if (h.shiftKey)
-        switch (h.key) {
+  function U0(i) {
+    if (i.ctrlKey || i.metaKey) {
+      if (i.shiftKey && !i.altKey && (i.key === "H" || i.key === "h")) {
+        i.preventDefault(), s0();
+        return;
+      }
+      if (i.shiftKey)
+        switch (i.key) {
           case "ArrowLeft":
-            h.preventDefault(), et("left");
+            i.preventDefault(), k2("left");
             break;
           case "ArrowRight":
-            h.preventDefault(), et("right");
+            i.preventDefault(), k2("right");
             break;
           case "ArrowUp":
-            h.preventDefault(), et("top");
+            i.preventDefault(), k2("top");
             break;
           case "ArrowDown":
-            h.preventDefault(), et("bottom");
+            i.preventDefault(), k2("bottom");
             break;
         }
-      else if (h.altKey)
-        switch (h.key) {
+      else if (i.altKey)
+        switch (i.key) {
           case "ArrowRight":
-            h.preventDefault(), et("horizontal-flow");
+            i.preventDefault(), k2("horizontal-flow");
             break;
           case "ArrowDown":
-            h.preventDefault(), et("vertical-flow");
+            i.preventDefault(), k2("vertical-flow");
             break;
         }
     }
   }
-  O(), U(), document.addEventListener("keydown", zt);
+  $0(), x0(), document.addEventListener("keydown", U0);
 }
+const e2 = {
+  active: !1,
+  colorOption: null,
+  nodes: /* @__PURE__ */ new Map(),
+  groups: /* @__PURE__ */ new Map()
+};
