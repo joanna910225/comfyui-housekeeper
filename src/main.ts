@@ -2082,7 +2082,7 @@ function initializeAlignmentPanel() {
                 // Exact spacing constants from H-Flow
                 const H_COLUMN_SPACING = 30;
                 const H_NODE_SPACING_Y = 30;
-                const H_LEVEL_PADDING = 5;
+                const H_LEVEL_PADDING = 0;
 
                 // Group by levels exactly like H-Flow
                 const hFlowLevels: {[level: number]: any[]} = {};
@@ -2180,7 +2180,7 @@ function initializeAlignmentPanel() {
                 // Exact spacing constants from V-Flow
                 const V_ROW_SPACING = 30;
                 const V_NODE_SPACING_X = 30;
-                const V_LEVEL_PADDING = 5;
+                const V_LEVEL_PADDING = 0;
 
                 // Group by levels exactly like V-Flow
                 const vFlowLevels: {[level: number]: any[]} = {};
@@ -3095,7 +3095,7 @@ function initializeAlignmentPanel() {
             const COLUMN_SPACING = 30;      // Spacing between columns
             const NODE_SPACING_X = 30;      // Horizontal space between node edges
             const NODE_SPACING_Y = 30;      // Vertical space between node edges
-            const LEVEL_PADDING = 5;        // Minimal padding between levels
+            const LEVEL_PADDING = 0;        // Minimal padding between levels
             
             // Group nodes by level
             const levels: {[level: number]: any[]} = {};
@@ -3276,7 +3276,7 @@ function initializeAlignmentPanel() {
             const ROW_SPACING = 30;         // Spacing between rows
             const NODE_SPACING_X = 30;      // Horizontal space between node edges
             const NODE_SPACING_Y = 30;      // Vertical space between node edges
-            const LEVEL_PADDING = 5;        // Minimal padding between levels
+            const LEVEL_PADDING = 0;        // Minimal padding between levels
             
             // Group nodes by level
             const levels: {[level: number]: any[]} = {};

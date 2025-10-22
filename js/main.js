@@ -1541,7 +1541,7 @@ function Te() {
           ...e,
           pos: e.pos ? [...e.pos] : [e.x || 0, e.y || 0],
           _calculatedSize: e.size && Array.isArray(e.size) ? [e.size[0], e.size[1]] : [e.width || 150, e.height || 100]
-        })), K = W2(L), E = Y2(L, K), C2 = 30, a0 = 30, o0 = 5, B2 = {};
+        })), K = W2(L), E = Y2(L, K), C2 = 30, a0 = 30, o0 = 0, B2 = {};
         L.forEach((e) => {
           var p;
           if (e && e.id) {
@@ -1591,7 +1591,7 @@ function Te() {
           ...e,
           pos: e.pos ? [...e.pos] : [e.x || 0, e.y || 0],
           _calculatedSize: e.size && Array.isArray(e.size) ? [e.size[0], e.size[1]] : [e.width || 150, e.height || 100]
-        })), J0 = W2(l0), F2 = Y2(l0, J0), Q0 = 30, ee = 30, te = 5, N2 = {};
+        })), J0 = W2(l0), F2 = Y2(l0, J0), Q0 = 30, ee = 30, te = 0, N2 = {};
         l0.forEach((e) => {
           var p;
           if (e && e.id) {
@@ -1926,7 +1926,7 @@ function Te() {
       n.forEach((s) => {
         s.pos || (s.position && Array.isArray(s.position) ? s.pos = s.position : typeof s.x == "number" && typeof s.y == "number" ? s.pos = [s.x, s.y] : s.pos = [0, 0]), s._calculatedSize || (s.size && Array.isArray(s.size) ? s._calculatedSize = [s.size[0], s.size[1]] : typeof s.width == "number" && typeof s.height == "number" ? s._calculatedSize = [s.width, s.height] : s._calculatedSize = [150, 100]), Array.isArray(s.pos) || (s.pos = [0, 0]);
       });
-      const w = W2(n), x = Y2(n, w), $ = 30, r2 = 30, P = 30, u = 5, v = {};
+      const w = W2(n), x = Y2(n, w), $ = 30, r2 = 30, P = 30, u = 0, v = {};
       n.forEach((s) => {
         var M;
         if (s && s.id) {
@@ -1987,7 +1987,7 @@ function Te() {
       n.forEach((s) => {
         s.pos || (s.position && Array.isArray(s.position) ? s.pos = s.position : typeof s.x == "number" && typeof s.y == "number" ? s.pos = [s.x, s.y] : s.pos = [0, 0]), s._calculatedSize || (s.size && Array.isArray(s.size) ? s._calculatedSize = [s.size[0], s.size[1]] : typeof s.width == "number" && typeof s.height == "number" ? s._calculatedSize = [s.width, s.height] : s._calculatedSize = [150, 100]), Array.isArray(s.pos) || (s.pos = [0, 0]);
       });
-      const w = W2(n), x = Y2(n, w), $ = 30, r2 = 30, P = 30, u = 5, v = {};
+      const w = W2(n), x = Y2(n, w), $ = 30, r2 = 30, P = 30, u = 0, v = {};
       n.forEach((s) => {
         var M;
         if (s && s.id) {
