@@ -112,6 +112,3 @@ yarn-error.log*
 node.zip
 .vscode/
 .claude/
-
-doc/*.png
-doc/*.jpg
