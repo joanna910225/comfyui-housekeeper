@@ -120,6 +120,9 @@ function initializeAlignmentPanel() {
     let customHexInput: HTMLInputElement | null = null;
     let customPreviewSwatch: HTMLElement | null = null;
 
+    // Flag to suppress preview after clicking until mouse moves
+    let suppressPreview = false;
+
     // Store locked sizes and original computeSize methods for size-max functionality
     const lockedSizes = new WeakMap();
     const originalComputeSizeMethods = new WeakMap();
@@ -1392,11 +1395,14 @@ function initializeAlignmentPanel() {
     function attachColorChipHandlers(chip: HTMLButtonElement, hex: string) {
         const activate = (event?: Event) => {
             event?.preventDefault();
-            applyColorToSelection(hex);
+            // Clear preview state BEFORE applying to prevent restoration during re-render
             previewState.active = false;
             previewState.colorOption = null;
             previewState.nodes.clear();
             previewState.groups.clear();
+            // Suppress preview until mouse moves to prevent auto-preview on re-ordered chips
+            suppressPreview = true;
+            applyColorToSelection(hex);
         };
         chip.addEventListener('click', activate);
         chip.addEventListener('keydown', (event: KeyboardEvent) => {
@@ -1406,6 +1412,8 @@ function initializeAlignmentPanel() {
             }
         });
         chip.addEventListener('mouseenter', () => {
+            // Don't show preview if we just clicked and chips re-ordered
+            if (suppressPreview) return;
             const option = buildColorOption(hex);
             captureCurrentColors(option);
             applyPreviewColor(option);
@@ -1510,6 +1518,13 @@ function initializeAlignmentPanel() {
         panel.setAttribute('role', 'region');
         panel.setAttribute('aria-label', 'Housekeeper alignment tools');
         panel.tabIndex = -1;
+
+        // Clear suppressPreview flag when mouse moves, allowing preview to work again
+        panel.addEventListener('mousemove', () => {
+            if (suppressPreview) {
+                suppressPreview = false;
+            }
+        });
 
         const content = document.createElement('div');
         content.className = 'housekeeper-content';
