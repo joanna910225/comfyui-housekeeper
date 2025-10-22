@@ -129,20 +129,35 @@ function initializeAlignmentPanel() {
     const DEFAULT_TOP_OFFSET = 48;
     const PANEL_BOTTOM_MARGIN = 24;
 
-    function getToolbarElement(): HTMLElement | null {
+    function getTopMenuElement(): HTMLElement | null {
+        // Look for the top menu bar specifically (not bottom menu)
+        const topMenu = document.querySelector<HTMLElement>('#comfyui-body-top, .comfyui-body-top');
+        if (topMenu && topMenu.getBoundingClientRect().top === 0) {
+            return topMenu;
+        }
+        
+        // Fallback to any menu if no specific top menu found
         return document.querySelector<HTMLElement>('#comfy-menu, .comfyui-menu, .litegraph-menu, .comfyui-toolbar');
     }
 
     function computeToolbarOffset(): number {
-        const toolbar = getToolbarElement();
-        if (!toolbar) {
+        const topMenu = getTopMenuElement();
+        if (!topMenu) {
             return DEFAULT_TOP_OFFSET;
         }
-        const rect = toolbar.getBoundingClientRect();
+        const rect = topMenu.getBoundingClientRect();
         if (!rect || (rect.width === 0 && rect.height === 0)) {
             return DEFAULT_TOP_OFFSET;
         }
-        return Math.max(DEFAULT_TOP_OFFSET, Math.ceil(rect.bottom + 8));
+        
+        // Only use the menu's bottom position if it's at the top of the page
+        // This prevents using a bottom menu's position
+        if (rect.top < 100) {
+            return Math.max(DEFAULT_TOP_OFFSET, Math.ceil(rect.bottom + 8));
+        }
+        
+        // If menu is not at top (e.g., at bottom), use default offset
+        return DEFAULT_TOP_OFFSET;
     }
 
     function updateLayoutMetrics() {
@@ -162,14 +177,14 @@ function initializeAlignmentPanel() {
         }
 
         if (typeof ResizeObserver !== 'undefined') {
-            const toolbar = getToolbarElement();
-            if (toolbar) {
+            const topMenu = getTopMenuElement();
+            if (topMenu) {
                 if (!layoutObserver) {
                     layoutObserver = new ResizeObserver(() => updateLayoutMetrics());
                 } else {
                     layoutObserver.disconnect();
                 }
-                layoutObserver.observe(toolbar);
+                layoutObserver.observe(topMenu);
             }
         }
     }
