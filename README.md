@@ -8,7 +8,7 @@
 A ComfyUI custom node that provides comprehensive node alignment tools and color management for organizing your workflows.
 
 <div align="center">
-<img src="doc/housekeeper-panel.png" alt="Housekeeper Panel" height="400">
+<img src="doc/screenshort.png" alt="Housekeeper Panel" height="400">
 </div>
 
 ## Features
