@@ -11,6 +11,30 @@ A ComfyUI custom node that provides comprehensive node alignment tools and color
 <img src="doc/screenshot.png" alt="Housekeeper Panel" height="400">
 </div>
 
+## Demo Videos
+
+<div align="center">
+
+### Node Alignment
+<video width="600" controls>
+  <source src="doc/alignment.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
+### Size Alignment
+<video width="600" controls>
+  <source src="doc/size-alignment.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
+### Color Management
+<video width="600" controls>
+  <source src="doc/color.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
+</div>
+
 ## Features
 
 - 14 alignment options including edge and center alignments
