@@ -11,6 +11,21 @@ A ComfyUI custom node that provides comprehensive node alignment tools and color
 <img src="doc/screenshot.png" alt="Housekeeper Panel" height="400">
 </div>
 
+## Demo
+
+<div align="center">
+
+### Node Alignment
+<img src="doc/alignment.gif" alt="Node Alignment Demo" width="600">
+
+### Size Alignment
+<img src="doc/size-alignment.gif" alt="Size Alignment Demo" width="600">
+
+### Color Management
+<img src="doc/color.gif" alt="Color Management Demo" width="600">
+
+</div>
+
 ## Features
 
 - 14 alignment options including edge and center alignments
