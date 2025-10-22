@@ -1,4 +1,9 @@
-# HouseKeeper - ComfyUI Node Alignment & Color Tool
+<div align="center">
+
+# <img src="icons/housekeeper.svg" alt="Housekeeper" height="32"> comfyui-housekeeper
+### ComfyUI Node Alignment & Color Tool
+
+</div>
 
 A ComfyUI custom node that provides comprehensive node alignment tools and color management for organizing your workflows.
 
