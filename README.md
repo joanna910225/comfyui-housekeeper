@@ -1,11 +1,11 @@
 <div align="center">
 
-# <img src="icons/housekeeper.svg" alt="Housekeeper" height="32"> comfyui-housekeeper 
+# <img src="icons/housekeeper.svg" alt="Housekeeper" height="32"> comfyui-housekeeper
 ### ComfyUI Node Alignment & Color Tool
 
-A ComfyUI custom node that provides comprehensive node alignment tools and color management for organizing your workflows.
-
 </div>
+
+A ComfyUI custom node that provides comprehensive node alignment tools and color management for organizing your workflows.
 
 <img src="doc/housekeeper-panel.png" alt="Housekeeper Panel" height="400">
 
