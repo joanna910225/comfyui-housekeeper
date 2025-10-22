@@ -1660,7 +1660,8 @@ function initializeAlignmentPanel() {
 
     // Preview functionality
     function showPreview(alignmentType: string) {
-        if (selectedNodes.length < 2) return;
+        // Allow size-min with 1 node, others need at least 2
+        if (selectedNodes.length < 1 || (selectedNodes.length < 2 && alignmentType !== 'size-min')) return;
         hidePreview(); // Clear any existing previews
 
         const canvas = (window as any).app?.canvas;
@@ -2356,8 +2357,8 @@ function initializeAlignmentPanel() {
                 `;
             } else if (selectedNodes.length === 1 && selectedGroups.length === 0) {
                 infoPanel.innerHTML = `
-                    Select additional nodes to align
-                    <small>Tip: Hold Shift and click to add more nodes</small>
+                    1 node selected · Size-Min available
+                    <small>Select more nodes for alignment options</small>
                 `;
             } else {
                 infoPanel.innerHTML = `
@@ -2369,7 +2370,9 @@ function initializeAlignmentPanel() {
 
         const buttons = panel?.querySelectorAll<HTMLButtonElement>('.hk-button');
         buttons?.forEach(button => {
-            button.disabled = !hasSelectedNodes;
+            // Size-min can work with 1 node, others need 2+
+            const isSizeMin = button.dataset.alignmentType === 'size-min';
+            button.disabled = isSizeMin ? selectedNodes.length < 1 : !hasSelectedNodes;
         });
     }
 
@@ -2527,7 +2530,8 @@ function initializeAlignmentPanel() {
 
     // Align nodes function with advanced options
     function alignNodes(alignmentType: string) {
-        if (selectedNodes.length < 2) {
+        // Allow size-min with 1 node, others need at least 2
+        if (selectedNodes.length < 1 || (selectedNodes.length < 2 && alignmentType !== 'size-min')) {
             showMessage('Please select at least 2 nodes to align', 'warning');
             return;
         }

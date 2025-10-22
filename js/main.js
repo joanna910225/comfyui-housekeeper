@@ -376,20 +376,20 @@ function Te() {
     return document.querySelector("#comfy-menu, .comfyui-menu, .litegraph-menu, .comfyui-toolbar");
   }
   function F() {
-    const r = x2();
-    if (!r)
+    const i = x2();
+    if (!i)
       return g2;
-    const t = r.getBoundingClientRect();
+    const t = i.getBoundingClientRect();
     return !t || t.width === 0 && t.height === 0 ? g2 : Math.max(g2, Math.ceil(t.bottom + 8));
   }
   function J() {
-    const r = F(), t = window.innerHeight || document.documentElement.clientHeight || 0, a = Math.max(t - r - E2, 280);
-    document.documentElement.style.setProperty("--hk-top-offset", `${r}px`), document.documentElement.style.setProperty("--hk-panel-max-height", `${a}px`);
+    const i = F(), t = window.innerHeight || document.documentElement.clientHeight || 0, a = Math.max(t - i - E2, 280);
+    document.documentElement.style.setProperty("--hk-top-offset", `${i}px`), document.documentElement.style.setProperty("--hk-panel-max-height", `${a}px`);
   }
   function P2() {
     if (y2 || (y2 = !0, window.addEventListener("resize", J), window.addEventListener("orientationchange", J)), typeof ResizeObserver < "u") {
-      const r = x2();
-      r && (U ? U.disconnect() : U = new ResizeObserver(() => J()), U.observe(r));
+      const i = x2();
+      i && (U ? U.disconnect() : U = new ResizeObserver(() => J()), U.observe(i));
     }
   }
   const U2 = [
@@ -422,10 +422,10 @@ function Te() {
     ["#2b193d", "#412271", "#6a4c93", "#9b5de5", "#f15bb5", "#f9a1bc", "#feeafa", "#ffd6e0", "#ffe5f1"]
   ], S2 = 4.5, _2 = "#AAAAAA";
   function J2() {
-    const r = "housekeeper-alignment-styles";
-    if (document.getElementById(r)) return;
+    const i = "housekeeper-alignment-styles";
+    if (document.getElementById(i)) return;
     const t = document.createElement("style");
-    t.id = r, t.textContent = `
+    t.id = i, t.textContent = `
 @import url('https://fonts.googleapis.com/css2?family=Gloria+Hallelujah&display=swap');
 
 :root {
@@ -1028,27 +1028,27 @@ function Te() {
   }
   J2(), P2(), J();
   function O() {
-    const r = document.createElement("section");
-    return r.className = "housekeeper-section", r;
+    const i = document.createElement("section");
+    return i.className = "housekeeper-section", i;
   }
-  function t2(r) {
+  function t2(i) {
     const t = document.createElement("p");
-    return t.className = "housekeeper-subtitle", t.textContent = r, t;
+    return t.className = "housekeeper-subtitle", t.textContent = i, t;
   }
-  function i2(r, t) {
+  function i2(i, t) {
     const a = document.createElement("div");
-    return a.className = `housekeeper-button-grid housekeeper-button-grid-${t}`, r.forEach((o) => {
+    return a.className = `housekeeper-button-grid housekeeper-button-grid-${t}`, i.forEach((o) => {
       a.appendChild(Z2(o));
     }), a;
   }
-  function Z2(r) {
+  function Z2(i) {
     const t = document.createElement("button");
-    t.type = "button", t.className = "hk-button", t.dataset.alignmentType = r.type, t.title = r.label, t.setAttribute("aria-label", r.label);
+    t.type = "button", t.className = "hk-button", t.dataset.alignmentType = i.type, t.title = i.label, t.setAttribute("aria-label", i.label);
     const a = document.createElement("img");
-    return a.src = r.icon, a.alt = "", a.draggable = !1, t.appendChild(a), t.addEventListener("mouseenter", () => y0(r.type)), t.addEventListener("mouseleave", () => I2()), t.addEventListener("focus", () => y0(r.type)), t.addEventListener("blur", () => I2()), t.addEventListener("click", () => k2(r.type)), t;
+    return a.src = i.icon, a.alt = "", a.draggable = !1, t.appendChild(a), t.addEventListener("mouseenter", () => y0(i.type)), t.addEventListener("mouseleave", () => I2()), t.addEventListener("focus", () => y0(i.type)), t.addEventListener("blur", () => I2()), t.addEventListener("click", () => k2(i.type)), t;
   }
-  function p0(r) {
-    const t = r.replace("#", "");
+  function p0(i) {
+    const t = i.replace("#", "");
     if (t.length === 3) {
       const a = parseInt(t[0] + t[0], 16), o = parseInt(t[1] + t[1], 16), l = parseInt(t[2] + t[2], 16);
       return { r: a, g: o, b: l };
@@ -1059,12 +1059,12 @@ function Te() {
       b: parseInt(t.slice(4, 6), 16)
     } : null;
   }
-  function B0(r, t, a) {
+  function B0(i, t, a) {
     const o = (l) => Math.max(0, Math.min(255, Math.round(l))).toString(16).padStart(2, "0");
-    return `#${o(r)}${o(t)}${o(a)}`;
+    return `#${o(i)}${o(t)}${o(a)}`;
   }
-  function h0(r) {
-    const t = p0(r);
+  function h0(i) {
+    const t = p0(i);
     if (!t) return null;
     const a = t.r / 255, o = t.g / 255, l = t.b / 255, n = Math.max(a, o, l), u = Math.min(a, o, l), f = n - u;
     let c = 0;
@@ -1072,54 +1072,54 @@ function Te() {
     const y = (n + u) / 2, w = f === 0 ? 0 : f / (1 - Math.abs(2 * y - 1));
     return { h: c, s: w, l: y };
   }
-  function u0(r, t, a) {
-    const o = (1 - Math.abs(2 * a - 1)) * t, l = o * (1 - Math.abs(r / 60 % 2 - 1)), n = a - o / 2;
+  function u0(i, t, a) {
+    const o = (1 - Math.abs(2 * a - 1)) * t, l = o * (1 - Math.abs(i / 60 % 2 - 1)), n = a - o / 2;
     let u = 0, f = 0, c = 0;
-    return 0 <= r && r < 60 ? (u = o, f = l, c = 0) : 60 <= r && r < 120 ? (u = l, f = o, c = 0) : 120 <= r && r < 180 ? (u = 0, f = o, c = l) : 180 <= r && r < 240 ? (u = 0, f = l, c = o) : 240 <= r && r < 300 ? (u = l, f = 0, c = o) : (u = o, f = 0, c = l), B0((u + n) * 255, (f + n) * 255, (c + n) * 255);
+    return 0 <= i && i < 60 ? (u = o, f = l, c = 0) : 60 <= i && i < 120 ? (u = l, f = o, c = 0) : 120 <= i && i < 180 ? (u = 0, f = o, c = l) : 180 <= i && i < 240 ? (u = 0, f = l, c = o) : 240 <= i && i < 300 ? (u = l, f = 0, c = o) : (u = o, f = 0, c = l), B0((u + n) * 255, (f + n) * 255, (c + n) * 255);
   }
-  function Q2(r, t) {
-    const a = h0(r);
-    if (!a) return r;
+  function Q2(i, t) {
+    const a = h0(i);
+    if (!a) return i;
     const o = Math.max(0, Math.min(1, a.l + t));
     return u0(a.h, a.s, o);
   }
-  function H2(r) {
-    const t = p0(r);
+  function H2(i) {
+    const t = p0(i);
     return t ? F0(t) : 0;
   }
-  function F0(r) {
+  function F0(i) {
     const t = (a) => {
       const o = a / 255;
       return o <= 0.03928 ? o / 12.92 : Math.pow((o + 0.055) / 1.055, 2.4);
     };
-    return 0.2126 * t(r.r) + 0.7152 * t(r.g) + 0.0722 * t(r.b);
+    return 0.2126 * t(i.r) + 0.7152 * t(i.g) + 0.0722 * t(i.b);
   }
-  function f0(r, t) {
-    const a = Math.max(r, t), o = Math.min(r, t);
+  function f0(i, t) {
+    const a = Math.max(i, t), o = Math.min(i, t);
     return (a + 0.05) / (o + 0.05);
   }
-  function v2(r) {
-    if (typeof r != "string") return null;
-    let t = r.trim();
+  function v2(i) {
+    if (typeof i != "string") return null;
+    let t = i.trim();
     return t ? (t.startsWith("#") || (t = `#${t}`), /^#([0-9a-fA-F]{3})$/.test(t) && (t = `#${t[1]}${t[1]}${t[2]}${t[2]}${t[3]}${t[3]}`), /^#([0-9a-fA-F]{6})$/.test(t) ? t.toLowerCase() : null) : null;
   }
   function N0() {
     var a;
-    const r = [], t = (a = window.LGraphCanvas) == null ? void 0 : a.node_colors;
+    const i = [], t = (a = window.LGraphCanvas) == null ? void 0 : a.node_colors;
     if (t)
       for (const o of Object.keys(t)) {
         const l = t[o], n = (l == null ? void 0 : l.bgcolor) || (l == null ? void 0 : l.color) || (l == null ? void 0 : l.groupcolor), u = v2(n);
-        if (u && !r.includes(u) && r.push(u), r.length >= B) break;
+        if (u && !i.includes(u) && i.push(u), i.length >= B) break;
       }
-    return r.length || X.forEach((o) => {
+    return i.length || X.forEach((o) => {
       const l = v2(o);
-      l && !r.includes(l) && r.length < B && r.push(l);
-    }), r.slice(0, B);
+      l && !i.includes(l) && i.length < B && i.push(l);
+    }), i.slice(0, B);
   }
   function D0() {
-    var r;
+    var i;
     try {
-      const t = (r = window.localStorage) == null ? void 0 : r.getItem(R);
+      const t = (i = window.localStorage) == null ? void 0 : i.getItem(R);
       if (t) {
         const a = JSON.parse(t);
         if (Array.isArray(a)) {
@@ -1132,59 +1132,59 @@ function Te() {
     }
     return N0();
   }
-  function O0(r) {
+  function O0(i) {
     var t;
     try {
-      (t = window.localStorage) == null || t.setItem(R, JSON.stringify(r));
+      (t = window.localStorage) == null || t.setItem(R, JSON.stringify(i));
     } catch {
     }
   }
   function g0() {
-    z && (z.replaceChildren(), Y.forEach((r) => {
-      const t = v0(r);
+    z && (z.replaceChildren(), Y.forEach((i) => {
+      const t = v0(i);
       z.appendChild(t);
     }));
   }
-  function C0(r) {
-    v2(r);
+  function C0(i) {
+    v2(i);
   }
-  function d0(r) {
-    const t = v2(r);
+  function d0(i) {
+    const t = v2(i);
     t && (b && (b.value = t), k && (k.value = t.toUpperCase()), C0(t));
   }
-  function P0(r) {
-    const t = v2(r);
+  function P0(i) {
+    const t = v2(i);
     t && (Y = [t, ...Y.filter((a) => a !== t)], Y.length > B && (Y.length = B), O0(Y), g0(), d0(t));
   }
-  function e0(r) {
-    const t = v2(r);
+  function e0(i) {
+    const t = v2(i);
     t && (w0(t), V2());
   }
-  function Z0(r) {
-    const t = H2(r), a = H2(_2);
+  function Z0(i) {
+    const t = H2(i), a = H2(_2);
     let o = f0(t, a);
-    if (o >= S2) return r;
-    const l = h0(r);
-    if (!l) return r;
+    if (o >= S2) return i;
+    const l = h0(i);
+    if (!l) return i;
     const n = t > a ? -1 : 1;
-    let u = l.l, f = n > 0 ? 0.98 : 0.02, c = r, y = o;
+    let u = l.l, f = n > 0 ? 0.98 : 0.02, c = i, y = o;
     for (let w = 0; w < 12; w++) {
       const x = u + (f - u) * 0.5, $ = u0(l.h, l.s, Math.max(0.02, Math.min(0.98, x))), r2 = H2($), P = f0(r2, a);
       P >= S2 ? (c = $, y = P, n > 0 ? u = x : f = x) : n > 0 ? f = x : u = x;
     }
-    return y >= S2 ? c : r;
+    return y >= S2 ? c : i;
   }
-  function m0(r, t, a, o = 6) {
+  function m0(i, t, a, o = 6) {
     let l = t, n = 0;
-    for (; Math.abs(H2(r) - H2(l)) < 0.08 && n < o; ) {
+    for (; Math.abs(H2(i) - H2(l)) < 0.08 && n < o; ) {
       const u = Q2(l, a);
       if (u === l) break;
       l = u, n += 1;
     }
     return l;
   }
-  function M2(r) {
-    const a = r.startsWith("#") ? r : `#${r}`;
+  function M2(i) {
+    const a = i.startsWith("#") ? i : `#${i}`;
     let o = Z0(a), l = Q2(o, -0.16), n = Q2(o, 0.12);
     return l = m0(o, l, -0.08), n = m0(o, n, 0.08), {
       color: l,
@@ -1192,14 +1192,14 @@ function Te() {
       groupcolor: n
     };
   }
-  function w0(r) {
+  function w0(i) {
     var n, u, f;
     const t = [...m, ...a2];
     if (!t.length) {
       L2("Select nodes or groups to apply color", "warning");
       return;
     }
-    const a = M2(r), o = /* @__PURE__ */ new Set();
+    const a = M2(i), o = /* @__PURE__ */ new Set();
     t.forEach((c) => {
       c != null && c.graph && o.add(c.graph);
     }), o.forEach((c) => {
@@ -1214,12 +1214,12 @@ function Te() {
     const l = ((n = window.LGraphCanvas) == null ? void 0 : n.active_canvas) ?? ((u = window.app) == null ? void 0 : u.canvas);
     (f = l == null ? void 0 : l.setDirty) == null || f.call(l, !0, !0);
   }
-  function t0(r, t) {
-    typeof r.setColorOption == "function" ? r.setColorOption(t) : (r.color = t.color, r.bgcolor = t.bgcolor, r.groupcolor = t.groupcolor);
+  function t0(i, t) {
+    typeof i.setColorOption == "function" ? i.setColorOption(t) : (i.color = t.color, i.bgcolor = t.bgcolor, i.groupcolor = t.groupcolor);
   }
-  function T2(r) {
+  function T2(i) {
     var t;
-    e2.active && ((t = e2.colorOption) == null ? void 0 : t.bgcolor) === r.bgcolor || (e2.active = !0, e2.colorOption = r, e2.nodes.clear(), e2.groups.clear(), m.forEach((a) => {
+    e2.active && ((t = e2.colorOption) == null ? void 0 : t.bgcolor) === i.bgcolor || (e2.active = !0, e2.colorOption = i, e2.nodes.clear(), e2.groups.clear(), m.forEach((a) => {
       e2.nodes.set(a, {
         color: a.color,
         bgcolor: a.bgcolor,
@@ -1231,25 +1231,25 @@ function Te() {
       });
     }));
   }
-  function i0(r) {
+  function i0(i) {
     var a, o, l;
-    m.forEach((n) => t0(n, r)), a2.forEach((n) => t0(n, r));
+    m.forEach((n) => t0(n, i)), a2.forEach((n) => t0(n, i));
     const t = ((a = window.LGraphCanvas) == null ? void 0 : a.active_canvas) ?? ((o = window.app) == null ? void 0 : o.canvas);
     (l = t == null ? void 0 : t.setDirty) == null || l.call(t, !0, !0);
   }
   function V2() {
     var a, o, l;
     if (!e2.active) return;
-    let r;
+    let i;
     for (const n of e2.nodes.values())
       if (n.bgcolor) {
-        r = n.bgcolor;
+        i = n.bgcolor;
         break;
       }
-    if (!r) {
+    if (!i) {
       for (const n of e2.groups.values())
         if (n.color) {
-          r = n.color;
+          i = n.color;
           break;
         }
     }
@@ -1269,33 +1269,33 @@ function Te() {
     const t = ((a = window.LGraphCanvas) == null ? void 0 : a.active_canvas) ?? ((o = window.app) == null ? void 0 : o.canvas);
     (l = t == null ? void 0 : t.setDirty) == null || l.call(t, !0, !0);
   }
-  function T0(r, t) {
+  function T0(i, t) {
     const a = (o) => {
       o == null || o.preventDefault(), w0(t), e2.active = !1, e2.colorOption = null, e2.nodes.clear(), e2.groups.clear();
     };
-    r.addEventListener("click", a), r.addEventListener("keydown", (o) => {
+    i.addEventListener("click", a), i.addEventListener("keydown", (o) => {
       (o.key === "Enter" || o.key === " ") && (o.preventDefault(), a());
-    }), r.addEventListener("mouseenter", () => {
+    }), i.addEventListener("mouseenter", () => {
       const o = M2(t);
       T2(o), i0(o);
-    }), r.addEventListener("focus", () => {
+    }), i.addEventListener("focus", () => {
       const o = M2(t);
       T2(o), i0(o);
-    }), r.addEventListener("mouseleave", () => V2()), r.addEventListener("blur", () => V2());
+    }), i.addEventListener("mouseleave", () => V2()), i.addEventListener("blur", () => V2());
   }
-  function v0(r, t = !0) {
-    const a = M2(r), o = a.bgcolor.toUpperCase(), l = document.createElement(t ? "button" : "div");
-    return t && (l.type = "button", l.setAttribute("aria-label", `Apply color ${o}`), l.title = `Apply color ${o}`), l.className = "hk-color-chip", l.style.background = a.bgcolor, l.style.borderColor = a.color, l.dataset.colorHex = a.bgcolor, t && T0(l, r), l;
+  function v0(i, t = !0) {
+    const a = M2(i), o = a.bgcolor.toUpperCase(), l = document.createElement(t ? "button" : "div");
+    return t && (l.type = "button", l.setAttribute("aria-label", `Apply color ${o}`), l.title = `Apply color ${o}`), l.className = "hk-color-chip", l.style.background = a.bgcolor, l.style.borderColor = a.color, l.dataset.colorHex = a.bgcolor, t && T0(l, i), l;
   }
-  function b0(r, t) {
+  function b0(i, t) {
     if (!z2.length) return;
     const a = z2.length, o = (t % a + a) % a;
     I = o;
     const l = z2[o];
-    r.replaceChildren(), l.forEach((n) => {
+    i.replaceChildren(), l.forEach((n) => {
       const u = v0(n);
-      r.appendChild(u);
-    }), r.setAttribute("aria-label", `Color harmony palette ${o + 1} of ${a}`);
+      i.appendChild(u);
+    }), i.setAttribute("aria-label", `Color harmony palette ${o + 1} of ${a}`);
   }
   function I0() {
     A && (J(), N = !0, A.classList.remove("collapsed"), A.classList.add("expanded"), setTimeout(() => {
@@ -1305,14 +1305,14 @@ function Te() {
   function R0() {
     A && (N = !1, A.classList.remove("expanded"), A.classList.add("collapsed"), _ == null || _.focus());
   }
-  function r0(r) {
-    (typeof r == "boolean" ? r : !N) ? I0() : R0();
+  function r0(i) {
+    (typeof i == "boolean" ? i : !N) ? I0() : R0();
   }
   function $0() {
     if (V) return;
     A = document.createElement("div"), A.className = "housekeeper-wrapper collapsed", _ = document.createElement("button"), _.type = "button", _.className = "housekeeper-handle", _.title = "Toggle Housekeeper panel (Ctrl+Shift+H)";
-    const r = document.createElement("img");
-    r.src = S0, r.alt = "", r.draggable = !1, _.appendChild(r);
+    const i = document.createElement("img");
+    i.src = S0, i.alt = "", i.draggable = !1, _.appendChild(i);
     const t = document.createElement("span");
     t.textContent = "Housekeeper", _.appendChild(t), _.addEventListener("click", () => r0()), V = document.createElement("div"), V.className = "housekeeper-panel", V.setAttribute("role", "region"), V.setAttribute("aria-label", "Housekeeper alignment tools"), V.tabIndex = -1;
     const a = document.createElement("div");
@@ -1379,13 +1379,13 @@ function Te() {
     const D = document.createElement("div");
     D.className = "housekeeper-divider housekeeper-divider-spaced", a.appendChild(D), a.appendChild(x), V.appendChild(a), A.appendChild(_), A.appendChild(V), document.body.appendChild(A), P2(), J();
   }
-  function y0(r) {
+  function y0(i) {
     var o;
-    if (m.length < 2) return;
+    if (m.length < 1 || m.length < 2 && i !== "size-min") return;
     I2();
     const t = (o = window.app) == null ? void 0 : o.canvas;
     if (!t) return;
-    W0(r, m).forEach((l, n) => {
+    W0(i, m).forEach((l, n) => {
       if (l && m[n]) {
         const u = document.createElement("div");
         u.style.cssText = `
@@ -1408,11 +1408,11 @@ function Te() {
     });
   }
   function I2() {
-    q.forEach((r) => {
-      r.parentNode && r.parentNode.removeChild(r);
+    q.forEach((i) => {
+      i.parentNode && i.parentNode.removeChild(i);
     }), q = [];
   }
-  function W0(r, t) {
+  function W0(i, t) {
     if (t.length < 2) return [];
     const a = [], o = Math.min(...t.map((f) => f.pos[0])), l = Math.max(...t.map((f) => {
       let c = 150;
@@ -1421,7 +1421,7 @@ function Te() {
       let c = 100;
       return f.size && Array.isArray(f.size) && f.size[1] ? c = f.size[1] : typeof f.height == "number" ? c = f.height : f.properties && typeof f.properties.height == "number" && (c = f.properties.height), f.pos[1] + c;
     }));
-    switch (r) {
+    switch (i) {
       case "left":
         const f = [...t].sort((e, p) => e.pos[1] - p.pos[1]);
         let c = f[0].pos[1];
@@ -1531,7 +1531,7 @@ function Te() {
           return !!p && !!d;
         });
         if (m2.length < 2) break;
-        const Y2 = Math.min(...m2.map((e) => e.pos && (Array.isArray(e.pos) || e.pos.length !== void 0) ? e.pos[0] : e.position && (Array.isArray(e.position) || e.position.length !== void 0) ? e.position[0] : typeof e.x == "number" ? e.x : 0)), i = Math.min(...m2.map((e) => e.pos && (Array.isArray(e.pos) || e.pos.length !== void 0) ? e.pos[1] : e.position && (Array.isArray(e.position) || e.position.length !== void 0) ? e.position[1] : typeof e.y == "number" ? e.y : 0)), L = m2.map((e) => ({
+        const Y2 = Math.min(...m2.map((e) => e.pos && (Array.isArray(e.pos) || e.pos.length !== void 0) ? e.pos[0] : e.position && (Array.isArray(e.position) || e.position.length !== void 0) ? e.position[0] : typeof e.x == "number" ? e.x : 0)), r = Math.min(...m2.map((e) => e.pos && (Array.isArray(e.pos) || e.pos.length !== void 0) ? e.pos[1] : e.position && (Array.isArray(e.position) || e.position.length !== void 0) ? e.position[1] : typeof e.y == "number" ? e.y : 0)), L = m2.map((e) => ({
           ...e,
           pos: e.pos ? [...e.pos] : [e.x || 0, e.y || 0],
           _calculatedSize: e.size && Array.isArray(e.size) ? [e.size[0], e.size[1]] : [e.width || 150, e.height || 100]
@@ -1559,7 +1559,7 @@ function Te() {
                 ));
                 p2 += u2 + C2 + a0;
               }
-            let h2 = i;
+            let h2 = r;
             p.forEach((C) => {
               C && C._calculatedSize && (z0.set(C.id, {
                 x: p2,
@@ -1634,11 +1634,11 @@ function Te() {
           let p = 150, d = 100;
           e.size && Array.isArray(e.size) ? (e.size[0] && (p = e.size[0]), e.size[1] && (d = e.size[1])) : (typeof e.width == "number" && (p = e.width), typeof e.height == "number" && (d = e.height), e.properties && (typeof e.properties.width == "number" && (p = e.properties.width), typeof e.properties.height == "number" && (d = e.properties.height)));
           let p2 = p, h2 = d;
-          if (r === "width-max" || r === "size-max")
+          if (i === "width-max" || i === "size-max")
             p2 = Math.max(...t.map((C) => C.size && Array.isArray(C.size) && C.size[0] ? C.size[0] : typeof C.width == "number" ? C.width : C.properties && typeof C.properties.width == "number" ? C.properties.width : 150));
-          else if (r === "width-min")
+          else if (i === "width-min")
             p2 = Math.min(...t.map((C) => C.size && Array.isArray(C.size) && C.size[0] ? C.size[0] : typeof C.width == "number" ? C.width : C.properties && typeof C.properties.width == "number" ? C.properties.width : 150));
-          else if (r === "size-min") {
+          else if (i === "size-min") {
             const C = j.get(e) || e.computeSize;
             if (C)
               try {
@@ -1648,9 +1648,9 @@ function Te() {
                 p2 = p, h2 = d;
               }
           }
-          if (r === "height-max" || r === "size-max")
+          if (i === "height-max" || i === "size-max")
             h2 = Math.max(...t.map((C) => C.size && Array.isArray(C.size) && C.size[1] ? C.size[1] : typeof C.height == "number" ? C.height : C.properties && typeof C.properties.height == "number" ? C.properties.height : 100));
-          else if (r === "height-min") {
+          else if (i === "height-min") {
             const C = Math.min(...t.map((H) => H.size && H.size[1] !== void 0 ? H.size[1] : typeof H.height == "number" ? H.height : H.properties && typeof H.properties.height == "number" ? H.properties.height : 100)), T = j.get(e) || e.computeSize;
             let u2 = null;
             if (T)
@@ -1675,17 +1675,18 @@ function Te() {
   function R2() {
     var n;
     if (!((n = window.app) != null && n.graph)) return;
-    const r = window.app.graph;
-    m = Object.values(r._nodes || {}).filter((u) => u && u.is_selected), a2 = (Array.isArray(r._groups) ? r._groups : []).filter((u) => u && u.selected);
+    const i = window.app.graph;
+    m = Object.values(i._nodes || {}).filter((u) => u && u.is_selected), a2 = (Array.isArray(i._groups) ? i._groups : []).filter((u) => u && u.selected);
     const o = m.length > 1;
     m.length + a2.length, o || I2(), A && A.classList.toggle("hk-has-selection", o);
     const l = V == null ? void 0 : V.querySelectorAll(".hk-button");
     l == null || l.forEach((u) => {
-      u.disabled = !o;
+      const f = u.dataset.alignmentType === "size-min";
+      u.disabled = f ? m.length < 1 : !o;
     });
   }
-  function $2(r) {
-    const t = {}, a = r.filter((o) => o && (o.id !== void 0 || o.id !== null));
+  function $2(i) {
+    const t = {}, a = i.filter((o) => o && (o.id !== void 0 || o.id !== null));
     return a.forEach((o) => {
       const l = o.id || `node_${a.indexOf(o)}`;
       o.id = l, t[l] = { inputs: [], outputs: [] }, o.inputs && Array.isArray(o.inputs) && o.inputs.forEach((n, u) => {
@@ -1706,26 +1707,26 @@ function Te() {
       });
     }), t;
   }
-  function Y0(r, t) {
+  function Y0(i, t) {
     for (const a of t)
       if (a && a.outputs && Array.isArray(a.outputs)) {
         for (const o of a.outputs)
-          if (o && o.links && Array.isArray(o.links) && o.links.includes(r))
+          if (o && o.links && Array.isArray(o.links) && o.links.includes(i))
             return a;
       }
     return null;
   }
-  function G0(r, t) {
+  function G0(i, t) {
     for (const a of t)
       if (a && a.inputs && Array.isArray(a.inputs)) {
         for (const o of a.inputs)
-          if (o && o.link === r)
+          if (o && o.link === i)
             return a;
       }
     return null;
   }
-  function W2(r, t) {
-    const a = {}, o = /* @__PURE__ */ new Set(), l = r.filter((c) => c && c.id), n = l.filter((c) => {
+  function W2(i, t) {
+    const a = {}, o = /* @__PURE__ */ new Set(), l = i.filter((c) => c && c.id), n = l.filter((c) => {
       const y = c.id;
       return !t[y] || !t[y].inputs.length || t[y].inputs.every((w) => !w.sourceNode);
     });
@@ -1754,9 +1755,9 @@ function Te() {
       }));
     }), a;
   }
-  function k2(r) {
+  function k2(i) {
     var t, a, o, l, n;
-    if (m.length < 2) {
+    if (m.length < 1 || m.length < 2 && i !== "size-min") {
       L2("Please select at least 2 nodes to align", "warning");
       return;
     }
@@ -1782,105 +1783,105 @@ function Te() {
         return v && v.height !== void 0 ? v.height : h.size && h.size[1] !== void 0 ? h.size[1] : typeof h.height == "number" ? h.height : h.properties && typeof h.properties.height == "number" ? h.properties.height : 100;
       })), r2 = Math.min(...m.map((h) => h.size && h.size[1] !== void 0 ? h.size[1] : typeof h.height == "number" ? h.height : h.properties && typeof h.properties.height == "number" ? h.properties.height : 100));
       let P;
-      switch (r) {
+      switch (i) {
         case "left":
           P = u;
-          const h = [...m].sort((i, L) => i.pos[1] - L.pos[1]);
+          const h = [...m].sort((r, L) => r.pos[1] - L.pos[1]);
           let v = h[0].pos[1];
-          h.forEach((i, L) => {
+          h.forEach((r, L) => {
             let M = 100;
-            i.size && Array.isArray(i.size) && i.size[1] ? M = i.size[1] : typeof i.height == "number" ? M = i.height : i.properties && typeof i.properties.height == "number" && (M = i.properties.height), i.pos[0] = P, i.pos[1] = v, typeof i.x == "number" && (i.x = i.pos[0]), typeof i.y == "number" && (i.y = i.pos[1]), v += M + 30;
+            r.size && Array.isArray(r.size) && r.size[1] ? M = r.size[1] : typeof r.height == "number" ? M = r.height : r.properties && typeof r.properties.height == "number" && (M = r.properties.height), r.pos[0] = P, r.pos[1] = v, typeof r.x == "number" && (r.x = r.pos[0]), typeof r.y == "number" && (r.y = r.pos[1]), v += M + 30;
           });
           break;
         case "right":
           P = f;
-          const s = [...m].sort((i, L) => i.pos[1] - L.pos[1]);
+          const s = [...m].sort((r, L) => r.pos[1] - L.pos[1]);
           let E = s[0].pos[1];
-          s.forEach((i, L) => {
+          s.forEach((r, L) => {
             let M = 100, C2 = 150;
-            i.size && Array.isArray(i.size) ? (i.size[1] && (M = i.size[1]), i.size[0] && (C2 = i.size[0])) : (typeof i.height == "number" && (M = i.height), typeof i.width == "number" && (C2 = i.width), i.properties && (typeof i.properties.height == "number" && (M = i.properties.height), typeof i.properties.width == "number" && (C2 = i.properties.width))), i.pos[0] = P - C2, i.pos[1] = E, typeof i.x == "number" && (i.x = i.pos[0]), typeof i.y == "number" && (i.y = i.pos[1]), E += M + 30;
+            r.size && Array.isArray(r.size) ? (r.size[1] && (M = r.size[1]), r.size[0] && (C2 = r.size[0])) : (typeof r.height == "number" && (M = r.height), typeof r.width == "number" && (C2 = r.width), r.properties && (typeof r.properties.height == "number" && (M = r.properties.height), typeof r.properties.width == "number" && (C2 = r.properties.width))), r.pos[0] = P - C2, r.pos[1] = E, typeof r.x == "number" && (r.x = r.pos[0]), typeof r.y == "number" && (r.y = r.pos[1]), E += M + 30;
           });
           break;
         case "top":
           P = c;
-          const Z = [...m].sort((i, L) => i.pos[0] - L.pos[0]);
+          const Z = [...m].sort((r, L) => r.pos[0] - L.pos[0]);
           let o2 = Z[0].pos[0];
-          Z.forEach((i, L) => {
+          Z.forEach((r, L) => {
             let M = 150;
-            i.size && Array.isArray(i.size) && i.size[0] ? M = i.size[0] : typeof i.width == "number" ? M = i.width : i.properties && typeof i.properties.width == "number" && (M = i.properties.width), i.pos[1] = P, i.pos[0] = o2, typeof i.x == "number" && (i.x = i.pos[0]), typeof i.y == "number" && (i.y = i.pos[1]), o2 += M + 30;
+            r.size && Array.isArray(r.size) && r.size[0] ? M = r.size[0] : typeof r.width == "number" ? M = r.width : r.properties && typeof r.properties.width == "number" && (M = r.properties.width), r.pos[1] = P, r.pos[0] = o2, typeof r.x == "number" && (r.x = r.pos[0]), typeof r.y == "number" && (r.y = r.pos[1]), o2 += M + 30;
           });
           break;
         case "bottom":
           P = y;
-          const b2 = [...m].sort((i, L) => i.pos[0] - L.pos[0]);
+          const b2 = [...m].sort((r, L) => r.pos[0] - L.pos[0]);
           let Q = u;
-          b2.forEach((i, L) => {
+          b2.forEach((r, L) => {
             let M = 150, C2 = 100;
-            i.size && Array.isArray(i.size) ? (i.size[0] && (M = i.size[0]), i.size[1] && (C2 = i.size[1])) : (typeof i.width == "number" && (M = i.width), typeof i.height == "number" && (C2 = i.height), i.properties && (typeof i.properties.width == "number" && (M = i.properties.width), typeof i.properties.height == "number" && (C2 = i.properties.height)));
+            r.size && Array.isArray(r.size) ? (r.size[0] && (M = r.size[0]), r.size[1] && (C2 = r.size[1])) : (typeof r.width == "number" && (M = r.width), typeof r.height == "number" && (C2 = r.height), r.properties && (typeof r.properties.width == "number" && (M = r.properties.width), typeof r.properties.height == "number" && (C2 = r.properties.height)));
             const s0 = P - C2, a0 = Q;
-            i.pos[1] = s0, i.pos[0] = a0, typeof i.x == "number" && (i.x = i.pos[0]), typeof i.y == "number" && (i.y = i.pos[1]), Q += M + 30;
+            r.pos[1] = s0, r.pos[0] = a0, typeof r.x == "number" && (r.x = r.pos[0]), typeof r.y == "number" && (r.y = r.pos[1]), Q += M + 30;
           });
           break;
         case "height-center":
-          const n2 = Math.min(...m.map((i) => i.pos[0])), g = Math.max(...m.map((i) => {
+          const n2 = Math.min(...m.map((r) => r.pos[0])), g = Math.max(...m.map((r) => {
             let L = 150;
-            return i.size && Array.isArray(i.size) && i.size[0] ? L = i.size[0] : typeof i.width == "number" ? L = i.width : i.properties && typeof i.properties.width == "number" && (L = i.properties.width), i.pos[0] + L;
-          })), S = (n2 + g) / 2, G = [...m].sort((i, L) => i.pos[1] - L.pos[1]);
+            return r.size && Array.isArray(r.size) && r.size[0] ? L = r.size[0] : typeof r.width == "number" ? L = r.width : r.properties && typeof r.properties.width == "number" && (L = r.properties.width), r.pos[0] + L;
+          })), S = (n2 + g) / 2, G = [...m].sort((r, L) => r.pos[1] - L.pos[1]);
           let D = G[0].pos[1];
-          G.forEach((i) => {
+          G.forEach((r) => {
             let K = 150, M = 100;
-            i.size && Array.isArray(i.size) ? (i.size[0] && (K = i.size[0]), i.size[1] && (M = i.size[1])) : (typeof i.width == "number" && (K = i.width), typeof i.height == "number" && (M = i.height), i.properties && (typeof i.properties.width == "number" && (K = i.properties.width), typeof i.properties.height == "number" && (M = i.properties.height))), i.pos[0] = S - K / 2, i.pos[1] = D, typeof i.x == "number" && (i.x = i.pos[0]), typeof i.y == "number" && (i.y = i.pos[1]), D += M + 30;
+            r.size && Array.isArray(r.size) ? (r.size[0] && (K = r.size[0]), r.size[1] && (M = r.size[1])) : (typeof r.width == "number" && (K = r.width), typeof r.height == "number" && (M = r.height), r.properties && (typeof r.properties.width == "number" && (K = r.properties.width), typeof r.properties.height == "number" && (M = r.properties.height))), r.pos[0] = S - K / 2, r.pos[1] = D, typeof r.x == "number" && (r.x = r.pos[0]), typeof r.y == "number" && (r.y = r.pos[1]), D += M + 30;
           });
           break;
         case "width-center":
-          const W = Math.min(...m.map((i) => i.pos[1])), c2 = Math.max(...m.map((i) => {
+          const W = Math.min(...m.map((r) => r.pos[1])), c2 = Math.max(...m.map((r) => {
             let L = 100;
-            return i.size && Array.isArray(i.size) && i.size[1] ? L = i.size[1] : typeof i.height == "number" ? L = i.height : i.properties && typeof i.properties.height == "number" && (L = i.properties.height), i.pos[1] + L;
-          })), f2 = (W + c2) / 2, m2 = [...m].sort((i, L) => i.pos[0] - L.pos[0]);
+            return r.size && Array.isArray(r.size) && r.size[1] ? L = r.size[1] : typeof r.height == "number" ? L = r.height : r.properties && typeof r.properties.height == "number" && (L = r.properties.height), r.pos[1] + L;
+          })), f2 = (W + c2) / 2, m2 = [...m].sort((r, L) => r.pos[0] - L.pos[0]);
           let Y2 = m2[0].pos[0];
-          m2.forEach((i) => {
+          m2.forEach((r) => {
             let K = 150, M = 100;
-            i.size && Array.isArray(i.size) ? (i.size[0] && (K = i.size[0]), i.size[1] && (M = i.size[1])) : (typeof i.width == "number" && (K = i.width), typeof i.height == "number" && (M = i.height), i.properties && (typeof i.properties.width == "number" && (K = i.properties.width), typeof i.properties.height == "number" && (M = i.properties.height))), i.pos[1] = f2 - M / 2, i.pos[0] = Y2, typeof i.x == "number" && (i.x = i.pos[0]), typeof i.y == "number" && (i.y = i.pos[1]), Y2 += K + 30;
+            r.size && Array.isArray(r.size) ? (r.size[0] && (K = r.size[0]), r.size[1] && (M = r.size[1])) : (typeof r.width == "number" && (K = r.width), typeof r.height == "number" && (M = r.height), r.properties && (typeof r.properties.width == "number" && (K = r.properties.width), typeof r.properties.height == "number" && (M = r.properties.height))), r.pos[1] = f2 - M / 2, r.pos[0] = Y2, typeof r.x == "number" && (r.x = r.pos[0]), typeof r.y == "number" && (r.y = r.pos[1]), Y2 += K + 30;
           });
           break;
         case "width-max":
-          m.forEach((i) => {
-            i.size && (i.size[0] = w);
+          m.forEach((r) => {
+            r.size && (r.size[0] = w);
           });
           break;
         case "width-min":
-          m.forEach((i) => {
-            i.size && (i.size[0] = x);
+          m.forEach((r) => {
+            r.size && (r.size[0] = x);
           });
           break;
         case "height-max":
-          m.forEach((i) => {
-            i.size && (i.size[1] = $);
+          m.forEach((r) => {
+            r.size && (r.size[1] = $);
           });
           break;
         case "height-min":
-          m.forEach((i) => {
-            if (i.size) {
-              const L = j.get(i) || i.computeSize;
+          m.forEach((r) => {
+            if (r.size) {
+              const L = j.get(r) || r.computeSize;
               if (L) {
-                const K = L.call(i);
-                i.size[1] = Math.max(r2, K[1]);
+                const K = L.call(r);
+                r.size[1] = Math.max(r2, K[1]);
               }
             }
           });
           break;
         case "size-max":
-          m.forEach((i) => {
-            i.size && (i.size[0] = w, i.size[1] = $);
+          m.forEach((r) => {
+            r.size && (r.size[0] = w, r.size[1] = $);
           });
           break;
         case "size-min":
-          m.forEach((i) => {
-            if (i.size) {
-              const L = j.get(i) || i.computeSize;
+          m.forEach((r) => {
+            if (r.size) {
+              const L = j.get(r) || r.computeSize;
               if (L) {
-                const K = L.call(i);
-                i.size[0] = K[0], i.size[1] = K[1];
+                const K = L.call(r);
+                r.size[0] = K[0], r.size[1] = K[1];
               }
             }
           });
@@ -1901,10 +1902,10 @@ function Te() {
       L2("Error during alignment", "error");
     }
   }
-  function Ie(r) {
+  function Ie(i) {
   }
   function X0() {
-    var r, t, a, o, l;
+    var i, t, a, o, l;
     try {
       const n = m.filter((s) => {
         if (!s) return !1;
@@ -1957,7 +1958,7 @@ function Te() {
         }
       });
       try {
-        (t = (r = window.app) == null ? void 0 : r.canvas) != null && t.setDirtyCanvas ? window.app.canvas.setDirtyCanvas(!0, !0) : (o = (a = window.app) == null ? void 0 : a.graph) != null && o.setDirtyCanvas ? window.app.graph.setDirtyCanvas(!0, !0) : (l = window.app) != null && l.canvas && window.app.canvas.draw(!0, !0);
+        (t = (i = window.app) == null ? void 0 : i.canvas) != null && t.setDirtyCanvas ? window.app.canvas.setDirtyCanvas(!0, !0) : (o = (a = window.app) == null ? void 0 : a.graph) != null && o.setDirtyCanvas ? window.app.graph.setDirtyCanvas(!0, !0) : (l = window.app) != null && l.canvas && window.app.canvas.draw(!0, !0);
       } catch {
       }
     } catch {
@@ -1965,7 +1966,7 @@ function Te() {
     }
   }
   function j0() {
-    var r, t, a, o, l;
+    var i, t, a, o, l;
     try {
       const n = m.filter((s) => {
         if (!s) return !1;
@@ -2018,16 +2019,16 @@ function Te() {
         }
       });
       try {
-        (t = (r = window.app) == null ? void 0 : r.canvas) != null && t.setDirtyCanvas ? window.app.canvas.setDirtyCanvas(!0, !0) : (o = (a = window.app) == null ? void 0 : a.graph) != null && o.setDirtyCanvas ? window.app.graph.setDirtyCanvas(!0, !0) : (l = window.app) != null && l.canvas && window.app.canvas.draw(!0, !0);
+        (t = (i = window.app) == null ? void 0 : i.canvas) != null && t.setDirtyCanvas ? window.app.canvas.setDirtyCanvas(!0, !0) : (o = (a = window.app) == null ? void 0 : a.graph) != null && o.setDirtyCanvas ? window.app.graph.setDirtyCanvas(!0, !0) : (l = window.app) != null && l.canvas && window.app.canvas.draw(!0, !0);
       } catch {
       }
     } catch {
       L2("Error in vertical flow alignment", "error");
     }
   }
-  function L2(r, t = "info") {
+  function L2(i, t = "info") {
     const a = document.createElement("div");
-    a.textContent = r, a.style.cssText = `
+    a.textContent = i, a.style.cssText = `
             position: fixed;
             top: 60px;
             right: 10px;
@@ -2052,8 +2053,8 @@ function Te() {
     }, 3e3);
   }
   function x0() {
-    var r;
-    if (!((r = window.app) != null && r.canvas)) {
+    var i;
+    if (!((i = window.app) != null && i.canvas)) {
       setTimeout(x0, 100);
       return;
     }
@@ -2065,34 +2066,34 @@ function Te() {
       (t.ctrlKey || t.metaKey) && setTimeout(R2, 10);
     })), setInterval(R2, 500);
   }
-  function U0(r) {
-    if (r.ctrlKey || r.metaKey) {
-      if (r.shiftKey && !r.altKey && (r.key === "H" || r.key === "h")) {
-        r.preventDefault(), r0();
+  function U0(i) {
+    if (i.ctrlKey || i.metaKey) {
+      if (i.shiftKey && !i.altKey && (i.key === "H" || i.key === "h")) {
+        i.preventDefault(), r0();
         return;
       }
-      if (r.shiftKey)
-        switch (r.key) {
+      if (i.shiftKey)
+        switch (i.key) {
           case "ArrowLeft":
-            r.preventDefault(), k2("left");
+            i.preventDefault(), k2("left");
             break;
           case "ArrowRight":
-            r.preventDefault(), k2("right");
+            i.preventDefault(), k2("right");
             break;
           case "ArrowUp":
-            r.preventDefault(), k2("top");
+            i.preventDefault(), k2("top");
             break;
           case "ArrowDown":
-            r.preventDefault(), k2("bottom");
+            i.preventDefault(), k2("bottom");
             break;
         }
-      else if (r.altKey)
-        switch (r.key) {
+      else if (i.altKey)
+        switch (i.key) {
           case "ArrowRight":
-            r.preventDefault(), k2("horizontal-flow");
+            i.preventDefault(), k2("horizontal-flow");
             break;
           case "ArrowDown":
-            r.preventDefault(), k2("vertical-flow");
+            i.preventDefault(), k2("vertical-flow");
             break;
         }
     }
