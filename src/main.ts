@@ -205,6 +205,7 @@ function initializeAlignmentPanel() {
     ];
 
     const harmonyColorSets: string[][] = [
+        ['#553333', '#593930', '#335533', '#333355', '#3f5159', '#335555', '#553355', '#665533', '#000000'],
         ['#ff6f61', '#ff9a76', '#ffc36a', '#ffe29a', '#ffd6d1', '#ffa69e', '#ff7b89', '#ef5d60', '#c03a53'],
         ['#003f5c', '#2f4b7c', '#376996', '#3f7cac', '#49a3c7', '#56cfe1', '#72efdd', '#80ffdb', '#c0fdfb'],
         ['#2a6041', '#3b7d4f', '#4f945c', '#66ad71', '#81c784', '#a5d6a7', '#dcedc8', '#93b48b', '#6d8b74'],
@@ -1197,10 +1198,21 @@ function initializeAlignmentPanel() {
         const base = sanitized;
 
         let bgcolor = ensureContrastWithDefaultText(base);
-        let color = adjustLightness(bgcolor, -0.16);
+        
+        // For dark/medium-dark backgrounds, lighten the title bar instead of darkening
+        const bgHsl = hexToHsl(bgcolor);
+        let color;
+        if (bgHsl && bgHsl.l < 0.40) {
+            // Dark background: lighten the title bar to keep it visible
+            color = adjustLightness(bgcolor, 0.12);
+        } else {
+            // Normal/light background: darken the title bar as usual
+            color = adjustLightness(bgcolor, -0.16);
+        }
+        
         let groupcolor = adjustLightness(bgcolor, 0.12);
 
-        color = ensureSeparation(bgcolor, color, -0.08);
+        color = ensureSeparation(bgcolor, color, bgHsl && bgHsl.l < 0.40 ? 0.08 : -0.08);
         groupcolor = ensureSeparation(bgcolor, groupcolor, 0.08);
 
         return {
