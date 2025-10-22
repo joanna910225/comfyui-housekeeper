@@ -12,6 +12,8 @@ import alignLeftIconUrl from "../icons/left.svg?url";
 import alignRightIconUrl from "../icons/right.svg?url";
 import alignTopIconUrl from "../icons/top.svg?url";
 import alignBottomIconUrl from "../icons/bottom.svg?url";
+import widthCenterIconUrl from "../icons/width-center.svg?url";
+import heightCenterIconUrl from "../icons/height-center.svg?url";
 import widthMaxIconUrl from "../icons/width-max.svg?url";
 import widthMinIconUrl from "../icons/width-min.svg?url";
 import heightMaxIconUrl from "../icons/height-max.svg?url";
@@ -181,8 +183,10 @@ function initializeAlignmentPanel() {
 
     const basicAlignments: AlignmentButtonConfig[] = [
         { type: 'left', icon: alignLeftIconUrl, label: 'Align left edges', group: 'basic' },
+        { type: 'height-center', icon: heightCenterIconUrl, label: 'Center horizontally', group: 'basic' },
         { type: 'right', icon: alignRightIconUrl, label: 'Align right edges', group: 'basic' },
         { type: 'top', icon: alignTopIconUrl, label: 'Align top edges', group: 'basic' },
+        { type: 'width-center', icon: widthCenterIconUrl, label: 'Center vertically', group: 'basic' },
         { type: 'bottom', icon: alignBottomIconUrl, label: 'Align bottom edges', group: 'basic' }
     ];
 
@@ -1905,6 +1909,108 @@ function initializeAlignmentPanel() {
                     positions.push(bottomNodePositions.get(node.id));
                 });
                 break;
+
+            case 'height-center':
+                // Align all nodes' horizontal centers on the same vertical line
+                // Calculate the horizontal center line of all nodes
+                const leftmostX = Math.min(...nodes.map((node: any) => node.pos[0]));
+                const rightmostX = Math.max(...nodes.map((node: any) => {
+                    let nodeWidth = 150;
+                    if (node.size && Array.isArray(node.size) && node.size[0]) {
+                        nodeWidth = node.size[0];
+                    } else if (typeof node.width === 'number') {
+                        nodeWidth = node.width;
+                    } else if (node.properties && typeof node.properties.width === 'number') {
+                        nodeWidth = node.properties.width;
+                    }
+                    return node.pos[0] + nodeWidth;
+                }));
+                const horizontalCenter = (leftmostX + rightmostX) / 2;
+
+                // Sort nodes by vertical position to maintain order
+                const widthCenterSorted = [...nodes].sort((a: any, b: any) => a.pos[1] - b.pos[1]);
+                let currentYWidthCenter = widthCenterSorted[0].pos[1];
+
+                const widthCenterPositions = new Map();
+
+                widthCenterSorted.forEach((node: any) => {
+                    let nodeWidth = 150, nodeHeight = 100;
+                    if (node.size && Array.isArray(node.size)) {
+                        if (node.size[0]) nodeWidth = node.size[0];
+                        if (node.size[1]) nodeHeight = node.size[1];
+                    } else {
+                        if (typeof node.width === 'number') nodeWidth = node.width;
+                        if (typeof node.height === 'number') nodeHeight = node.height;
+                        if (node.properties) {
+                            if (typeof node.properties.width === 'number') nodeWidth = node.properties.width;
+                            if (typeof node.properties.height === 'number') nodeHeight = node.properties.height;
+                        }
+                    }
+
+                    widthCenterPositions.set(node.id, {
+                        x: horizontalCenter - (nodeWidth / 2),
+                        y: currentYWidthCenter,
+                        width: nodeWidth,
+                        height: nodeHeight
+                    });
+                    currentYWidthCenter += nodeHeight + 30;
+                });
+
+                nodes.forEach((node: any) => {
+                    positions.push(widthCenterPositions.get(node.id));
+                });
+                break;
+
+            case 'width-center':
+                // Align all nodes' vertical centers on the same horizontal line
+                // Calculate the vertical center line of all nodes
+                const topmostY = Math.min(...nodes.map((node: any) => node.pos[1]));
+                const bottommostY = Math.max(...nodes.map((node: any) => {
+                    let nodeHeight = 100;
+                    if (node.size && Array.isArray(node.size) && node.size[1]) {
+                        nodeHeight = node.size[1];
+                    } else if (typeof node.height === 'number') {
+                        nodeHeight = node.height;
+                    } else if (node.properties && typeof node.properties.height === 'number') {
+                        nodeHeight = node.properties.height;
+                    }
+                    return node.pos[1] + nodeHeight;
+                }));
+                const verticalCenter = (topmostY + bottommostY) / 2;
+
+                // Sort nodes by horizontal position to maintain order
+                const heightCenterSorted = [...nodes].sort((a: any, b: any) => a.pos[0] - b.pos[0]);
+                let currentXHeightCenter = heightCenterSorted[0].pos[0];
+
+                const heightCenterPositions = new Map();
+
+                heightCenterSorted.forEach((node: any) => {
+                    let nodeWidth = 150, nodeHeight = 100;
+                    if (node.size && Array.isArray(node.size)) {
+                        if (node.size[0]) nodeWidth = node.size[0];
+                        if (node.size[1]) nodeHeight = node.size[1];
+                    } else {
+                        if (typeof node.width === 'number') nodeWidth = node.width;
+                        if (typeof node.height === 'number') nodeHeight = node.height;
+                        if (node.properties) {
+                            if (typeof node.properties.width === 'number') nodeWidth = node.properties.width;
+                            if (typeof node.properties.height === 'number') nodeHeight = node.properties.height;
+                        }
+                    }
+
+                    heightCenterPositions.set(node.id, {
+                        x: currentXHeightCenter,
+                        y: verticalCenter - (nodeHeight / 2),
+                        width: nodeWidth,
+                        height: nodeHeight
+                    });
+                    currentXHeightCenter += nodeWidth + 30;
+                });
+
+                nodes.forEach((node: any) => {
+                    positions.push(heightCenterPositions.get(node.id));
+                });
+                break;
                 
             case 'horizontal-flow':
                 // EXACT HORIZONTAL FLOW ALGORITHM from alignHorizontalFlow()
@@ -2670,6 +2776,106 @@ function initializeAlignmentPanel() {
                         
                         // Calculate next X position: current X + this node's width + spacing
                         currentXBottom += nodeWidth + nodeSpacing;
+                    });
+                    break;
+
+                case 'height-center':
+                    // Align all nodes' horizontal centers on the same vertical line, maintain vertical spacing
+                    // Calculate the horizontal center line of all nodes
+                    const leftmostXAlign = Math.min(...selectedNodes.map((node: any) => node.pos[0]));
+                    const rightmostXAlign = Math.max(...selectedNodes.map((node: any) => {
+                        let nodeWidth = 150;
+                        if (node.size && Array.isArray(node.size) && node.size[0]) {
+                            nodeWidth = node.size[0];
+                        } else if (typeof node.width === 'number') {
+                            nodeWidth = node.width;
+                        } else if (node.properties && typeof node.properties.width === 'number') {
+                            nodeWidth = node.properties.width;
+                        }
+                        return node.pos[0] + nodeWidth;
+                    }));
+                    const horizontalCenterAlign = (leftmostXAlign + rightmostXAlign) / 2;
+
+                    // Sort nodes by vertical position to maintain order
+                    const widthCenterSortedNodes = [...selectedNodes].sort((a: any, b: any) => a.pos[1] - b.pos[1]);
+                    
+                    let currentYWidthCenterAlign = widthCenterSortedNodes[0].pos[1];
+                    
+                    widthCenterSortedNodes.forEach((node: any) => {
+                        const nodeSpacing = 30;
+                        
+                        let nodeWidth = 150, nodeHeight = 100;
+                        if (node.size && Array.isArray(node.size)) {
+                            if (node.size[0]) nodeWidth = node.size[0];
+                            if (node.size[1]) nodeHeight = node.size[1];
+                        } else {
+                            if (typeof node.width === 'number') nodeWidth = node.width;
+                            if (typeof node.height === 'number') nodeHeight = node.height;
+                            if (node.properties) {
+                                if (typeof node.properties.width === 'number') nodeWidth = node.properties.width;
+                                if (typeof node.properties.height === 'number') nodeHeight = node.properties.height;
+                            }
+                        }
+
+                        // Center the node horizontally on the center line
+                        node.pos[0] = horizontalCenterAlign - (nodeWidth / 2);
+                        node.pos[1] = currentYWidthCenterAlign;
+                        
+                        // Update x,y properties if they exist
+                        if (typeof node.x === 'number') node.x = node.pos[0];
+                        if (typeof node.y === 'number') node.y = node.pos[1];
+                        
+                        currentYWidthCenterAlign += nodeHeight + nodeSpacing;
+                    });
+                    break;
+
+                case 'width-center':
+                    // Align all nodes' vertical centers on the same horizontal line, maintain horizontal spacing
+                    // Calculate the vertical center line of all nodes
+                    const topmostYAlign = Math.min(...selectedNodes.map((node: any) => node.pos[1]));
+                    const bottommostYAlign = Math.max(...selectedNodes.map((node: any) => {
+                        let nodeHeight = 100;
+                        if (node.size && Array.isArray(node.size) && node.size[1]) {
+                            nodeHeight = node.size[1];
+                        } else if (typeof node.height === 'number') {
+                            nodeHeight = node.height;
+                        } else if (node.properties && typeof node.properties.height === 'number') {
+                            nodeHeight = node.properties.height;
+                        }
+                        return node.pos[1] + nodeHeight;
+                    }));
+                    const verticalCenterAlign = (topmostYAlign + bottommostYAlign) / 2;
+
+                    // Sort nodes by horizontal position to maintain order
+                    const heightCenterSortedNodes = [...selectedNodes].sort((a: any, b: any) => a.pos[0] - b.pos[0]);
+                    
+                    let currentXHeightCenterAlign = heightCenterSortedNodes[0].pos[0];
+                    
+                    heightCenterSortedNodes.forEach((node: any) => {
+                        const nodeSpacing = 30;
+                        
+                        let nodeWidth = 150, nodeHeight = 100;
+                        if (node.size && Array.isArray(node.size)) {
+                            if (node.size[0]) nodeWidth = node.size[0];
+                            if (node.size[1]) nodeHeight = node.size[1];
+                        } else {
+                            if (typeof node.width === 'number') nodeWidth = node.width;
+                            if (typeof node.height === 'number') nodeHeight = node.height;
+                            if (node.properties) {
+                                if (typeof node.properties.width === 'number') nodeWidth = node.properties.width;
+                                if (typeof node.properties.height === 'number') nodeHeight = node.properties.height;
+                            }
+                        }
+
+                        // Center the node vertically on the center line
+                        node.pos[1] = verticalCenterAlign - (nodeHeight / 2);
+                        node.pos[0] = currentXHeightCenterAlign;
+                        
+                        // Update x,y properties if they exist
+                        if (typeof node.x === 'number') node.x = node.pos[0];
+                        if (typeof node.y === 'number') node.y = node.pos[1];
+                        
+                        currentXHeightCenterAlign += nodeWidth + nodeSpacing;
                     });
                     break;
 
