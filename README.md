@@ -33,7 +33,7 @@ Restart ComfyUI to load the custom node.
 
 ## Usage
 
-<img src="doc/handler.png" alt="Housekeeper Handler" height="100">
+<img src="doc/handler.png" alt="Housekeeper Handler" height="200">
 
 The Housekeeper handle appears on the right side of the canvas after installation. Click to open the panel. Select 2 or more nodes to use alignment features.
 
