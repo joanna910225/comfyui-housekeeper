@@ -1672,7 +1672,8 @@ function initializeAlignmentPanel() {
         content.appendChild(divider);
         content.appendChild(alignmentSection);
         const colorDivider = document.createElement('div');
-        colorDivider.className = 'housekeeper-divider housekeeper-divider-spaced';
+        colorDivider.className = 'housekeeper-divider';
+        colorDivider.style.marginTop = '10px';
         content.appendChild(colorDivider);
         content.appendChild(colorSection);
 
