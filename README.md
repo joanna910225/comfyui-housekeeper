@@ -2,7 +2,7 @@
 
 A ComfyUI custom node that provides comprehensive node alignment tools and color management for organizing your workflows.
 
-![Housekeeper Panel](doc/housekeeper-panel.png)
+<img src="doc/housekeeper-panel.png" alt="Housekeeper Panel" height="400">
 
 ## Features
 
@@ -26,7 +26,7 @@ Restart ComfyUI to load the custom node.
 
 ## Usage
 
-![Housekeeper Handler](doc/housekeeper-handler.png)
+<img src="doc/housekeeper-handler.png" alt="Housekeeper Handler" height="100">
 
 The Housekeeper handle appears on the right side of the canvas after installation. Click to open the panel. Select 2 or more nodes to use alignment features.
 
