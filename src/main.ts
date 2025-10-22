@@ -1392,11 +1392,12 @@ function initializeAlignmentPanel() {
     function attachColorChipHandlers(chip: HTMLButtonElement, hex: string) {
         const activate = (event?: Event) => {
             event?.preventDefault();
-            applyColorToSelection(hex);
+            // Clear preview state BEFORE applying to prevent restoration during re-render
             previewState.active = false;
             previewState.colorOption = null;
             previewState.nodes.clear();
             previewState.groups.clear();
+            applyColorToSelection(hex);
         };
         chip.addEventListener('click', activate);
         chip.addEventListener('keydown', (event: KeyboardEvent) => {

@@ -1277,7 +1277,7 @@ function Te() {
   }
   function T0(i, t) {
     const o = (a) => {
-      a == null || a.preventDefault(), w0(t), e2.active = !1, e2.colorOption = null, e2.nodes.clear(), e2.groups.clear();
+      a == null || a.preventDefault(), e2.active = !1, e2.colorOption = null, e2.nodes.clear(), e2.groups.clear(), w0(t);
     };
     i.addEventListener("click", o), i.addEventListener("keydown", (a) => {
       (a.key === "Enter" || a.key === " ") && (a.preventDefault(), o());
