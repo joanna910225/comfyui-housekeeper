@@ -91,3 +91,8 @@ Pick any color using the color picker or enter hex codes. Click the checkmark to
 ### Recent Colors
 
 The panel automatically remembers your last used colors for quick access.
+
+## Updates
+
+### 02/12/2025
+- **Compatible with recent Vue changes of ComfyUI official package** - Fixed compatibility issues with updated ComfyUI versions by removing Vue component dependencies and using pure JavaScript implementation for the alignment panel.
