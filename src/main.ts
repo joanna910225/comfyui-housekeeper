@@ -1,10 +1,10 @@
 import { app } from "../../../scripts/app.js";
 import { ComfyApp } from '@comfyorg/comfyui-frontend-types'
 
-import { addWidget, ComponentWidgetImpl } from "../../../scripts/domWidget.js";
+// import { addWidget, ComponentWidgetImpl } from "../../../scripts/domWidget.js";
 
-import VueExampleComponent from "@/components/VueExampleComponent.vue";
-import NodeAlignmentPanel from "@/components/NodeAlignmentPanel.vue";
+// import VueExampleComponent from "@/components/VueExampleComponent.vue";
+// import NodeAlignmentPanel from "@/components/NodeAlignmentPanel.vue";
 
 import homeIconUrl from "../icons/housekeeper.svg?url";
 import collapseIconUrl from "../icons/collapse.svg?url";
@@ -28,6 +28,8 @@ const comfyApp: ComfyApp = app;
 // Global alignment panel instance
 let alignmentPanel: any = null;
 
+// Commented out Vue-based extension - uncomment if you need Vue components
+/*
 comfyApp.registerExtension({
     name: 'vue-basic',
     getCustomWidgets(app) {
@@ -62,6 +64,7 @@ comfyApp.registerExtension({
         node.setSize([Math.max(oldWidth, 300), Math.max(oldHeight, 520)])
     }
 });
+*/
 
 // Register alignment panel extension that loads immediately
 comfyApp.registerExtension({

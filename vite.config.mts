@@ -15,7 +15,7 @@ export default defineConfig({
     },
     build: {
         lib: {
-            entry: './src/main.js',
+            entry: './src/main.ts',
             formats: ['es'],
             fileName: 'main'
         },
