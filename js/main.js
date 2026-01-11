@@ -14,25 +14,44 @@ t1.registerExtension({
 });
 function i1() {
   let O = null, T = null, U = null, E2 = !1, b = [], s2 = [], S2 = [], e2 = 0;
-  const R2 = "housekeeper-recent-colors", o2 = 9, T2 = ["#353535", "#3f5159", "#593930", "#335533", "#333355", "#335555", "#553355", "#665533", "#000000"];
+  const R2 = "housekeeper-recent-colors", POSITION_KEY = "housekeeper-position-top", o2 = 9, T2 = ["#353535", "#3f5159", "#593930", "#335533", "#333355", "#335555", "#553355", "#665533", "#000000"];
   let t2 = b0(), a2 = null, E = null, V = null, g2 = !1;
   const H2 = /* @__PURE__ */ new WeakMap(), d2 = /* @__PURE__ */ new WeakMap();
   let m2 = null, W2 = !1;
-  const w2 = 48, p0 = 24;
+  // Drag state variables
+  let isDragging = !1, dragStartY = 0, initialDragTop = 0, userHasDragged = !1, dragMoved = !1;
+  const w2 = 110, p0 = 24; //110px starting point now below the Menu
   function G2() {
-    const i = document.querySelector("#comfyui-body-top, .comfyui-body-top");
+    // Added detection for the <header> tag used in ComfyUI V1/Desktop
+    const i = document.querySelector("header, .comfy-vue-header, #comfyui-body-top, .comfyui-body-top");
     return i && i.getBoundingClientRect().top === 0 ? i : document.querySelector("#comfy-menu, .comfyui-menu, .litegraph-menu, .comfyui-toolbar");
   }
   function n0() {
+    // 1. Check for saved position first
+    const savedTop = localStorage.getItem(POSITION_KEY);
+    if (savedTop !== null) {
+        return parseFloat(savedTop);
+    }
+
+    // 2. Fallback to auto-detection if no saved position exists
     const i = G2();
     if (!i)
       return w2;
     const t = i.getBoundingClientRect();
-    return !t || t.width === 0 && t.height === 0 ? w2 : t.top < 100 ? Math.max(w2, Math.ceil(t.bottom + 8)) : w2;
+    return !t || t.width === 0 && t.height === 0 ? w2 : t.top < 100 ? Math.max(w2, Math.ceil(t.bottom + 12)) : w2; //little more room
   }
   function l2() {
-    const i = n0(), t = window.innerHeight || document.documentElement.clientHeight || 0, o = Math.max(t - i - p0, 280);
-    document.documentElement.style.setProperty("--hk-top-offset", `${i}px`), document.documentElement.style.setProperty("--hk-panel-max-height", `${o}px`);
+    // Don't update layout while the user is actively dragging (prevents jitter)
+    if (isDragging) return;
+
+    const i = n0(), t = window.innerHeight || document.documentElement.clientHeight || 0;
+    
+    // Always apply the calculated position (n0 now handles the priority of Saved vs Auto)
+    document.documentElement.style.setProperty("--hk-top-offset", `${i}px`);
+    
+    // Calculate max height
+    const o = Math.max(t - i - p0, 280);
+    document.documentElement.style.setProperty("--hk-panel-max-height", `${o}px`);
   }
   function Y2() {
     if (W2 || (W2 = !0, window.addEventListener("resize", l2), window.addEventListener("orientationchange", l2)), typeof ResizeObserver < "u") {
@@ -83,7 +102,7 @@ function i1() {
     --hk-handle-bg: rgba(32, 35, 42, 0.92);
     --hk-text-strong: #E8F3FF;
     --hk-text-muted: rgba(232, 243, 255, 0.74);
-    --hk-top-offset: 48px;
+    --hk-top-offset: 110px; // Increased default fallback offset to 110px to fall below the menu header
     --hk-panel-max-height: calc(100vh - 96px);
     --hk-panel-width: clamp(270px, 18vw, min(270px, calc(100vw - 24px)));
     --hk-button-size: clamp(34px, 7vw, 40px);
@@ -123,7 +142,8 @@ function i1() {
     flex-direction: column;
     align-items: center;
     gap: clamp(6px, 1.2vh, 8px);
-    cursor: pointer;
+	  cursor: grab; // Changed from pointer
+    touch-action: none;
     width: clamp(32px, 4vw, 48px);
     max-width: 44px;
     min-height: clamp(100px, 18vh, 140px);
@@ -961,13 +981,53 @@ function i1() {
   function O2(i) {
     (typeof i == "boolean" ? i : !E2) ? k0() : L0();
   }
+  // Drag Event Handlers
+  function handleDragStart(i) {
+    if (i.button !== 0) return; // Left click only
+    isDragging = !0, dragMoved = !1, dragStartY = i.clientY;
+    const t = getComputedStyle(document.documentElement).getPropertyValue("--hk-top-offset");
+    initialDragTop = parseFloat(t) || n0(), document.body.style.userSelect = "none", U && (U.style.cursor = "grabbing");
+  }
+
+  function handleDrag(i) {
+    if (!isDragging) return;
+    const t = i.clientY - dragStartY;
+    Math.abs(t) > 4 && (dragMoved = !0); // Threshold to distinguish click from drag
+    let o = initialDragTop + t;
+    o = Math.max(0, Math.min(o, window.innerHeight - 60)), document.documentElement.style.setProperty("--hk-top-offset", `${o}px`), userHasDragged = !0;
+  }
+
+function handleDragEnd() {
+    if (isDragging) {
+      isDragging = !1;
+      document.body.style.userSelect = "";
+      U && (U.style.cursor = "grab");
+      
+      // Save current position to localStorage
+      const currentTop = getComputedStyle(document.documentElement).getPropertyValue("--hk-top-offset");
+      localStorage.setItem(POSITION_KEY, parseFloat(currentTop));
+      
+      l2();
+    }
+  }
+  
+  
   function A0() {
     if (T) return;
-    O = document.createElement("div"), O.className = "housekeeper-wrapper collapsed", U = document.createElement("button"), U.type = "button", U.className = "housekeeper-handle", U.title = "Toggle Housekeeper panel (Ctrl+Shift+H)";
+	O = document.createElement("div"), O.className = "housekeeper-wrapper collapsed", U = document.createElement("button"), U.type = "button", U.className = "housekeeper-handle", U.title = "Drag to move / Click to toggle";
+    
+    // Add Drag Listeners
+    U.addEventListener("mousedown", handleDragStart);
+    window.addEventListener("mousemove", handleDrag);
+    window.addEventListener("mouseup", handleDragEnd);
+    
+    // Only toggle if it wasn't a drag action
     const i = document.createElement("img");
     i.src = l0, i.alt = "", i.draggable = !1, U.appendChild(i);
     const t = document.createElement("span");
-    t.textContent = "Housekeeper", U.appendChild(t), U.addEventListener("click", () => O2()), T = document.createElement("div"), T.className = "housekeeper-panel", T.setAttribute("role", "region"), T.setAttribute("aria-label", "Housekeeper alignment tools"), T.tabIndex = -1, T.addEventListener("mousemove", () => {
+    t.textContent = "Housekeeper", U.appendChild(t), U.addEventListener("click", (e) => {
+        !dragMoved && O2();
+    }), T = document.createElement("div"), T.className = "housekeeper-panel", T.setAttribute("role", "region"), T.setAttribute("aria-label", "Housekeeper alignment tools"), T.tabIndex = -1, T.addEventListener("mousemove", () => {
       g2 && (g2 = !1);
     });
     const o = document.createElement("div");
