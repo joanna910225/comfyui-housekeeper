@@ -273,12 +273,19 @@ function initializeAlignmentPanel() {
     const PANEL_BOTTOM_MARGIN = 24;
 
     function getTopMenuElement(): HTMLElement | null {
-        // Look for the top menu bar specifically (not bottom menu)
-        const topMenu = document.querySelector<HTMLElement>('#comfyui-body-top, .comfyui-body-top');
-        if (topMenu && topMenu.getBoundingClientRect().top === 0) {
+        // `header` and `.comfy-vue-header` cover the ComfyUI V1 and Desktop layouts, where
+        // none of the ids below exist and the panel would otherwise fall back to a fixed
+        // default offset and sit under the menu. Thanks to @ImagineerNL, who reported this
+        // from a configuration none of the other selectors match (PR #26).
+        const topMenu = document.querySelector<HTMLElement>(
+            'header, .comfy-vue-header, #comfyui-body-top, .comfyui-body-top'
+        );
+        // Tolerance rather than `=== 0`: an exact float comparison against a DOM rect fails
+        // under browser zoom, which silently dropped the menu on any non-100% zoom level.
+        if (topMenu && Math.abs(topMenu.getBoundingClientRect().top) < 1) {
             return topMenu;
         }
-        
+
         // Fallback to any menu if no specific top menu found
         return document.querySelector<HTMLElement>('#comfy-menu, .comfyui-menu, .litegraph-menu, .comfyui-toolbar');
     }

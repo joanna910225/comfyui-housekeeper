@@ -80,8 +80,10 @@ function De() {
   }
   const N2 = 48, B0 = 24;
   function a0() {
-    const e = document.querySelector("#comfyui-body-top, .comfyui-body-top");
-    return e && e.getBoundingClientRect().top === 0 ? e : document.querySelector("#comfy-menu, .comfyui-menu, .litegraph-menu, .comfyui-toolbar");
+    const e = document.querySelector(
+      "header, .comfy-vue-header, #comfyui-body-top, .comfyui-body-top"
+    );
+    return e && Math.abs(e.getBoundingClientRect().top) < 1 ? e : document.querySelector("#comfy-menu, .comfyui-menu, .litegraph-menu, .comfyui-toolbar");
   }
   function _0() {
     const e = a0();
