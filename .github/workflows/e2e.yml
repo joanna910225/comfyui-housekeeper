@@ -98,6 +98,28 @@ jobs:
             || { echo "::error::the extension bundle is not being served"; exit 1; }
           echo "extension loaded and its bundle is served"
 
+      # The first page load pays for ComfyUI's frontend initialising, which on a 2-core
+      # runner exceeded the per-test timeout and failed whichever test happened to run
+      # first - in beforeEach, before it asserted anything. Paying that cost here keeps it
+      # out of the suite instead of masking it with retries.
+      - name: Warm up the frontend
+        working-directory: extension/e2e
+        run: |
+          node --input-type=module -e "
+          import { chromium } from '@playwright/test';
+          const browser = await chromium.launch({ channel: 'chrome' });
+          const page = await browser.newPage();
+          await page.goto('http://127.0.0.1:8188/', { waitUntil: 'domcontentloaded' });
+          await page.waitForFunction(
+            () => Boolean(window.app?.graph && window.app?.canvas && window.LiteGraph),
+            null,
+            { timeout: 180000 }
+          );
+          await page.waitForSelector('.housekeeper-wrapper', { timeout: 60000 });
+          console.log('frontend warm: app ready and the Housekeeper panel is attached');
+          await browser.close();
+          "
+
       - name: Run browser tests
         working-directory: extension/e2e
         env:
