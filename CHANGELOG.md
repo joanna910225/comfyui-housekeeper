@@ -2,6 +2,24 @@
 
 All notable changes to this project are documented here.
 
+## [0.6.2] - 2026-08-12
+
+### Fixed
+
+- **Pinned nodes were moved and resized like any other node.** Pinning is how you tell ComfyUI
+  to leave something where it is, and Housekeeper ignored it completely — the flag was not read
+  anywhere in the source. Every alignment, size operation and flow arrangement now leaves pinned
+  nodes exactly as they are, and says how many it skipped rather than letting you wonder why part
+  of the selection did not move. The hover preview no longer draws a destination for a node that
+  will not move either. Closes #50.
+
+  Pinned nodes take no part in the layout at all, so they do not supply a reference edge — align
+  left on a selection whose leftmost node is pinned uses the leftmost *movable* node instead.
+  Treating them as fixed anchors the rest arranges around is a different feature, tracked in #58.
+
+  Why it was missed for so long: litegraph refuses to move a pinned node in its own movement path,
+  so this looks handled. Housekeeper writes `node.pos` by index, which never reaches that guard.
+
 ## [0.6.1] - 2026-08-12
 
 Two ways the extension could get the geometry wrong: one that destroyed a layout, one that hid the

@@ -271,6 +271,30 @@ export async function setCollapsed(page: Page, title: string, collapsed: boolean
   await page.waitForTimeout(100)
 }
 
+/**
+ * Pin through litegraph's own API rather than writing the flag, so the test proves the
+ * extension reads what ComfyUI actually sets. Asserts the node reports itself pinned
+ * afterwards — if upstream renames the accessor, this fails here instead of quietly
+ * turning the pinned tests into no-ops.
+ */
+export async function setPinned(page: Page, title: string, pinned: boolean) {
+  await page.evaluate(
+    ({ title, pinned }) => {
+      const app = (window as any).app
+      const node = app.graph._nodes.find((candidate: any) => candidate.title === title)
+      if (!node) throw new Error(`Missing node ${title}`)
+      if (typeof node.pin === 'function') node.pin(pinned)
+      else node.flags = { ...(node.flags ?? {}), pinned }
+      if (!!node.pinned !== pinned) {
+        throw new Error(`pin(${pinned}) did not take effect on ${title}; node.pinned=${node.pinned}`)
+      }
+      app.canvas.setDirty?.(true, true)
+    },
+    { title, pinned }
+  )
+  await page.waitForTimeout(100)
+}
+
 export function alignmentButton(page: Page, name: string): Locator {
   return page.getByRole('button', { name, exact: true })
 }
