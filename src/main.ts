@@ -180,6 +180,28 @@ function initializeAlignmentPanel() {
         return node?.size?.[1] !== undefined ? node.size[1] : Math.max(outerHeight(node) - 30, 0);
     }
 
+    // Measure nodes for a single flow-layout run and return a lookup over the result.
+    //
+    // Sizes are deliberately NOT cached on the node. They used to be stamped as
+    // `node._calculatedSize` behind an `if (!node._calculatedSize)` guard and were never
+    // invalidated, so the second flow layout in a session laid every node out against the
+    // size it happened to have the first time - a node grown from 100 to 400 tall still
+    // reserved 100, and its neighbour was drawn inside it.
+    //
+    // Invalidating on resize would not have been enough either: collapsing a node changes
+    // what node.height reports without touching node.size and fires no resize event at all.
+    // Measuring fresh per run is both simpler and correct for every case.
+    //
+    // Measure the LIVE node, never a `{...node}` copy: width/height are prototype getters,
+    // so a spread copy loses them and would silently fall back to the 150x100 defaults.
+    function measureFlowNodes(nodes: any[]) {
+        const sizes = new Map<any, [number, number]>();
+        nodes.forEach(node => {
+            if (node) sizes.set(node, [nodeWidth(node), outerHeight(node)]);
+        });
+        return (node: any): [number, number] => sizes.get(node) ?? [150, 100];
+    }
+
     const DEFAULT_TOP_OFFSET = 48;
     const PANEL_BOTTOM_MARGIN = 24;
 
@@ -2181,14 +2203,20 @@ function initializeAlignmentPanel() {
                     return 0;
                 }));
 
-                // Create copies for calculation (don't modify originals)
-                const hFlowNodeCopies = hFlowValidNodes.map(node => ({
-                    ...node,
-                    pos: node.pos ? [...node.pos] : [node.x || 0, node.y || 0],
-                    _calculatedSize: node.size && Array.isArray(node.size) ?
-                        [node.size[0], node.size[1]] :
-                        [node.width || 150, node.height || 100]
-                }));
+                // Measure the live nodes, then lay out against copies so the originals are
+                // never touched. Measuring must happen before the spread: width and height are
+                // prototype getters, so `{...node}` drops them and a copy would measure as the
+                // 150x100 fallback. Keyed by copy identity so the layout below can look it up.
+                const hFlowMeasured = new Map<any, [number, number]>();
+                const hFlowNodeCopies = hFlowValidNodes.map(node => {
+                    const copy = {
+                        ...node,
+                        pos: node.pos ? [...node.pos] : [node.x || 0, node.y || 0]
+                    };
+                    hFlowMeasured.set(copy, [nodeWidth(node), outerHeight(node)]);
+                    return copy;
+                });
+                const hSizeOf = (node: any): [number, number] => hFlowMeasured.get(node) ?? [150, 100];
 
                 // Use exact connection analysis
                 const hFlowConnections = analyzeNodeConnections(hFlowNodeCopies);
@@ -2226,7 +2254,7 @@ function initializeAlignmentPanel() {
                             for (let prevLevel = 0; prevLevel < level; prevLevel++) {
                                 const prevLevelNodes = hFlowLevels[prevLevel] || [];
                                 const prevMaxWidth = Math.max(...prevLevelNodes.map(node =>
-                                    node && node._calculatedSize && node._calculatedSize[0] ? node._calculatedSize[0] : 150
+                                    hSizeOf(node)[0]
                                 ));
                                 currentX += prevMaxWidth + H_COLUMN_SPACING + H_LEVEL_PADDING;
                             }
@@ -2234,14 +2262,14 @@ function initializeAlignmentPanel() {
 
                         let currentY = hFlowStartY;
                         levelNodes.forEach((node) => {
-                            if (node && node._calculatedSize) {
+                            if (node) {
                                 hFlowNodePositions.set(node.id, {
                                     x: currentX,
                                     y: currentY,
-                                    width: node._calculatedSize[0],
-                                    height: node._calculatedSize[1]
+                                    width: hSizeOf(node)[0],
+                                    height: hSizeOf(node)[1]
                                 });
-                                currentY += node._calculatedSize[1] + H_NODE_SPACING_Y;
+                                currentY += hSizeOf(node)[1] + H_NODE_SPACING_Y;
                             }
                         });
                     }
@@ -2279,14 +2307,17 @@ function initializeAlignmentPanel() {
                     return 0;
                 }));
 
-                // Create copies for calculation (don't modify originals)
-                const vFlowNodeCopies = vFlowValidNodes.map(node => ({
-                    ...node,
-                    pos: node.pos ? [...node.pos] : [node.x || 0, node.y || 0],
-                    _calculatedSize: node.size && Array.isArray(node.size) ?
-                        [node.size[0], node.size[1]] :
-                        [node.width || 150, node.height || 100]
-                }));
+                // Measure the live nodes before spreading - see the H-Flow branch above for why.
+                const vFlowMeasured = new Map<any, [number, number]>();
+                const vFlowNodeCopies = vFlowValidNodes.map(node => {
+                    const copy = {
+                        ...node,
+                        pos: node.pos ? [...node.pos] : [node.x || 0, node.y || 0]
+                    };
+                    vFlowMeasured.set(copy, [nodeWidth(node), outerHeight(node)]);
+                    return copy;
+                });
+                const vSizeOf = (node: any): [number, number] => vFlowMeasured.get(node) ?? [150, 100];
 
                 // Use exact connection analysis
                 const vFlowConnections = analyzeNodeConnections(vFlowNodeCopies);
@@ -2324,7 +2355,7 @@ function initializeAlignmentPanel() {
                             for (let prevLevel = 0; prevLevel < level; prevLevel++) {
                                 const prevLevelNodes = vFlowLevels[prevLevel] || [];
                                 const prevMaxHeight = Math.max(...prevLevelNodes.map(node =>
-                                    node && node._calculatedSize && node._calculatedSize[1] ? node._calculatedSize[1] : 100
+                                    vSizeOf(node)[1]
                                 ));
                                 currentY += prevMaxHeight + V_ROW_SPACING + V_LEVEL_PADDING;
                             }
@@ -2332,14 +2363,14 @@ function initializeAlignmentPanel() {
 
                         let currentX = vFlowStartX;
                         levelNodes.forEach((node) => {
-                            if (node && node._calculatedSize) {
+                            if (node) {
                                 vFlowNodePositions.set(node.id, {
                                     x: currentX,
                                     y: currentY,
-                                    width: node._calculatedSize[0],
-                                    height: node._calculatedSize[1]
+                                    width: vSizeOf(node)[0],
+                                    height: vSizeOf(node)[1]
                                 });
-                                currentX += node._calculatedSize[0] + V_NODE_SPACING_X;
+                                currentX += vSizeOf(node)[0] + V_NODE_SPACING_X;
                             }
                         });
                     }
@@ -3161,28 +3192,22 @@ function initializeAlignmentPanel() {
                     }
                 }
                 
-                // CRITICAL: NEVER modify node.size - only read for calculations
-                // Get size for calculations without modifying original
-                if (!node._calculatedSize) {
-                    if (node.size && Array.isArray(node.size)) {
-                        node._calculatedSize = [node.size[0], node.size[1]]; // Copy, don't modify
-                    } else if (typeof node.width === 'number' && typeof node.height === 'number') {
-                        node._calculatedSize = [node.width, node.height];
-                    } else {
-                        node._calculatedSize = [150, 100]; // Fallback for calculations only
-                    }
-                }
-                
-                // Ensure position array is properly formatted (OK to modify position)
-                if (!Array.isArray(node.pos)) {
-                    node.pos = [0, 0];
-                }
-                
-                // NEVER modify node.size, node.width, node.height properties!
+                // Sizes are measured per run by measureFlowNodes() below - never cached on
+                // the node, and node.size is never modified.
+                //
+                // The `if (!Array.isArray(node.pos)) node.pos = [0, 0]` reset that used to sit
+                // here is gone. node.pos is a Float32Array, so Array.isArray was false for
+                // every node and this fired every time, writing the origin into the position
+                // accessor. It happened to be invisible on the classic canvas because every
+                // node is repositioned below anyway - but under Vue Nodes that write lands in
+                // the layout store, which is exactly where it does damage.
             });
             
             const connections = analyzeNodeConnections(validNodes);
             const nodeGraph = buildNodeGraph(validNodes, connections);
+            // Fresh every run - see measureFlowNodes(). A cached size goes stale the moment
+            // the user resizes or collapses a node.
+            const sizeOf = measureFlowNodes(validNodes);
             
             // Configuration for horizontal flow - OPTIMIZED for staying near original location
             const COLUMN_SPACING = 30;      // Spacing between columns
@@ -3212,13 +3237,13 @@ function initializeAlignmentPanel() {
                     
                     // Calculate total height needed for this level (preserving original node sizes)
                     const totalHeight = levelNodes.reduce((sum, node, index) => {
-                        const nodeHeight = node && node._calculatedSize && node._calculatedSize[1] ? node._calculatedSize[1] : 100;
+                        const nodeHeight = sizeOf(node)[1];
                         return sum + nodeHeight + (index < levelNodes.length - 1 ? NODE_SPACING_Y : 0);
                     }, 0);
                     
                     // Calculate maximum node width in this level for proper column spacing
                     const maxNodeWidth = Math.max(...levelNodes.map(node => 
-                        node && node._calculatedSize && node._calculatedSize[0] ? node._calculatedSize[0] : 150
+                        sizeOf(node)[0]
                     ));
                     
                     // Position horizontally (X-axis) - ensure proper spacing between columns
@@ -3228,7 +3253,7 @@ function initializeAlignmentPanel() {
                         for (let prevLevel = 0; prevLevel < level; prevLevel++) {
                             const prevLevelNodes = levels[prevLevel] || [];
                             const prevMaxWidth = Math.max(...prevLevelNodes.map(node => 
-                                node && node._calculatedSize && node._calculatedSize[0] ? node._calculatedSize[0] : 150
+                                sizeOf(node)[0]
                             ));
                             currentX += prevMaxWidth + COLUMN_SPACING + LEVEL_PADDING;
                         }
@@ -3239,9 +3264,8 @@ function initializeAlignmentPanel() {
                     
                     
                     levelNodes.forEach((node, index) => {
-                        if (node && node.pos && node._calculatedSize) {
+                        if (node && node.pos) {
                             const oldPos = [node.pos[0], node.pos[1]];
-                            const calculatedSize = [node._calculatedSize[0], node._calculatedSize[1]]; // Use calculated size for display
                             
                             // Set horizontal position (column based on level) 
                             node.pos[0] = currentX;
@@ -3255,7 +3279,7 @@ function initializeAlignmentPanel() {
                             
                             // Move to next vertical position for next node in this level
                             // Add the current node's height plus spacing (using calculated size)
-                            currentY += node._calculatedSize[1] + NODE_SPACING_Y;
+                            currentY += sizeOf(node)[1] + NODE_SPACING_Y;
                             
                             // Only update position properties (x,y,pos) - NEVER size properties
                             if (typeof node.x === 'number') node.x = node.pos[0];
@@ -3334,28 +3358,22 @@ function initializeAlignmentPanel() {
                     }
                 }
                 
-                // CRITICAL: NEVER modify node.size - only read for calculations
-                // Get size for calculations without modifying original
-                if (!node._calculatedSize) {
-                    if (node.size && Array.isArray(node.size)) {
-                        node._calculatedSize = [node.size[0], node.size[1]]; // Copy, don't modify
-                    } else if (typeof node.width === 'number' && typeof node.height === 'number') {
-                        node._calculatedSize = [node.width, node.height];
-                    } else {
-                        node._calculatedSize = [150, 100]; // Fallback for calculations only
-                    }
-                }
-                
-                // Ensure position array is properly formatted (OK to modify position)
-                if (!Array.isArray(node.pos)) {
-                    node.pos = [0, 0];
-                }
-                
-                // NEVER modify node.size, node.width, node.height properties!
+                // Sizes are measured per run by measureFlowNodes() below - never cached on
+                // the node, and node.size is never modified.
+                //
+                // The `if (!Array.isArray(node.pos)) node.pos = [0, 0]` reset that used to sit
+                // here is gone. node.pos is a Float32Array, so Array.isArray was false for
+                // every node and this fired every time, writing the origin into the position
+                // accessor. It happened to be invisible on the classic canvas because every
+                // node is repositioned below anyway - but under Vue Nodes that write lands in
+                // the layout store, which is exactly where it does damage.
             });
             
             const connections = analyzeNodeConnections(validNodes);
             const nodeGraph = buildNodeGraph(validNodes, connections);
+            // Fresh every run - see measureFlowNodes(). A cached size goes stale the moment
+            // the user resizes or collapses a node.
+            const sizeOf = measureFlowNodes(validNodes);
             
             // Configuration for vertical flow - ENHANCED spacing to prevent overlapping
             const ROW_SPACING = 30;         // Spacing between rows
@@ -3386,14 +3404,14 @@ function initializeAlignmentPanel() {
                     
                     // Calculate total width needed for this level (preserving original node sizes)
                     const totalWidth = levelNodes.reduce((sum, node, index) => {
-                        const nodeWidth = node && node._calculatedSize && node._calculatedSize[0] ? node._calculatedSize[0] : 150;
+                        const nodeWidth = sizeOf(node)[0];
                         // Add spacing between all nodes, including after the last one for visual balance
                         return sum + nodeWidth + NODE_SPACING_X;
                     }, 0);
                     
                     // Calculate maximum node height in this level for proper row spacing
                     const maxNodeHeight = Math.max(...levelNodes.map(node => 
-                        node && node._calculatedSize && node._calculatedSize[1] ? node._calculatedSize[1] : 100
+                        sizeOf(node)[1]
                     ));
                     
                     // Position vertically (Y-axis) - ensure proper spacing between rows
@@ -3403,7 +3421,7 @@ function initializeAlignmentPanel() {
                         for (let prevLevel = 0; prevLevel < level; prevLevel++) {
                             const prevLevelNodes = levels[prevLevel] || [];
                             const prevMaxHeight = Math.max(...prevLevelNodes.map(node => 
-                                node && node._calculatedSize && node._calculatedSize[1] ? node._calculatedSize[1] : 100
+                                sizeOf(node)[1]
                             ));
                             currentY += prevMaxHeight + ROW_SPACING + LEVEL_PADDING;
                         }
@@ -3414,9 +3432,8 @@ function initializeAlignmentPanel() {
                     
                     
                     levelNodes.forEach((node, index) => {
-                        if (node && node.pos && node._calculatedSize) {
+                        if (node && node.pos) {
                             const oldPos = [node.pos[0], node.pos[1]];
-                            const calculatedSize = [node._calculatedSize[0], node._calculatedSize[1]]; // Use calculated size for display
                             
                             // Set horizontal position with proper spacing
                             node.pos[0] = currentX;
@@ -3430,7 +3447,7 @@ function initializeAlignmentPanel() {
                             
                             // Move to next horizontal position for next node in this level
                             // Add the current node's width plus spacing (using calculated size)
-                            currentX += node._calculatedSize[0] + NODE_SPACING_X;
+                            currentX += sizeOf(node)[0] + NODE_SPACING_X;
                             
                             // Only update position properties (x,y,pos) - NEVER size properties
                             if (typeof node.x === 'number') node.x = node.pos[0];
