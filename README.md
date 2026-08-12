@@ -5,11 +5,21 @@
 
 </div>
 
-A ComfyUI custom node that provides comprehensive node alignment tools and color management for organizing your workflows.
+A ComfyUI extension that provides node alignment tools and color management for organizing your workflows. It runs entirely in the browser and adds no nodes to your node menu.
 
 ## Updates
 
-### 02/12/2025
+### 2026-08-12 — v0.2.0
+- **Hover preview now appears where it should.** It was being drawn about a screen height above the canvas on most installs, so it looked like the feature did nothing ([#24](https://github.com/joanna910225/comfyui-housekeeper/issues/24))
+- **Panel no longer covers ComfyUI's right sidebar** ([#25](https://github.com/joanna910225/comfyui-housekeeper/issues/25))
+- **Ctrl+Z now undoes an alignment** in a single step
+- **Keyboard shortcuts no longer fire while you are typing** in a prompt widget
+- **Flow alignment orders nodes within a column by vertical position**, as documented
+- Housekeeper is now frontend-only — the three unused placeholder nodes have been removed, and it no longer fails to load on ComfyUI builds without `comfy_config`
+
+See [CHANGELOG.md](CHANGELOG.md) for the full list.
+
+### 2025-12-02
 - **Compatible with recent Vue changes of ComfyUI official package**
 
 <div align="center">
@@ -33,7 +43,7 @@ A ComfyUI custom node that provides comprehensive node alignment tools and color
 
 ## Features
 
-- 14 alignment options including edge and center alignments
+- 6 alignment options — four edge and two center alignments
 - Size normalization for consistent node dimensions
 - Flow-based arrangement using workflow connections
 - Preset color palettes for node styling
@@ -96,3 +106,19 @@ Pick any color using the color picker or enter hex codes. Click the checkmark to
 ### Recent Colors
 
 The panel automatically remembers your last used colors for quick access.
+
+## Keyboard Shortcuts
+
+Use `Cmd` in place of `Ctrl` on macOS. Shortcuts are ignored while the focus is in a text field, so they will not interfere with typing in a prompt widget.
+
+| Shortcut | Action |
+| --- | --- |
+| `Ctrl+Shift+H` | Show / hide the panel |
+| `Ctrl+Shift+←` | Align left edges |
+| `Ctrl+Shift+→` | Align right edges |
+| `Ctrl+Shift+↑` | Align top edges |
+| `Ctrl+Shift+↓` | Align bottom edges |
+| `Ctrl+Alt+→` | Horizontal flow |
+| `Ctrl+Alt+↓` | Vertical flow |
+
+Every operation is a single undo step — press `Ctrl+Z` once to revert it.

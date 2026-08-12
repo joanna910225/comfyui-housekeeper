@@ -1,19 +1,18 @@
-from .ComfyUIFEExampleVueBasic import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS
-import os
-import nodes
-from comfy_config import config_parser
+"""Housekeeper - ComfyUI node alignment and colour tools.
 
-custom_node_dir = os.path.dirname(os.path.realpath(__file__))
-print("==========================")
+This is a frontend-only extension: all behaviour lives in js/main.js, which ComfyUI serves
+from the directory named by WEB_DIRECTORY. There are no backend nodes.
 
-project_config = config_parser.extract_node_configuration(custom_node_dir)
+NODE_CLASS_MAPPINGS is exported as an empty dict on purpose. ComfyUI's custom-node loader
+registers WEB_DIRECTORY first, but then requires either NODE_CLASS_MAPPINGS or a
+comfy_entrypoint to consider the module loaded; without one it logs a skip warning and
+reports "(IMPORT FAILED)" next to this pack on every startup. The loader's check is
+`getattr(module, "NODE_CLASS_MAPPINGS") is not None`, so an empty dict satisfies it.
+"""
 
-print(project_config.project.name)
+WEB_DIRECTORY = "./js"
 
-print("==========================")
+NODE_CLASS_MAPPINGS = {}
+NODE_DISPLAY_NAME_MAPPINGS = {}
 
-js_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "js")
-
-nodes.EXTENSION_WEB_DIRS[project_config.project.name] = js_dir
-
-__all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']
+__all__ = ["WEB_DIRECTORY", "NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]

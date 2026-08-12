@@ -1,0 +1,74 @@
+# Changelog
+
+All notable changes to this project are documented here.
+
+## [0.2.0] - 2026-08-12
+
+Correctness release. Findings and verification detail are in
+[#27](https://github.com/joanna910225/comfyui-housekeeper/issues/27).
+
+### Fixed
+
+- **Hover preview rendered off-screen.** The preview overlay subtracted
+  `document.querySelector('nav').height` from its Y coordinate. That `<nav>` is ComfyUI's
+  *vertical* side toolbar (`height: 100%`), so on a 1080p install the term was ~1030px and every
+  preview rectangle was drawn roughly a full screen above the canvas. The overlay now applies only
+  the node title-bar offset, which is what it always needed. Closes #24.
+- **Panel covered the right sidebar.** `.housekeeper-wrapper` was pinned to `right: 0` at
+  `z-index: 1000` with no horizontal offset logic, while ComfyUI's right sidebar sits at
+  `z-index: 10`. The panel now offsets by the sidebar's width via `--hk-right-offset` and tracks it
+  with a `ResizeObserver`, so it keeps clear when the sidebar is toggled. Closes #25.
+- **Alignment could not be undone.** Position and size changes were not recorded in ComfyUI's
+  undo history, so Ctrl+Z after an align did nothing or reverted an unrelated edit. All alignment,
+  sizing and colour operations are now bracketed in a single undo transaction using the canvas
+  change events ComfyUI actually listens for. `graph.beforeChange()`/`afterChange()`, used
+  previously by the colour path, forward only to a callback the frontend never assigns and
+  recorded nothing.
+- **Flow layout ignored vertical ordering.** Within a column, nodes were laid out in graph
+  creation order rather than by vertical position, because the lookup compared a numeric node id
+  against a string object key and could never match.
+- **Keyboard shortcuts fired while typing.** `Ctrl/Cmd+Shift+Arrow`, `Ctrl+Shift+H` and
+  `Ctrl+Alt+Arrow` were captured globally with no check for the focused element, so word-selection
+  inside a prompt widget was swallowed and silently realigned the still-selected nodes instead.
+  Shortcuts now ignore input, textarea, select and contenteditable targets.
+- **Colour preview corrupted the undo baseline.** Hovering a swatch writes colours directly onto
+  live nodes; clicking then applied on top of that state, so one undo restored the *preview*
+  colour rather than the original. The preview is now rolled back before the change is committed.
+- **`size-min` / `height-min` preview did not match the applied result.** One side of the
+  comparison was body-only height and the other included the title bar.
+- Node ids are no longer rewritten on live graph nodes. A node with id `0` was renamed to the
+  string `"node_0"`, which dangled every link referencing it and corrupted serialisation. Id `0`
+  is now handled correctly throughout rather than being treated as absent.
+- Canvas redraws no longer call `LGraphCanvas.setDirtyCanvas`, which does not exist — all three
+  copies silently fell through to a secondary path.
+- Warning and error toasts no longer intercept clicks: they had no `pointer-events: none`, so for
+  3.3 seconds they blocked ComfyUI's top-right menu, including while fully transparent.
+- Errors are now logged to the console. Previously a failure during startup or alignment was
+  swallowed by an empty `catch`, leaving the extension silently absent with no diagnostic.
+
+### Changed
+
+- **Housekeeper is now a frontend-only extension.** The three backend nodes (`vue-basic`,
+  `housekeeper-alignment`, `housekeeper-alignment-cmd`) were unreachable placeholders from the
+  ComfyUI example template and have been removed, along with `ComfyUIFEExampleVueBasic.py`. The
+  panel has always been created client-side and never needed them.
+- `__init__.py` no longer imports `comfy_config`, which is absent from ComfyUI builds older than
+  2025-06-03 and caused the entire extension — panel included — to fail to load there. It now uses
+  the long-supported `WEB_DIRECTORY` contract and imports with no ComfyUI dependencies at all.
+- Removed three debug `print` banners emitted on every ComfyUI startup.
+- Repository, bug tracker and documentation URLs pointed at `joanna910225/housekeeper`, which does
+  not exist; they now point at `joanna910225/comfyui-housekeeper`.
+- Version bumped from `0.0.1`, unchanged since the first commit, so Registry releases can be
+  distinguished.
+
+### Notes
+
+An earlier draft of #27 reported a path-traversal issue in `ComfyUIFEExampleVueBasic.py`. That
+finding was **retracted** on verification: ComfyUI added path containment to
+`folder_paths.get_annotated_filepath` on 2026-07-03, and on older builds the code granted no
+capability that core `LoadImage` did not already expose. The file is removed here because it is
+dead template code, not for security reasons.
+
+## [0.0.1]
+
+Initial release.
