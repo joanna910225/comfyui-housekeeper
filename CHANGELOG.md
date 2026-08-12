@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased]
+
+### Fixed
+
+- **The panel could sit under the menu bar on ComfyUI V1 and Desktop.** Its top offset is measured
+  from ComfyUI's menu, but the selectors used to find that menu matched none of the elements those
+  layouts use, so the panel fell back to a fixed default and overlapped. Reported with a working fix
+  by [@ImagineerNL](https://github.com/ImagineerNL) in
+  [#26](https://github.com/joanna910225/comfyui-housekeeper/pull/26); the selectors are theirs.
+- The same measurement compared a DOM rectangle against zero with exact float equality, so it
+  silently failed at any browser zoom other than 100%.
+
 ## [0.6.0] - 2026-08-12
 
 Housekeeping. Nothing changes in the panel — this release is about what the project ships and
@@ -75,7 +87,9 @@ Panel placement you control. Detail in
 ### Added
 
 - **The panel can be dragged, and remembers where you put it.** Drag the handle when the panel is
-  collapsed, or its header when open. A *Reset position* control appears once the panel has been
+  collapsed, or its header when open. [@ImagineerNL](https://github.com/ImagineerNL) proposed and
+  implemented this independently in [#26](https://github.com/joanna910225/comfyui-housekeeper/pull/26),
+  several months before it shipped here. A *Reset position* control appears once the panel has been
   moved and returns it to the automatic placement. The position is clamped on load and on window
   resize, so a position saved on a larger monitor can never leave the panel somewhere it cannot be
   grabbed again. Closes #22.
