@@ -28,6 +28,34 @@ const comfyApp: ComfyApp = app;
 // Global alignment panel instance
 let alignmentPanel: any = null;
 
+// Gap left between nodes when aligning or arranging, in graph units.
+//
+// Every alignment re-stacks the selection along the other axis using this gap, which is what
+// #20 reports: aligning vertically also re-spaces horizontally. That behaviour is deliberate,
+// but the amount should be the user's choice (#20, #23).
+//
+// Module scope because the panel closure reads it while the ComfyUI setting that writes it is
+// registered out here.
+const DEFAULT_NODE_SPACING = 30;
+const NODE_SPACING_SETTING_ID = 'Housekeeper.NodeSpacing';
+const MAX_NODE_SPACING = 400;
+let nodeSpacingValue = DEFAULT_NODE_SPACING;
+// Set by the panel so a change made in ComfyUI's settings dialog updates the in-panel
+// control too, instead of the two drifting apart while both are open.
+let spacingControlSync: (() => void) | null = null;
+
+/** Current gap between nodes. Single source of truth for every layout site. */
+function nodeGap(): number {
+    return nodeSpacingValue;
+}
+
+function setNodeSpacing(value: unknown) {
+    const parsed = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(parsed)) return;
+    // Clamped so a hand-edited setting cannot produce negative or absurd layouts.
+    nodeSpacingValue = Math.min(Math.max(Math.round(parsed), 0), MAX_NODE_SPACING);
+}
+
 // Commented out Vue-based extension - uncomment if you need Vue components
 /*
 comfyApp.registerExtension({
@@ -69,7 +97,26 @@ comfyApp.registerExtension({
 // Register alignment panel extension that loads immediately
 comfyApp.registerExtension({
     name: 'housekeeper-alignment',
-    
+
+    // Declared here so it appears in ComfyUI's own settings dialog rather than as a bespoke
+    // control, and so ComfyUI persists it per user. onChange fires with the stored value on
+    // load as well as on edit, which is what seeds nodeSpacingValue.
+    settings: [
+        {
+            id: NODE_SPACING_SETTING_ID,
+            category: ['Housekeeper', 'Layout', 'Node spacing'],
+            name: 'Node spacing',
+            tooltip: 'Gap left between nodes when aligning or arranging them, in pixels.',
+            type: 'slider',
+            attrs: { min: 0, max: 200, step: 5 },
+            defaultValue: DEFAULT_NODE_SPACING,
+            onChange: (value: unknown) => {
+                setNodeSpacing(value);
+                spacingControlSync?.();
+            }
+        }
+    ],
+
     async setup() {
         
         // Create the alignment panel immediately without waiting for a specific node
@@ -133,6 +180,10 @@ function initializeAlignmentPanel() {
     const PANEL_MIN_VISIBLE = 48;
     // Pointer travel before a press on the handle counts as a drag rather than a click.
     const PANEL_DRAG_THRESHOLD = 4;
+    // Arrow-key nudge distance from the focused handle, and the coarser Shift+arrow step.
+    // Dragging is pointer-only, so without these the panel cannot be moved from the keyboard.
+    const PANEL_NUDGE_STEP = 10;
+    const PANEL_NUDGE_STEP_LARGE = 50;
     const RECENT_COLOR_LIMIT = 9;
     const FALLBACK_RECENT_COLORS = ['#353535', '#3f5159', '#593930', '#335533', '#333355', '#335555', '#553355', '#665533', '#000000'];
 
@@ -391,6 +442,58 @@ function initializeAlignmentPanel() {
         savePanelPosition(null);
         applyPanelPosition();
         updateLayoutMetrics();
+    }
+
+    /**
+     * Move the panel by a delta, seeding a custom position from wherever it currently sits if
+     * it has not been moved before. Used by the keyboard nudge; the pointer drag tracks an
+     * absolute position from its grab offset instead, but both end up in clampPanelPosition
+     * and savePanelPosition so they behave identically once the move is applied.
+     */
+    function movePanelBy(dx: number, dy: number) {
+        if (!wrapper) return;
+
+        if (!customPosition) {
+            const rect = wrapper.getBoundingClientRect();
+            const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+            customPosition = { top: rect.top, right: viewportWidth - rect.right };
+        }
+
+        // `right` grows leftwards, hence the sign flip on the horizontal delta.
+        customPosition = clampPanelPosition({
+            top: customPosition.top + dy,
+            right: customPosition.right - dx
+        });
+        applyPanelPosition();
+        savePanelPosition(customPosition);
+    }
+
+    /**
+     * Arrow keys reposition the panel while the handle has focus. Buttons do nothing with
+     * arrow keys by default, so this claims nothing the user would otherwise get, and it is
+     * the only way to move the panel without a pointer.
+     */
+    function makeKeyboardMovable(grip: HTMLElement) {
+        grip.addEventListener('keydown', (event: KeyboardEvent) => {
+            // Leave modified combos alone - Ctrl/Cmd+Shift+Arrow is the alignment shortcut.
+            if (event.ctrlKey || event.metaKey || event.altKey) return;
+
+            const step = event.shiftKey ? PANEL_NUDGE_STEP_LARGE : PANEL_NUDGE_STEP;
+            let dx = 0;
+            let dy = 0;
+
+            switch (event.key) {
+                case 'ArrowLeft': dx = -step; break;
+                case 'ArrowRight': dx = step; break;
+                case 'ArrowUp': dy = -step; break;
+                case 'ArrowDown': dy = step; break;
+                default: return;
+            }
+
+            // Otherwise the arrow scrolls the page behind the panel.
+            event.preventDefault();
+            movePanelBy(dx, dy);
+        });
     }
 
     /**
@@ -744,6 +847,46 @@ function initializeAlignmentPanel() {
 .housekeeper-wrapper.hk-dragging .housekeeper-panel,
 .housekeeper-wrapper.hk-dragging .housekeeper-handle {
     transition: none;
+}
+
+.housekeeper-spacing-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.housekeeper-spacing-slider {
+    /* min-width: 0 so the slider yields instead of forcing the row past the panel width. */
+    flex: 1 1 auto;
+    min-width: 0;
+    accent-color: var(--hk-accent);
+    cursor: pointer;
+}
+
+.housekeeper-spacing-value {
+    flex: 0 0 auto;
+    width: 52px;
+    background: rgba(12, 14, 18, 0.85);
+    border: 1px solid rgba(120, 170, 255, 0.35);
+    border-radius: 4px;
+    color: var(--hk-text-strong);
+    font-family: inherit;
+    font-size: var(--hk-body-font-size);
+    padding: 3px 6px;
+    text-align: right;
+}
+
+.housekeeper-spacing-value:focus-visible,
+.housekeeper-spacing-slider:focus-visible {
+    outline: 2px solid var(--hk-accent);
+    outline-offset: 2px;
+}
+
+.housekeeper-spacing-unit {
+    flex: 0 0 auto;
+    color: var(--hk-text-muted);
+    font-size: var(--hk-subtitle-font-size);
 }
 
 .housekeeper-position-row {
@@ -1285,6 +1428,73 @@ function initializeAlignmentPanel() {
         subtitle.className = 'housekeeper-subtitle';
         subtitle.textContent = text;
         return subtitle;
+    }
+
+    /**
+     * In-panel control for the node gap. Writes through to the ComfyUI setting rather than
+     * keeping its own copy, so the panel and ComfyUI's settings dialog cannot disagree, and
+     * so the value is persisted by ComfyUI per user like every other setting.
+     */
+    function createSpacingControl() {
+        const row = document.createElement('div');
+        row.className = 'housekeeper-spacing-row';
+
+        const slider = document.createElement('input');
+        slider.type = 'range';
+        slider.className = 'housekeeper-spacing-slider';
+        slider.min = '0';
+        slider.max = '200';
+        slider.step = '5';
+        slider.setAttribute('aria-label', 'Gap between nodes when aligning, in pixels');
+
+        // A number input beside it, because a slider alone cannot be set precisely and is
+        // awkward to operate for anyone who wants an exact value.
+        const readout = document.createElement('input');
+        readout.type = 'number';
+        readout.className = 'housekeeper-spacing-value';
+        readout.min = '0';
+        readout.max = String(MAX_NODE_SPACING);
+        readout.step = '1';
+        readout.setAttribute('aria-label', 'Gap between nodes when aligning, in pixels');
+
+        const unit = document.createElement('span');
+        unit.className = 'housekeeper-spacing-unit';
+        unit.textContent = 'px';
+
+        const render = () => {
+            const current = String(nodeGap());
+            slider.value = current;
+            readout.value = current;
+        };
+
+        const commit = (raw: string) => {
+            const parsed = Number(raw);
+            if (!Number.isFinite(parsed)) { render(); return; }
+
+            setNodeSpacing(parsed);
+            // Persist through ComfyUI so the settings dialog reflects it and it survives a
+            // reload. setNodeSpacing has already clamped, so store the clamped value rather
+            // than what was typed.
+            try {
+                (window as any).app?.extensionManager?.setting?.set(NODE_SPACING_SETTING_ID, nodeGap());
+            } catch (error) {
+                console.error('[housekeeper] could not persist node spacing:', error);
+            }
+            render();
+        };
+
+        slider.addEventListener('input', () => commit(slider.value));
+        readout.addEventListener('change', () => commit(readout.value));
+
+        // Keep the control honest if the value is changed from ComfyUI's settings dialog
+        // while the panel is open.
+        spacingControlSync = render;
+        render();
+
+        row.appendChild(slider);
+        row.appendChild(readout);
+        row.appendChild(unit);
+        return row;
     }
 
     function createButtonGrid(buttons: AlignmentButtonConfig[], group: AlignmentButtonConfig['group']) {
@@ -1925,7 +2135,8 @@ function initializeAlignmentPanel() {
         toggleHandle = document.createElement('button');
         toggleHandle.type = 'button';
         toggleHandle.className = 'housekeeper-handle';
-        toggleHandle.title = 'Toggle Housekeeper panel (Ctrl+Shift+H)';
+        toggleHandle.title = 'Toggle Housekeeper panel (Ctrl+Shift+H). Arrow keys move the panel, Shift+arrow moves further.';
+        toggleHandle.setAttribute('aria-keyshortcuts', 'Control+Shift+H ArrowUp ArrowDown ArrowLeft ArrowRight');
 
         const handleIcon = document.createElement('img');
         handleIcon.src = homeIconUrl;
@@ -2020,6 +2231,12 @@ function initializeAlignmentPanel() {
         alignmentSection.appendChild(createButtonGrid(sizeAlignments, 'size'));
         alignmentSection.appendChild(createSubtitle('Flow Alignment'));
         alignmentSection.appendChild(createButtonGrid(flowAlignments, 'flow'));
+
+        // The gap is also a ComfyUI setting, but it belongs here too: it changes what every
+        // button above does, and looking for it in ComfyUI's global settings dialog means
+        // leaving the panel you are working in.
+        alignmentSection.appendChild(createSubtitle('Spacing'));
+        alignmentSection.appendChild(createSpacingControl());
 
         const buildPalette = (colors: string[], className: string, interactive = true) => {
             const palette = document.createElement('div');
@@ -2178,6 +2395,7 @@ function initializeAlignmentPanel() {
         document.body.appendChild(wrapper);
 
         makeDraggable(toggleHandle);
+        makeKeyboardMovable(toggleHandle);
 
         // Restore a previously dragged position. Applied after the wrapper is in the document
         // so clamping can measure it, and re-clamped against the current viewport in case the
@@ -2320,7 +2538,7 @@ function initializeAlignmentPanel() {
                         width: nodeWidth,
                         height: nodeHeight
                     });
-                    currentY += nodeHeight + 30;
+                    currentY += nodeHeight + nodeGap();
                 });
 
                 // Push positions in the original node order
@@ -2355,7 +2573,7 @@ function initializeAlignmentPanel() {
                         width: nodeWidth,
                         height: nodeHeight
                     });
-                    currentYRight += nodeHeight + 30;
+                    currentYRight += nodeHeight + nodeGap();
                 });
 
                 nodes.forEach((node: any) => {
@@ -2389,7 +2607,7 @@ function initializeAlignmentPanel() {
                         width: nodeWidth,
                         height: nodeHeight
                     });
-                    currentX += nodeWidth + 30;
+                    currentX += nodeWidth + nodeGap();
                 });
 
                 nodes.forEach((node: any) => {
@@ -2423,7 +2641,7 @@ function initializeAlignmentPanel() {
                         width: nodeWidth,
                         height: nodeHeight
                     });
-                    currentXBottom += nodeWidth + 30;
+                    currentXBottom += nodeWidth + nodeGap();
                 });
 
                 nodes.forEach((node: any) => {
@@ -2474,7 +2692,7 @@ function initializeAlignmentPanel() {
                         width: nodeWidth,
                         height: nodeHeight
                     });
-                    currentYWidthCenter += nodeHeight + 30;
+                    currentYWidthCenter += nodeHeight + nodeGap();
                 });
 
                 nodes.forEach((node: any) => {
@@ -2525,7 +2743,7 @@ function initializeAlignmentPanel() {
                         width: nodeWidth,
                         height: nodeHeight
                     });
-                    currentXHeightCenter += nodeWidth + 30;
+                    currentXHeightCenter += nodeWidth + nodeGap();
                 });
 
                 nodes.forEach((node: any) => {
@@ -2579,8 +2797,8 @@ function initializeAlignmentPanel() {
                 const hFlowNodeGraph = buildNodeGraph(hFlowNodeCopies, hFlowConnections);
 
                 // Exact spacing constants from H-Flow
-                const H_COLUMN_SPACING = 30;
-                const H_NODE_SPACING_Y = 30;
+                const H_COLUMN_SPACING = nodeGap();
+                const H_NODE_SPACING_Y = nodeGap();
                 const H_LEVEL_PADDING = 0;
 
                 // Group by levels exactly like H-Flow
@@ -2680,8 +2898,8 @@ function initializeAlignmentPanel() {
                 const vFlowNodeGraph = buildNodeGraph(vFlowNodeCopies, vFlowConnections);
 
                 // Exact spacing constants from V-Flow
-                const V_ROW_SPACING = 30;
-                const V_NODE_SPACING_X = 30;
+                const V_ROW_SPACING = nodeGap();
+                const V_NODE_SPACING_X = nodeGap();
                 const V_LEVEL_PADDING = 0;
 
                 // Group by levels exactly like V-Flow
@@ -3144,7 +3362,7 @@ function initializeAlignmentPanel() {
                     // Calculate positions to ensure no overlapping
                     let currentY = leftSortedNodes[0].pos[1]; // Start from the topmost node's position
                     leftSortedNodes.forEach((node: any, index: number) => {
-                        const nodeSpacing = 30; // Extra spacing for safety
+                        const nodeSpacing = nodeGap();
                         
                         // Get node height from multiple possible sources
                         let nodeHeight = 100; // Default fallback
@@ -3182,7 +3400,7 @@ function initializeAlignmentPanel() {
                     // Calculate positions to ensure no overlapping
                     let currentYRight = rightSortedNodes[0].pos[1]; // Start from the topmost node's position
                     rightSortedNodes.forEach((node: any, index: number) => {
-                        const nodeSpacing = 30; // Extra spacing for safety
+                        const nodeSpacing = nodeGap();
                         
                         // Get node dimensions from multiple possible sources
                         let nodeHeight = 100; // Default fallback
@@ -3224,7 +3442,7 @@ function initializeAlignmentPanel() {
                     // Calculate positions to ensure no overlapping
                     let currentX = topSortedNodes[0].pos[0]; // Start from the leftmost node's position
                     topSortedNodes.forEach((node: any, index: number) => {
-                        const nodeSpacing = 30; // Extra spacing for safety
+                        const nodeSpacing = nodeGap();
                         
                         // Get node width from multiple possible sources
                         let nodeWidth = 150; // Default fallback
@@ -3263,7 +3481,7 @@ function initializeAlignmentPanel() {
                     
                     
                     bottomSortedNodes.forEach((node: any, index: number) => {
-                        const nodeSpacing = 30; // Extra spacing for safety
+                        const nodeSpacing = nodeGap();
                         
                         // Get node dimensions from multiple possible sources
                         let nodeWidth = 150; // Default fallback
@@ -3324,7 +3542,7 @@ function initializeAlignmentPanel() {
                     let currentYWidthCenterAlign = widthCenterSortedNodes[0].pos[1];
                     
                     widthCenterSortedNodes.forEach((node: any) => {
-                        const nodeSpacing = 30;
+                        const nodeSpacing = nodeGap();
                         
                         let nodeWidth = 150, nodeHeight = 100;
                         if (node.size && Array.isArray(node.size)) {
@@ -3374,7 +3592,7 @@ function initializeAlignmentPanel() {
                     let currentXHeightCenterAlign = heightCenterSortedNodes[0].pos[0];
                     
                     heightCenterSortedNodes.forEach((node: any) => {
-                        const nodeSpacing = 30;
+                        const nodeSpacing = nodeGap();
                         
                         let nodeWidth = 150, nodeHeight = 100;
                         if (node.size && Array.isArray(node.size)) {
@@ -3566,9 +3784,9 @@ function initializeAlignmentPanel() {
             const sizeOf = measureFlowNodes(validNodes);
             
             // Configuration for horizontal flow - OPTIMIZED for staying near original location
-            const COLUMN_SPACING = 30;      // Spacing between columns
-            const NODE_SPACING_X = 30;      // Horizontal space between node edges
-            const NODE_SPACING_Y = 30;      // Vertical space between node edges
+            const COLUMN_SPACING = nodeGap();      // Spacing between columns
+            const NODE_SPACING_X = nodeGap();      // Horizontal space between node edges
+            const NODE_SPACING_Y = nodeGap();      // Vertical space between node edges
             const LEVEL_PADDING = 0;        // Minimal padding between levels
             
             // Group nodes by level
@@ -3732,9 +3950,9 @@ function initializeAlignmentPanel() {
             const sizeOf = measureFlowNodes(validNodes);
             
             // Configuration for vertical flow - ENHANCED spacing to prevent overlapping
-            const ROW_SPACING = 30;         // Spacing between rows
-            const NODE_SPACING_X = 30;      // Horizontal space between node edges
-            const NODE_SPACING_Y = 30;      // Vertical space between node edges
+            const ROW_SPACING = nodeGap();         // Spacing between rows
+            const NODE_SPACING_X = nodeGap();      // Horizontal space between node edges
+            const NODE_SPACING_Y = nodeGap();      // Vertical space between node edges
             const LEVEL_PADDING = 0;        // Minimal padding between levels
             
             // Group nodes by level
