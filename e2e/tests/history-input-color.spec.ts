@@ -1,4 +1,10 @@
 import { expect, test } from '@playwright/test'
+
+// ComfyUI and the browser both key off the platform's primary modifier: Meta (Cmd) on
+// macOS, Control elsewhere. Hard-coding Meta makes these tests silently no-op on Linux -
+// Meta is the Super key there, so the browser performs no word-selection and the
+// assertions fail against perfectly correct behaviour.
+const MOD = process.platform === 'darwin' ? 'Meta' : 'Control'
 import {
   alignmentButton,
   installGraph,
@@ -30,13 +36,13 @@ test.describe('history, text input and colour', () => {
     const aligned = (await snapshots(page)).map(({ title, x, y }) => ({ title, x, y }))
     expect(aligned).not.toEqual(before)
 
-    await page.keyboard.press('Meta+z')
+    await page.keyboard.press(`${MOD}+z`)
     await page.waitForTimeout(500)
     const undone = (await snapshots(page)).map(({ title, x, y }) => ({ title, x, y }))
     expect(undone).toEqual(before)
   })
 
-  test('Meta+Shift+Left edits prompt selection without moving selected nodes', async ({ page }) => {
+  test('primary-modifier+Shift+Left edits prompt selection without moving selected nodes', async ({ page }) => {
     await installGraph(page, [
       { title: 'Prompt', type: 'CLIPTextEncode', x: 80, y: 80, width: 420, height: 220 },
       { title: 'Other', x: 620, y: 260, width: 180, height: 100 }
@@ -50,7 +56,7 @@ test.describe('history, text input and colour', () => {
       element.setSelectionRange(element.value.length, element.value.length)
     })
 
-    await page.keyboard.press('Meta+Shift+ArrowLeft')
+    await page.keyboard.press(`${MOD}+Shift+ArrowLeft`)
     const selection = await prompt.evaluate((element: HTMLTextAreaElement) => ({
       start: element.selectionStart,
       end: element.selectionEnd,
@@ -78,7 +84,7 @@ test.describe('history, text input and colour', () => {
     await chip.hover()
     await page.waitForTimeout(150)
     await chip.click()
-    await page.keyboard.press('Meta+z')
+    await page.keyboard.press(`${MOD}+z`)
     await page.waitForTimeout(500)
 
     const after = (await snapshots(page)).map(({ title, color, bgcolor }) => ({
