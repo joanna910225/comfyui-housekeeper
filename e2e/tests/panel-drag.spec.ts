@@ -48,6 +48,9 @@ test.describe('draggable panel position', () => {
 
   test('the panel header can be dragged while open, without closing it', async ({ page }) => {
     await openHousekeeper(page)
+    // Expanding changes the wrapper's width, which re-measures the automatic placement.
+    // Let that settle before grabbing the header, or the drag starts from a stale box.
+    await page.waitForTimeout(600)
     const before = await wrapperPosition(page)
     await dragBy(page, '.housekeeper-header', -250, 180)
 
