@@ -43,8 +43,18 @@ Tags = []
 Repository = "https://github.com/joanna910225/comfyui-housekeeper"
 includes = ["js"]
 
-[tool.setuptools.package-data]
-"*" = ["*.*"]
+[tool.setuptools]
+# ComfyUI loads a custom node by scanning custom_nodes/ for a directory, not by importing a
+# package from site-packages - so a pip install can never produce a working install of this
+# extension no matter what the wheel contains. Installation is "clone into custom_nodes",
+# as the README says, or via the ComfyUI Registry.
+#
+# Declaring no packages is therefore the honest result, and it stops setuptools' src-layout
+# auto-discovery producing a wrong one. Because a src/ directory exists, discovery used to
+# select src/components as the sole package and publish five unused .vue files as a
+# top-level `components` module - shipping no __init__.py, no js/main.js, and a name that
+# would collide with any other package called `components` on sys.path.
+packages = []
 
 [tool.pytest.ini_options]
 minversion = "8.0"
