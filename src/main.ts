@@ -236,22 +236,69 @@ function initializeAlignmentPanel() {
         return DEFAULT_TOP_OFFSET;
     }
 
-    // Width of ComfyUI's right-hand sidebar, so the panel can sit beside it instead of on top
-    // of it. The wrapper is z-index 1000 and the sidebar is 10, so without this the panel wins
-    // the stacking order and covers the sidebar entirely (issue #25). This is the horizontal
-    // counterpart to computeToolbarOffset().
+    // How far in from the right edge the panel must sit to stay clear of ComfyUI's own
+    // right-hand chrome. The wrapper is z-index 1000 against the sidebar's 10, so without
+    // this it wins the stacking order and covers whatever is underneath (issue #25).
+    //
+    // This measures the LEFTMOST EDGE of right-docked chrome rather than a sidebar width,
+    // because two different things have to be cleared and only one is a panel:
+    //
+    //   side panel open   -> clear the whole panel      (its left edge, e.g. 1038 of 1280)
+    //   side panel closed -> the top-right control cluster is still there and must stay
+    //                        clickable (its left edge, e.g. 1235 of 1280)
+    //
+    // Measuring an edge also survives ComfyUI moving the sidebar between implementations -
+    // it has been #comfyui-body-right and is currently a PrimeVue splitter panel, and the
+    // splitter's right pane is `position: static`, so it cannot be found by looking for
+    // overlays either.
+    const RIGHT_EDGE_TOLERANCE = 24;   // a control may sit a little in from the edge
+    const RIGHT_CHROME_BAND = 240;     // only chrome beside the handle matters
+    // Clearance so the panel never lands flush against ComfyUI's chrome. Without it the two
+    // edges coincide exactly and sub-pixel rounding is enough to make the panel win a
+    // hit-test on the control immediately beside it.
+    const RIGHT_CHROME_MARGIN = 8;
+
     function computeRightOffset(): number {
-        const sidebar = document.querySelector<HTMLElement>('#comfyui-body-right, .comfyui-body-right');
-        if (!sidebar) return 0;
-
-        const rect = sidebar.getBoundingClientRect();
-        if (!rect || rect.width === 0) return 0;
-
-        // Only offset for a sidebar actually docked to the right edge of the viewport.
         const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
-        if (viewportWidth && rect.right < viewportWidth - 2) return 0;
+        if (!viewportWidth) return 0;
 
-        return Math.ceil(rect.width);
+        let leftmost = viewportWidth;
+
+        const consider = (element: Element) => {
+            const rect = element.getBoundingClientRect();
+            if (rect.width < 24 || rect.height < 24) return;
+            // Must actually hug the right edge...
+            if (rect.right < viewportWidth - RIGHT_EDGE_TOLERANCE) return;
+            // ...not be a full-width container such as the canvas pane...
+            if (rect.width > viewportWidth * 0.6) return;
+            // ...and sit in the band the panel occupies.
+            if (rect.top > RIGHT_CHROME_BAND || rect.bottom < 0) return;
+
+            leftmost = Math.min(leftmost, rect.left);
+        };
+
+        // Named containers first, for frontends that still expose them.
+        document
+            .querySelectorAll('#comfyui-body-right, .comfyui-body-right, .p-splitterpanel')
+            .forEach(consider);
+
+        // The current frontend renders its right-hand controls as floating overlays built
+        // from utility classes - no id, no stable class, not a splitter pane. What they do
+        // share is structural: they sit inside a `pointer-events: none` overlay layer and
+        // opt back in with `pointer-events: auto`. Keying on that survives class churn.
+        //
+        // Scoped to the overlay roots rather than walking the whole document, so this stays
+        // cheap enough to run from a ResizeObserver.
+        const overlayRoots = document.querySelectorAll<HTMLElement>('#vue-app, .comfyui-body-right, .graph-canvas-container');
+        overlayRoots.forEach(root => {
+            root.querySelectorAll<HTMLElement>('.pointer-events-auto, [style*="pointer-events: auto"]').forEach(element => {
+                if (element.closest('.housekeeper-wrapper')) return;
+                consider(element);
+            });
+        });
+
+        if (leftmost >= viewportWidth) return 0;
+        return Math.ceil(viewportWidth - leftmost) + RIGHT_CHROME_MARGIN;
     }
 
     function updateLayoutMetrics() {
