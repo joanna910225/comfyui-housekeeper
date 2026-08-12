@@ -38,6 +38,9 @@ const REQUIRED = [
   'findSourceNode', 'findTargetNode', 'analyzeNodeConnections', 'buildNodeGraph',
   'nodeWidth', 'outerHeight', 'alignHorizontalFlow',
 ];
+// nodeGap() lives at module scope rather than inside the panel closure, but the flow
+// functions call it, so it has to come along or they throw ReferenceError.
+const REQUIRED_MODULE_SCOPE = ['nodeGap'];
 // Optional helpers: pulled in when present. Keeping these optional means the suite can be
 // run against an older revision of src/main.ts to confirm it actually catches the bug,
 // instead of erroring out during extraction and looking like a pass/fail either way.
@@ -45,9 +48,15 @@ const OPTIONAL = ['bodyHeight', 'measureFlowNodes'];
 
 /** Load alignHorizontalFlow() bound to a given selection. */
 function loadFlow(selectedNodes) {
-  const present = [...REQUIRED, ...OPTIONAL.filter(n => source.includes(`function ${n}(`))];
+  const present = [...REQUIRED, ...REQUIRED_MODULE_SCOPE, ...OPTIONAL.filter(n => source.includes(`function ${n}(`))];
+  // Module-scope state the extracted functions close over. Parsed from source rather than
+  // hard-coded, so the harness cannot quietly disagree with the real default.
+  const defaultSpacing = source.match(/const DEFAULT_NODE_SPACING = (\d+)/)?.[1]
+  assert.ok(defaultSpacing, 'could not read DEFAULT_NODE_SPACING from src/main.ts')
+
   const shim = `
     const NODE_TITLE_HEIGHT = 30;
+    let nodeSpacingValue = ${defaultSpacing};
     function debugNodeStructure() {}
     function showMessage() {}
     function markCanvasDirty() {}
