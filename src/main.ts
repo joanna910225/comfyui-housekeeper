@@ -80,8 +80,11 @@ comfyApp.registerExtension({
                 
                 // Initialize the alignment panel
                 initializeAlignmentPanel();
-                
+
             } catch (error) {
+                // Without this the extension vanishes silently and field reports
+                // ("it stopped working after I updated ComfyUI") are undiagnosable.
+                console.error('[housekeeper] failed to initialize alignment panel:', error);
             }
         }
     },
@@ -126,11 +129,56 @@ function initializeAlignmentPanel() {
     // Flag to suppress preview after clicking until mouse moves
     let suppressPreview = false;
 
-    // Store locked sizes and original computeSize methods for size-max functionality
-    const lockedSizes = new WeakMap();
+    // Store original computeSize methods for size-max functionality.
+    // NOTE: never written - every `.get()` falls through to node.computeSize. Left in place
+    // for the wider dead-code sweep rather than widening this changeset.
     const originalComputeSizeMethods = new WeakMap();
     let layoutObserver: ResizeObserver | null = null;
     let layoutListenersAttached = false;
+
+    // --- Canvas + geometry helpers -------------------------------------------------
+    // litegraph exposes node geometry as typed arrays (pos is a Float32Array, size is a
+    // Float32Array or a Proxy over one), so Array.isArray() is always false for them.
+    // Read through the documented accessors instead of testing for a plain Array.
+
+    // Height of a node's title bar in graph units. node.pos is the top-left of the node BODY;
+    // the title renders above it, so the rendered box spans pos[1] - NODE_TITLE_HEIGHT to
+    // pos[1] + size[1]. Read from litegraph when available so a future core change carries over.
+    const NODE_TITLE_HEIGHT: number = (window as any).LiteGraph?.NODE_TITLE_HEIGHT ?? 30;
+
+    function getActiveCanvas(): any {
+        return (window as any).LGraphCanvas?.active_canvas ?? (window as any).app?.canvas;
+    }
+
+    function markCanvasDirty() {
+        try {
+            const canvas = getActiveCanvas();
+            if (canvas?.setDirty) {
+                canvas.setDirty(true, true);
+            } else if ((window as any).app?.graph?.setDirtyCanvas) {
+                (window as any).app.graph.setDirtyCanvas(true, true);
+            } else if (canvas?.draw) {
+                canvas.draw(true, true);
+            }
+        } catch {
+            // Changes are still applied even if the redraw request fails.
+        }
+    }
+
+    // node.width === node.size[0]; node.height === NODE_TITLE_HEIGHT + bodyHeight.
+    // Positioning must use the rendered (title-inclusive) box; size operations write
+    // node.size[1], which is body-only. Keeping these separate avoids mixing the two.
+    function nodeWidth(node: any): number {
+        return typeof node?.width === 'number' ? node.width : (node?.size?.[0] ?? 150);
+    }
+
+    function outerHeight(node: any): number {
+        return typeof node?.height === 'number' ? node.height : (node?.size?.[1] ?? 100);
+    }
+
+    function bodyHeight(node: any): number {
+        return node?.size?.[1] !== undefined ? node.size[1] : Math.max(outerHeight(node) - 30, 0);
+    }
 
     const DEFAULT_TOP_OFFSET = 48;
     const PANEL_BOTTOM_MARGIN = 24;
@@ -166,12 +214,32 @@ function initializeAlignmentPanel() {
         return DEFAULT_TOP_OFFSET;
     }
 
+    // Width of ComfyUI's right-hand sidebar, so the panel can sit beside it instead of on top
+    // of it. The wrapper is z-index 1000 and the sidebar is 10, so without this the panel wins
+    // the stacking order and covers the sidebar entirely (issue #25). This is the horizontal
+    // counterpart to computeToolbarOffset().
+    function computeRightOffset(): number {
+        const sidebar = document.querySelector<HTMLElement>('#comfyui-body-right, .comfyui-body-right');
+        if (!sidebar) return 0;
+
+        const rect = sidebar.getBoundingClientRect();
+        if (!rect || rect.width === 0) return 0;
+
+        // Only offset for a sidebar actually docked to the right edge of the viewport.
+        const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+        if (viewportWidth && rect.right < viewportWidth - 2) return 0;
+
+        return Math.ceil(rect.width);
+    }
+
     function updateLayoutMetrics() {
         const topOffset = computeToolbarOffset();
+        const rightOffset = computeRightOffset();
         const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
         const maxHeight = Math.max(viewportHeight - topOffset - PANEL_BOTTOM_MARGIN, 280);
 
         document.documentElement.style.setProperty('--hk-top-offset', `${topOffset}px`);
+        document.documentElement.style.setProperty('--hk-right-offset', `${rightOffset}px`);
         document.documentElement.style.setProperty('--hk-panel-max-height', `${maxHeight}px`);
     }
 
@@ -183,16 +251,22 @@ function initializeAlignmentPanel() {
         }
 
         if (typeof ResizeObserver !== 'undefined') {
-            const topMenu = getTopMenuElement();
-            if (topMenu) {
-                if (!layoutObserver) {
-                    layoutObserver = new ResizeObserver(() => updateLayoutMetrics());
-                } else {
-                    layoutObserver.disconnect();
-                }
-                layoutObserver.observe(topMenu);
+            if (!layoutObserver) {
+                layoutObserver = new ResizeObserver(() => updateLayoutMetrics());
+            } else {
+                layoutObserver.disconnect();
             }
+
+            // Observe both the top menubar and the right sidebar. The sidebar is toggled at
+            // runtime, so without observing it the panel would only avoid it on load.
+            const topMenu = getTopMenuElement();
+            if (topMenu) layoutObserver.observe(topMenu);
+
+            const sidebar = document.querySelector<HTMLElement>('#comfyui-body-right, .comfyui-body-right');
+            if (sidebar) layoutObserver.observe(sidebar);
         }
+
+        updateLayoutMetrics();
     }
 
     interface AlignmentButtonConfig {
@@ -259,6 +333,7 @@ function initializeAlignmentPanel() {
     --hk-text-strong: #E8F3FF;
     --hk-text-muted: rgba(232, 243, 255, 0.74);
     --hk-top-offset: 48px;
+    --hk-right-offset: 0px;
     --hk-panel-max-height: calc(100vh - 96px);
     --hk-panel-width: clamp(270px, 18vw, min(270px, calc(100vw - 24px)));
     --hk-button-size: clamp(34px, 7vw, 40px);
@@ -273,7 +348,7 @@ function initializeAlignmentPanel() {
 .housekeeper-wrapper {
     position: fixed;
     top: var(--hk-top-offset);
-    right: 0;
+    right: var(--hk-right-offset, 0px);
     display: flex;
     flex-direction: row-reverse;
     align-items: flex-start;
@@ -1250,23 +1325,24 @@ function initializeAlignmentPanel() {
         }
 
         const colorOption = buildColorOption(hex);
-        const graphs = new Set<any>();
-        targets.forEach((item: any) => {
-            if (item?.graph) graphs.add(item.graph);
-        });
 
-        graphs.forEach(graph => graph?.beforeChange?.());
+        // graph.beforeChange()/afterChange() only forward to canvas.onBeforeChange, which the
+        // ComfyUI frontend never assigns - they record nothing. The canvas emit* pair is what
+        // dispatches the event ChangeTracker listens for. try/finally so a throw mid-apply
+        // cannot leave the transaction open.
+        const undoCanvas = getActiveCanvas();
+        undoCanvas?.emitBeforeChange?.();
 
-        targets.forEach((item: any) => {
-            applyColorToTarget(item, colorOption);
-        });
-
-        graphs.forEach(graph => graph?.afterChange?.());
+        try {
+            targets.forEach((item: any) => {
+                applyColorToTarget(item, colorOption);
+            });
+        } finally {
+            undoCanvas?.emitAfterChange?.();
+        }
 
         recordRecentColor(colorOption.bgcolor);
-
-        const activeCanvas = (window as any).LGraphCanvas?.active_canvas ?? (window as any).app?.canvas;
-        activeCanvas?.setDirty?.(true, true);
+        markCanvasDirty();
     }
 
     function applyColorToTarget(target: any, option: { color: string; bgcolor: string; groupcolor: string }) {
@@ -1397,9 +1473,13 @@ function initializeAlignmentPanel() {
     function attachColorChipHandlers(chip: HTMLButtonElement, hex: string) {
         const activate = (event?: Event) => {
             event?.preventDefault();
-            // Clear preview state BEFORE applying to prevent restoration during re-render
-            previewState.active = false;
-            previewState.colorOption = null;
+            // Roll the hover preview back BEFORE applying. The preview writes colours straight
+            // onto live nodes, so applying on top of it would make the undo snapshot baseline
+            // the preview colour and Ctrl+Z would restore that instead of the user's original.
+            // restorePreviewColors() also clears previewState.active, which preserves the
+            // original guard here: the re-render triggered by applying fires mouseleave on the
+            // re-ordered chips, and that must not revert what we just applied.
+            restorePreviewColors();
             previewState.nodes.clear();
             previewState.groups.clear();
             // Suppress preview until mouse moves to prevent auto-preview on re-ordered chips
@@ -1758,34 +1838,23 @@ function initializeAlignmentPanel() {
                     transition: all 0.2s ease;
                 `;
 
-                // Convert node canvas coordinates to screen coordinates using canvas transform
-                // Account for high-DPI displays and container offsets
-                const dpr = window.devicePixelRatio || 1;
+                // Convert graph coordinates to viewport coordinates. canvasRect already accounts
+                // for every toolbar above the canvas, exactly like litegraph's own
+                // DragAndScale.convertOffsetToCanvas - no page-chrome correction belongs here.
+                //
+                // The only correction needed is the node title bar: pos.y is the top-left of the
+                // node BODY, while the rendered node starts NODE_TITLE_HEIGHT above it. That is a
+                // graph-space constant, so it is correctly multiplied by the zoom scale.
+                //
+                // This previously used document.querySelector('nav').height. That <nav> is
+                // ComfyUI's VERTICAL side toolbar (height: 100%), so on a default install the
+                // term was ~1000px instead of ~30 and every preview rect landed off-screen.
                 const baseScreenX = (pos.x + canvas.ds.offset[0]) * canvas.ds.scale;
                 const baseScreenY = (pos.y + canvas.ds.offset[1]) * canvas.ds.scale;
 
-                // Check if we need to account for container offset
-                const canvasContainer = canvas.canvas.parentElement;
                 const canvasRect = canvas.canvas.getBoundingClientRect();
-                const containerRect = canvasContainer ? canvasContainer.getBoundingClientRect() : null;
-                const containerOffsetY = containerRect ? canvasRect.top - containerRect.top : 0;
-
-                // Calculate any offset from top of viewport to canvas
-                // This accounts for toolbars, headers, or other UI elements above the canvas
-                const viewportToCanvasOffset = canvasRect.top;
-
-                // Use nav element height as base offset
-                const navElement = document.querySelector('nav');
-                let BASE_OFFSET = 31; // Fallback if nav not found
-
-                if (navElement) {
-                    const navRect = navElement.getBoundingClientRect();
-                    BASE_OFFSET = navRect.height;
-                }
-
-                const scaledOffset = BASE_OFFSET * canvas.ds.scale;
                 const screenX = canvasRect.left + baseScreenX;
-                const screenY = canvasRect.top + baseScreenY - scaledOffset;
+                const screenY = canvasRect.top + baseScreenY - (NODE_TITLE_HEIGHT * canvas.ds.scale);
 
                 const screenWidth = pos.width * canvas.ds.scale;
                 const screenHeight = pos.height * canvas.ds.scale;
@@ -2133,7 +2202,7 @@ function initializeAlignmentPanel() {
                 // Group by levels exactly like H-Flow
                 const hFlowLevels: {[level: number]: any[]} = {};
                 hFlowNodeCopies.forEach(node => {
-                    if (node && node.id) {
+                    if (node && node.id != null) {
                         const level = hFlowNodeGraph[node.id]?.level ?? 0;
                         if (!hFlowLevels[level]) hFlowLevels[level] = [];
                         hFlowLevels[level].push(node);
@@ -2146,8 +2215,8 @@ function initializeAlignmentPanel() {
                     const level = parseInt(levelStr);
                     if (levelNodes && levelNodes.length > 0) {
                         levelNodes.sort((a, b) => {
-                            const aOrder = a && a.id && hFlowNodeGraph[a.id] ? hFlowNodeGraph[a.id].order : 0;
-                            const bOrder = b && b.id && hFlowNodeGraph[b.id] ? hFlowNodeGraph[b.id].order : 0;
+                            const aOrder = a && a.id != null && hFlowNodeGraph[a.id] ? hFlowNodeGraph[a.id].order : 0;
+                            const bOrder = b && b.id != null && hFlowNodeGraph[b.id] ? hFlowNodeGraph[b.id].order : 0;
                             return aOrder - bOrder;
                         });
 
@@ -2231,7 +2300,7 @@ function initializeAlignmentPanel() {
                 // Group by levels exactly like V-Flow
                 const vFlowLevels: {[level: number]: any[]} = {};
                 vFlowNodeCopies.forEach(node => {
-                    if (node && node.id) {
+                    if (node && node.id != null) {
                         const level = vFlowNodeGraph[node.id]?.level ?? 0;
                         if (!vFlowLevels[level]) vFlowLevels[level] = [];
                         vFlowLevels[level].push(node);
@@ -2244,8 +2313,8 @@ function initializeAlignmentPanel() {
                     const level = parseInt(levelStr);
                     if (levelNodes && levelNodes.length > 0) {
                         levelNodes.sort((a, b) => {
-                            const aOrder = a && a.id && vFlowNodeGraph[a.id] ? vFlowNodeGraph[a.id].order : 0;
-                            const bOrder = b && b.id && vFlowNodeGraph[b.id] ? vFlowNodeGraph[b.id].order : 0;
+                            const aOrder = a && a.id != null && vFlowNodeGraph[a.id] ? vFlowNodeGraph[a.id].order : 0;
+                            const bOrder = b && b.id != null && vFlowNodeGraph[b.id] ? vFlowNodeGraph[b.id].order : 0;
                             return aOrder - bOrder;
                         });
 
@@ -2330,11 +2399,11 @@ function initializeAlignmentPanel() {
                                 // Check for both Array and Float32Array (use length and index access)
                                 if (minSize && minSize.length >= 2 && minSize[0] !== undefined && minSize[1] !== undefined) {
                                     previewWidth = minSize[0];
-                                    // Add 30px to compensate for title bar height
-                                    previewHeight = minSize[1] + 30;
+                                    // computeSize() is body-only; add the title to match the rect origin
+                                    previewHeight = minSize[1] + NODE_TITLE_HEIGHT;
                                 } else if (typeof minSize === 'number') {
                                     previewWidth = currentWidth;
-                                    previewHeight = minSize + 30;
+                                    previewHeight = minSize + NODE_TITLE_HEIGHT;
                                 } else {
                                     previewWidth = currentWidth;
                                     previewHeight = currentHeight;
@@ -2346,21 +2415,16 @@ function initializeAlignmentPanel() {
                         }
                     }
 
+                    // Every previewHeight below is title-INCLUSIVE, matching the rect origin in
+                    // showPreview (which starts at pos[1] - NODE_TITLE_HEIGHT). computeSize()
+                    // returns a body-only size, hence the explicit + NODE_TITLE_HEIGHT on it.
                     if (alignmentType === 'height-max' || alignmentType === 'size-max') {
-                        previewHeight = Math.max(...nodes.map((n: any) => {
-                            if (n.size && Array.isArray(n.size) && n.size[1]) return n.size[1];
-                            if (typeof n.height === 'number') return n.height;
-                            if (n.properties && typeof n.properties.height === 'number') return n.properties.height;
-                            return 100;
-                        }));
+                        previewHeight = Math.max(...nodes.map((n: any) => outerHeight(n)));
                     } else if (alignmentType === 'height-min') {
-                        // Calculate minimum height among all selected nodes
-                        const minHeightAmongSelected = Math.min(...nodes.map((n: any) => {
-                            if (n.size && n.size[1] !== undefined) return n.size[1];
-                            if (typeof n.height === 'number') return n.height;
-                            if (n.properties && typeof n.properties.height === 'number') return n.properties.height;
-                            return 100;
-                        }));
+                        // Was reading n.size[1] directly here (body-only) while comparing it
+                        // against a title-inclusive computeSize result below, which made the
+                        // preview up to NODE_TITLE_HEIGHT too short.
+                        const minHeightAmongSelected = Math.min(...nodes.map((n: any) => outerHeight(n)));
 
                         // Get this node's minimum accepted height from computeSize
                         const computeSizeMethod = originalComputeSizeMethods.get(node) || node.computeSize;
@@ -2369,10 +2433,10 @@ function initializeAlignmentPanel() {
                             try {
                                 const result = computeSizeMethod.call(node);
                                 if (result && result.length >= 2 && result[1] !== undefined) {
-                                    // Add 30px to compensate for title bar height
-                                    nodeMinHeight = result[1] + 30;
+                                    // computeSize() is body-only; add the title to match the rect origin
+                                    nodeMinHeight = result[1] + NODE_TITLE_HEIGHT;
                                 } else if (typeof result === 'number') {
-                                    nodeMinHeight = result + 30;
+                                    nodeMinHeight = result + NODE_TITLE_HEIGHT;
                                 }
                             } catch (e) {
                                 // computeSize failed, use null
@@ -2453,14 +2517,18 @@ function initializeAlignmentPanel() {
     function analyzeNodeConnections(nodes: any[]) {
         const connections: {[nodeId: string]: {inputs: any[], outputs: any[]}} = {};
         
-        // Filter out invalid nodes and ensure they have IDs
-        const validNodes = nodes.filter(node => node && (node.id !== undefined || node.id !== null));
-        
-        validNodes.forEach(node => {
-            // Create a unique identifier if node.id is missing
-            const nodeId = node.id || `node_${validNodes.indexOf(node)}`;
-            node.id = nodeId; // Ensure the node has an id
-            
+        // NOTE: the previous predicate here was `node.id !== undefined || node.id !== null`,
+        // which is true for every value. It is dropped rather than changed to `&&`: the loop
+        // below deliberately synthesises an id for nodes that lack one, and `&&` would filter
+        // those out and make that synthesis dead code.
+        const validNodes = nodes.filter(node => node);
+
+        validNodes.forEach((node, index) => {
+            // Derive a local key when the node has no usable id. Note `node.id` is NOT written
+            // back: doing so renames live graph nodes (id 0 becomes "node_0"), which dangles
+            // every link referencing them and corrupts serialisation.
+            const nodeId = node.id ?? `node_${index}`;
+
             connections[nodeId] = { inputs: [], outputs: [] };
             
             // Analyze inputs
@@ -2529,7 +2597,10 @@ function initializeAlignmentPanel() {
         const visited = new Set();
         
         // Filter valid nodes
-        const validNodes = nodes.filter(node => node && node.id);
+        // `!= null` rather than a truthiness test: id 0 is a legal litegraph id (it arrives via
+        // configure() from hand-edited or third-party workflow JSON). Dropping it here would
+        // leave a hole in `levels`, and Math.max(...[]) on an empty level yields -Infinity.
+        const validNodes = nodes.filter(node => node && node.id != null);
         
         // Find root nodes (nodes with no inputs)
         const rootNodes = validNodes.filter(node => {
@@ -2550,7 +2621,7 @@ function initializeAlignmentPanel() {
         while (queue.length > 0) {
             const {node, level} = queue.shift()!;
             
-            if (!node || !node.id || visited.has(node.id)) continue;
+            if (!node || node.id == null || visited.has(node.id)) continue;
             visited.add(node.id);
             
             graph[node.id] = {level, order: 0};
@@ -2558,7 +2629,7 @@ function initializeAlignmentPanel() {
             // Add connected nodes to queue
             if (connections[node.id] && connections[node.id].outputs) {
                 connections[node.id].outputs.forEach((output: any) => {
-                    if (output && output.targetNode && output.targetNode.id && !visited.has(output.targetNode.id)) {
+                    if (output && output.targetNode && output.targetNode.id != null && !visited.has(output.targetNode.id)) {
                         queue.push({node: output.targetNode, level: level + 1});
                     }
                 });
@@ -2567,16 +2638,21 @@ function initializeAlignmentPanel() {
         
         // Handle disconnected nodes (assign them to level 0)
         validNodes.forEach(node => {
-            if (node && node.id && !graph[node.id]) {
+            if (node && node.id != null && !graph[node.id]) {
                 graph[node.id] = {level: 0, order: 0};
             }
         });
         
         // Assign order within each level
         const levels: {[level: number]: any[]} = {};
+        // `nodeId` is an Object.entries key, so always a string, while node.id is a number on
+        // current frontends. The previous strict compare could therefore never match: every
+        // level stayed empty, no `order` was ever assigned, and the four downstream sorts
+        // became stable no-ops - i.e. "sort within a level by vertical position" never ran.
+        const nodesById = new Map(validNodes.map(n => [String(n.id), n]));
         Object.entries(graph).forEach(([nodeId, data]) => {
             if (!levels[data.level]) levels[data.level] = [];
-            const node = validNodes.find(n => n && n.id === nodeId);
+            const node = nodesById.get(nodeId);
             if (node) {
                 levels[data.level].push(node);
             }
@@ -2591,7 +2667,7 @@ function initializeAlignmentPanel() {
                     return aY - bY;
                 });
                 levelNodes.forEach((node, index) => {
-                    if (node && node.id && graph[node.id]) {
+                    if (node && node.id != null && graph[node.id]) {
                         graph[node.id].order = index;
                     }
                 });
@@ -2609,82 +2685,29 @@ function initializeAlignmentPanel() {
             return;
         }
 
+        // Bracket every mutation in one undo transaction. ComfyUI's ChangeTracker listens
+        // for the DOM event emitted by these two methods; graph.beforeChange()/afterChange()
+        // only invoke canvas.onBeforeChange, which the frontend never assigns.
+        // finally is required: the horizontal/vertical-flow cases return from inside the try.
+        const undoCanvas = getActiveCanvas();
+        undoCanvas?.emitBeforeChange?.();
 
         try {
             // Calculate all reference positions and sizes at the start to avoid drift on consecutive clicks
             const originalLeftPos = Math.min(...selectedNodes.map((node: any) => node.pos[0]));
-            const originalRightPos = Math.max(...selectedNodes.map((node: any) => {
-                // Get actual node width, same logic as in positioning
-                let nodeWidth = 150; // Default fallback
-                if (node.size && Array.isArray(node.size) && node.size[0]) {
-                    nodeWidth = node.size[0];
-                } else if (typeof node.width === 'number') {
-                    nodeWidth = node.width;
-                } else if (node.properties && typeof node.properties.width === 'number') {
-                    nodeWidth = node.properties.width;
-                }
-                return node.pos[0] + nodeWidth;
-            }));
+            // Positioning bounds use the rendered (title-inclusive) box, so that every node's
+            // rendered edge lands the same distance from the reference value regardless of size.
+            const originalRightPos = Math.max(...selectedNodes.map((node: any) => node.pos[0] + nodeWidth(node)));
             const originalTopPos = Math.min(...selectedNodes.map((node: any) => node.pos[1]));
-            const originalBottomPos = Math.max(...selectedNodes.map((node: any) => {
-                // Get actual node height, same logic as in positioning
-                let nodeHeight = 100; // Default fallback
-                if (node.size && Array.isArray(node.size) && node.size[1]) {
-                    nodeHeight = node.size[1];
-                } else if (typeof node.height === 'number') {
-                    nodeHeight = node.height;
-                } else if (node.properties && typeof node.properties.height === 'number') {
-                    nodeHeight = node.properties.height;
-                }
-                return node.pos[1] + nodeHeight;
-            }));
+            const originalBottomPos = Math.max(...selectedNodes.map((node: any) => node.pos[1] + outerHeight(node)));
 
-            // Calculate max/min width and height for size adjustment functions
-            const originalMaxWidth = Math.max(...selectedNodes.map((node: any) => {
-                const locked = lockedSizes.get(node);
-                if (locked && locked.width !== undefined) return locked.width;
-                let k = 150;
-                if (node.size && Array.isArray(node.size) && node.size[0]) {
-                    k = node.size[0];
-                } else if (typeof node.width === 'number') {
-                    k = node.width;
-                } else if (node.properties && typeof node.properties.width === 'number') {
-                    k = node.properties.width;
-                }
-                return k;
-            }));
-
-            const originalMinWidth = Math.min(...selectedNodes.map((node: any) => {
-                const locked = lockedSizes.get(node);
-                if (locked && locked.width !== undefined) return locked.width;
-                let k = 150;
-                if (node.size && Array.isArray(node.size) && node.size[0]) {
-                    k = node.size[0];
-                } else if (typeof node.width === 'number') {
-                    k = node.width;
-                } else if (node.properties && typeof node.properties.width === 'number') {
-                    k = node.properties.width;
-                }
-                return k;
-            }));
-
-            const originalMaxHeight = Math.max(...selectedNodes.map((node: any) => {
-                const locked = lockedSizes.get(node);
-                if (locked && locked.height !== undefined) return locked.height;
-                // node.size is a Float32Array, not a regular array
-                if (node.size && node.size[1] !== undefined) return node.size[1];
-                if (typeof node.height === 'number') return node.height;
-                if (node.properties && typeof node.properties.height === 'number') return node.properties.height;
-                return 100;
-            }));
-
-            const originalMinHeight = Math.min(...selectedNodes.map((node: any) => {
-                // node.size is a Float32Array, not a regular array, so don't use Array.isArray()
-                if (node.size && node.size[1] !== undefined) return node.size[1];
-                if (typeof node.height === 'number') return node.height;
-                if (node.properties && typeof node.properties.height === 'number') return node.properties.height;
-                return 100;
-            }));
+            // Size bounds are body-only, because the size operations below write node.size[1].
+            // Mixing these two conventions is the trap this block used to hide behind dead
+            // Array.isArray() guards - keep them explicitly separate.
+            const originalMaxWidth = Math.max(...selectedNodes.map((node: any) => nodeWidth(node)));
+            const originalMinWidth = Math.min(...selectedNodes.map((node: any) => nodeWidth(node)));
+            const originalMaxHeight = Math.max(...selectedNodes.map((node: any) => bodyHeight(node)));
+            const originalMinHeight = Math.min(...selectedNodes.map((node: any) => bodyHeight(node)));
 
             let referenceValue: number;
 
@@ -3026,24 +3049,13 @@ function initializeAlignmentPanel() {
             }
 
             // Mark canvas as dirty to trigger redraw (only for basic alignment)
-            try {
-                if (window.app?.canvas?.setDirtyCanvas) {
-                    window.app.canvas.setDirtyCanvas(true, true);
-                } else if (window.app?.graph?.setDirtyCanvas) {
-                    window.app.graph.setDirtyCanvas(true, true);
-                } else if (window.app?.canvas) {
-                    // Force a redraw by triggering a canvas event
-                    window.app.canvas.draw(true, true);
-                }
-            } catch (redrawError) {
-                // Continue without redraw - the changes are still applied
-            }
-            
+            markCanvasDirty();
 
-            // Success message removed - clean prompt window
-            
         } catch (error) {
+            console.error('[housekeeper] alignment failed:', alignmentType, error);
             showMessage('Error during alignment', 'error');
+        } finally {
+            undoCanvas?.emitAfterChange?.();
         }
     }
     
@@ -3146,7 +3158,7 @@ function initializeAlignmentPanel() {
             // Group nodes by level
             const levels: {[level: number]: any[]} = {};
             validNodes.forEach(node => {
-                if (node && node.id) {
+                if (node && node.id != null) {
                     const level = nodeGraph[node.id]?.level ?? 0;
                     if (!levels[level]) levels[level] = [];
                     levels[level].push(node);
@@ -3158,8 +3170,8 @@ function initializeAlignmentPanel() {
                 const level = parseInt(levelStr);
                 if (levelNodes && levelNodes.length > 0) {
                     levelNodes.sort((a, b) => {
-                        const aOrder = a && a.id && nodeGraph[a.id] ? nodeGraph[a.id].order : 0;
-                        const bOrder = b && b.id && nodeGraph[b.id] ? nodeGraph[b.id].order : 0;
+                        const aOrder = a && a.id != null && nodeGraph[a.id] ? nodeGraph[a.id].order : 0;
+                        const bOrder = b && b.id != null && nodeGraph[b.id] ? nodeGraph[b.id].order : 0;
                         return aOrder - bOrder;
                     });
                     
@@ -3220,19 +3232,11 @@ function initializeAlignmentPanel() {
             });
             
             // Mark canvas as dirty to trigger redraw
-            try {
-                if (window.app?.canvas?.setDirtyCanvas) {
-                    window.app.canvas.setDirtyCanvas(true, true);
-                } else if (window.app?.graph?.setDirtyCanvas) {
-                    window.app.graph.setDirtyCanvas(true, true);
-                } else if (window.app?.canvas) {
-                    window.app.canvas.draw(true, true);
-                }
-            } catch (redrawError) {
-            }
+            markCanvasDirty();
             
             // Success message removed - clean prompt window
         } catch (error) {
+            console.error('[housekeeper] horizontal flow alignment failed:', error);
             showMessage('Error in horizontal flow alignment', 'error');
         }
     }
@@ -3327,7 +3331,7 @@ function initializeAlignmentPanel() {
             // Group nodes by level
             const levels: {[level: number]: any[]} = {};
             validNodes.forEach(node => {
-                if (node && node.id) {
+                if (node && node.id != null) {
                     const level = nodeGraph[node.id]?.level ?? 0;
                     if (!levels[level]) levels[level] = [];
                     levels[level].push(node);
@@ -3340,8 +3344,8 @@ function initializeAlignmentPanel() {
                 const level = parseInt(levelStr);
                 if (levelNodes && levelNodes.length > 0) {
                     levelNodes.sort((a, b) => {
-                        const aOrder = a && a.id && nodeGraph[a.id] ? nodeGraph[a.id].order : 0;
-                        const bOrder = b && b.id && nodeGraph[b.id] ? nodeGraph[b.id].order : 0;
+                        const aOrder = a && a.id != null && nodeGraph[a.id] ? nodeGraph[a.id].order : 0;
+                        const bOrder = b && b.id != null && nodeGraph[b.id] ? nodeGraph[b.id].order : 0;
                         return aOrder - bOrder;
                     });
                     
@@ -3403,19 +3407,11 @@ function initializeAlignmentPanel() {
             });
             
             // Mark canvas as dirty to trigger redraw
-            try {
-                if (window.app?.canvas?.setDirtyCanvas) {
-                    window.app.canvas.setDirtyCanvas(true, true);
-                } else if (window.app?.graph?.setDirtyCanvas) {
-                    window.app.graph.setDirtyCanvas(true, true);
-                } else if (window.app?.canvas) {
-                    window.app.canvas.draw(true, true);
-                }
-            } catch (redrawError) {
-            }
+            markCanvasDirty();
             
             // Success message removed - clean prompt window
         } catch (error) {
+            console.error('[housekeeper] vertical flow alignment failed:', error);
             showMessage('Error in vertical flow alignment', 'error');
         }
     }
@@ -3436,6 +3432,7 @@ function initializeAlignmentPanel() {
             font-size: 14px;
             max-width: 300px;
             word-wrap: break-word;
+            pointer-events: none;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             opacity: 0;
             transform: translateX(20px);
@@ -3490,8 +3487,25 @@ function initializeAlignmentPanel() {
     }
 
     // Keyboard shortcuts
+    // True when the keystroke is destined for a text field, in which case none of the
+    // shortcuts below may claim it. Ctrl/Cmd+Shift+Arrow is the OS word-selection binding and
+    // is used constantly in ComfyUI's prompt widgets. This must run before preventDefault():
+    // checking the selection instead is not enough, because preventDefault happens first, and
+    // a canvas selection survives while the user types (clicks into an overlaid DOM widget are
+    // never forwarded to litegraph), so the shortcut would rewrite node positions mid-sentence.
+    function isTextEntryTarget(e: KeyboardEvent): boolean {
+        const path = typeof e.composedPath === 'function' ? e.composedPath() : [];
+        const target = (path[0] as HTMLElement) ?? (e.target as HTMLElement) ?? document.activeElement;
+        if (!target || !(target as any).tagName) return false;
+
+        const tag = (target as HTMLElement).tagName.toUpperCase();
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+        return (target as HTMLElement).isContentEditable === true;
+    }
+
     function handleKeyboard(e: KeyboardEvent) {
         if (!(e.ctrlKey || e.metaKey)) return;
+        if (isTextEntryTarget(e)) return;
 
         if (e.shiftKey && !e.altKey && (e.key === 'H' || e.key === 'h')) {
             e.preventDefault();
