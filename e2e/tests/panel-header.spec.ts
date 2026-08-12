@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { openComfyUI, openHousekeeper } from './helpers/comfyui'
+import { openComfyUI, openHousekeeper, waitForPanelSettled } from './helpers/comfyui'
 
 const STORAGE_KEY = 'housekeeper-panel-position'
 type Page = import('@playwright/test').Page
@@ -81,14 +81,11 @@ test.describe('panel header layout', () => {
   for (const width of WIDTHS) {
     test(`header controls never collide at ${width}px, before and after dragging`, async ({ page }) => {
       await page.setViewportSize({ width, height: 800 })
-      await openComfyUI(page)
-      await page.evaluate(key => window.localStorage.removeItem(key), STORAGE_KEY)
-      await page.reload({ waitUntil: 'domcontentloaded' })
+      // Fresh context per test: localStorage is already empty.
       await openComfyUI(page)
       await openHousekeeper(page)
-      // ComfyUI reflows its own chrome asynchronously after a viewport change, and the panel
-      // measures against it. Let both settle before asserting or dragging.
-      await page.waitForTimeout(600)
+      // Expanding changes the wrapper's width, so its placement is recomputed again.
+      await waitForPanelSettled(page)
 
       const initial = await headerLayout(page)
       expectNoCollisions(initial, `default @${width}`)
@@ -112,11 +109,8 @@ test.describe('panel header layout', () => {
   test('the reset label reads in full rather than being truncated', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await openComfyUI(page)
-    await page.evaluate(key => window.localStorage.removeItem(key), STORAGE_KEY)
-    await page.reload({ waitUntil: 'domcontentloaded' })
-    await openComfyUI(page)
     await openHousekeeper(page)
-    await page.waitForTimeout(600)
+    await waitForPanelSettled(page)
     await dragHeader(page, -150, 120)
 
     const reset = page.locator('.housekeeper-reset-position')

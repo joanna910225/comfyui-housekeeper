@@ -273,12 +273,19 @@ function initializeAlignmentPanel() {
     const PANEL_BOTTOM_MARGIN = 24;
 
     function getTopMenuElement(): HTMLElement | null {
-        // Look for the top menu bar specifically (not bottom menu)
-        const topMenu = document.querySelector<HTMLElement>('#comfyui-body-top, .comfyui-body-top');
-        if (topMenu && topMenu.getBoundingClientRect().top === 0) {
+        // `header` and `.comfy-vue-header` cover the ComfyUI V1 and Desktop layouts, where
+        // none of the ids below exist and the panel would otherwise fall back to a fixed
+        // default offset and sit under the menu. Thanks to @ImagineerNL, who reported this
+        // from a configuration none of the other selectors match (PR #26).
+        const topMenu = document.querySelector<HTMLElement>(
+            'header, .comfy-vue-header, #comfyui-body-top, .comfyui-body-top'
+        );
+        // Tolerance rather than `=== 0`: an exact float comparison against a DOM rect fails
+        // under browser zoom, which silently dropped the menu on any non-100% zoom level.
+        if (topMenu && Math.abs(topMenu.getBoundingClientRect().top) < 1) {
             return topMenu;
         }
-        
+
         // Fallback to any menu if no specific top menu found
         return document.querySelector<HTMLElement>('#comfy-menu, .comfyui-menu, .litegraph-menu, .comfyui-toolbar');
     }
@@ -2827,9 +2834,11 @@ function initializeAlignmentPanel() {
                         if (level > 0) {
                             for (let prevLevel = 0; prevLevel < level; prevLevel++) {
                                 const prevLevelNodes = hFlowLevels[prevLevel] || [];
-                                const prevMaxWidth = Math.max(...prevLevelNodes.map(node =>
-                                    hSizeOf(node)[0]
-                                ));
+                                // Math.max() with no arguments is -Infinity. An empty level
+                                // must contribute nothing rather than destroy the layout.
+                                const prevMaxWidth = prevLevelNodes.length
+                                    ? Math.max(...prevLevelNodes.map(node => hSizeOf(node)[0]))
+                                    : 0;
                                 currentX += prevMaxWidth + H_COLUMN_SPACING + H_LEVEL_PADDING;
                             }
                         }
@@ -2928,9 +2937,9 @@ function initializeAlignmentPanel() {
                         if (level > 0) {
                             for (let prevLevel = 0; prevLevel < level; prevLevel++) {
                                 const prevLevelNodes = vFlowLevels[prevLevel] || [];
-                                const prevMaxHeight = Math.max(...prevLevelNodes.map(node =>
-                                    vSizeOf(node)[1]
-                                ));
+                                const prevMaxHeight = prevLevelNodes.length
+                                    ? Math.max(...prevLevelNodes.map(node => vSizeOf(node)[1]))
+                                    : 0;
                                 currentY += prevMaxHeight + V_ROW_SPACING + V_LEVEL_PADDING;
                             }
                         }
@@ -3269,7 +3278,13 @@ function initializeAlignmentPanel() {
 
             successors.get(current)!.forEach(next => {
                 // Relaxation: a node sits one past its DEEPEST producer, not its first.
-                if (level.get(next)! < level.get(current)! + 1) {
+                //
+                // Only for nodes not yet placed. Raising one that has already been placed
+                // vacates the level it was counted in, and a cycle makes that reachable: in
+                // A -> B -> C -> A the cycle breaks at A (level 0), then C's edge back to A
+                // raised A to 3 and left level 0 empty. The layout then takes
+                // Math.max() of an empty level, which is -Infinity, and every node lands there.
+                if (!visited.has(next) && level.get(next)! < level.get(current)! + 1) {
                     level.set(next, level.get(current)! + 1);
                 }
                 const remaining = indegree.get(next)! - 1;
@@ -3826,9 +3841,9 @@ function initializeAlignmentPanel() {
                         // Calculate cumulative width of previous levels plus spacing
                         for (let prevLevel = 0; prevLevel < level; prevLevel++) {
                             const prevLevelNodes = levels[prevLevel] || [];
-                            const prevMaxWidth = Math.max(...prevLevelNodes.map(node => 
-                                sizeOf(node)[0]
-                            ));
+                            const prevMaxWidth = prevLevelNodes.length
+                                ? Math.max(...prevLevelNodes.map(node => sizeOf(node)[0]))
+                                : 0;
                             currentX += prevMaxWidth + COLUMN_SPACING + LEVEL_PADDING;
                         }
                     }
@@ -3994,9 +4009,9 @@ function initializeAlignmentPanel() {
                         // Calculate cumulative height of previous levels plus spacing
                         for (let prevLevel = 0; prevLevel < level; prevLevel++) {
                             const prevLevelNodes = levels[prevLevel] || [];
-                            const prevMaxHeight = Math.max(...prevLevelNodes.map(node => 
-                                sizeOf(node)[1]
-                            ));
+                            const prevMaxHeight = prevLevelNodes.length
+                                ? Math.max(...prevLevelNodes.map(node => sizeOf(node)[1]))
+                                : 0;
                             currentY += prevMaxHeight + ROW_SPACING + LEVEL_PADDING;
                         }
                     }
