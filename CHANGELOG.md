@@ -2,6 +2,54 @@
 
 All notable changes to this project are documented here.
 
+## [0.4.0] - 2026-08-12
+
+Panel placement you control. Detail in
+[#27](https://github.com/joanna910225/comfyui-housekeeper/issues/27).
+
+### Added
+
+- **The panel can be dragged, and remembers where you put it.** Drag the handle when the panel is
+  collapsed, or its header when open. A *Reset position* control appears once the panel has been
+  moved and returns it to the automatic placement. The position is clamped on load and on window
+  resize, so a position saved on a larger monitor can never leave the panel somewhere it cannot be
+  grabbed again. Closes #22.
+
+  Automatic placement remains the default. It is also, on its own, not something to rely on: ComfyUI
+  has relocated its right-hand controls twice, so a panel that keeps out of the way today can be
+  covering something after the next frontend release. Being able to move it is the durable answer.
+
+### Fixed
+
+- **The panel covered ComfyUI's right-hand controls.** The offset added in 0.2.0 measured the width
+  of an element that still exists but is 0px wide in current ComfyUI, so no offset was applied and
+  the collapsed handle sat on top of the properties toggle. It now measures the leftmost edge of
+  ComfyUI's right-docked interface, which works whether the side panel is open or closed and does not
+  depend on class names. Closes #25.
+- **The panel header controls overlapped.** The *Reset position* button shared a row with the title
+  and the close control, and the three did not fit in the panel's width — the title ran into the
+  button and its label clipped to "Reset pos...". The reset control now has its own row, and the
+  title yields rather than forcing the header wider than the panel.
+- **The panel could not shrink on narrow viewports.** Its width was set by an expression whose
+  minimum exceeded its maximum, so the viewport cap it was written to apply never took effect.
+- **The panel could be pushed off the left edge** on narrow viewports, when the measured offset
+  exceeded the space available. Staying on screen now takes priority over clearing ComfyUI's chrome
+  when both cannot hold.
+
+### Internal
+
+- The browser test suite is now deterministic. ComfyUI persists part of its interface state
+  server-side rather than in the browser, so tests that opened its side panel were changing the
+  starting conditions of later tests, and results depended on execution order. Runs are now
+  reproducible: 34 passed, 0 failed across consecutive runs, where previously one assertion failed
+  in 5 of 8 runs and passed in isolation every time.
+- 17 further browser tests covering panel dragging, persistence, reset, off-screen clamping and
+  header layout at eight viewport widths.
+
+### Known limitation
+
+Dragging is pointer-driven, so the panel cannot currently be repositioned from the keyboard.
+
 ## [0.3.0] - 2026-08-12
 
 Flow-layout correctness, plus the project's first tests. Detail in

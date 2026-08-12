@@ -7,9 +7,19 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": [
+        "./src/*"
+      ]
     },
-    "typeRoots": ["src/types", "node_modules/@types"]
+    "typeRoots": [
+      "src/types",
+      "node_modules/@types"
+    ]
   },
-  "exclude": ["node_modules", "dist", "js"]
+  "exclude": [
+    "dist",
+    "e2e",
+    "js",
+    "node_modules"
+  ]
 }

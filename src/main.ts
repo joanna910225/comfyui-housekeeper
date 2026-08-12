@@ -110,6 +110,8 @@ function initializeAlignmentPanel() {
     let panel: HTMLElement | null = null;
     let infoPanel: HTMLElement | null = null;
     let toggleHandle: HTMLButtonElement | null = null;
+    let resetPositionButton: HTMLButtonElement | null = null;
+    let positionRow: HTMLElement | null = null;
     let isExpanded = false;
     let selectedNodes: any[] = [];
     let selectedGroups: any[] = [];
@@ -117,6 +119,20 @@ function initializeAlignmentPanel() {
     let currentPaletteIndex = 0;
 
     const RECENT_COLOR_STORAGE_KEY = 'housekeeper-recent-colors';
+    const PANEL_POSITION_STORAGE_KEY = 'housekeeper-panel-position';
+
+    // A position the user has dragged the panel to. While set, it wins over the automatic
+    // placement: ComfyUI moves its own right-hand controls between releases, so no amount of
+    // measuring can be relied on to keep out of the way forever - being able to put the panel
+    // somewhere and have it stay there is the durable answer.
+    type PanelPosition = { top: number; right: number };
+    let customPosition: PanelPosition | null = null;
+
+    // Keep at least this much of the wrapper on screen, so it can never be dragged (or
+    // resized) somewhere it cannot be grabbed again.
+    const PANEL_MIN_VISIBLE = 48;
+    // Pointer travel before a press on the handle counts as a drag rather than a click.
+    const PANEL_DRAG_THRESHOLD = 4;
     const RECENT_COLOR_LIMIT = 9;
     const FALLBACK_RECENT_COLORS = ['#353535', '#3f5159', '#593930', '#335533', '#333355', '#335555', '#553355', '#665533', '#000000'];
 
@@ -301,15 +317,194 @@ function initializeAlignmentPanel() {
         return Math.ceil(viewportWidth - leftmost) + RIGHT_CHROME_MARGIN;
     }
 
+    // --- Draggable panel position ---------------------------------------------------
+
+    function clampPanelPosition(position: PanelPosition): PanelPosition {
+        const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+        const width = wrapper?.offsetWidth ?? PANEL_MIN_VISIBLE;
+        const height = wrapper?.offsetHeight ?? PANEL_MIN_VISIBLE;
+
+        // Allow the panel to hang off an edge, but never so far that the handle is
+        // unreachable - otherwise a stored position could make it impossible to recover.
+        const maxRight = Math.max(viewportWidth - PANEL_MIN_VISIBLE, 0);
+        const maxTop = Math.max(viewportHeight - PANEL_MIN_VISIBLE, 0);
+
+        return {
+            right: Math.min(Math.max(position.right, -(width - PANEL_MIN_VISIBLE)), maxRight),
+            top: Math.min(Math.max(position.top, 0), maxTop)
+        };
+    }
+
+    function loadPanelPosition(): PanelPosition | null {
+        try {
+            const stored = window.localStorage?.getItem(PANEL_POSITION_STORAGE_KEY);
+            if (!stored) return null;
+            const parsed = JSON.parse(stored);
+            if (!parsed || typeof parsed !== 'object') return null;
+            const { top, right } = parsed as Record<string, unknown>;
+            if (typeof top !== 'number' || typeof right !== 'number') return null;
+            if (!Number.isFinite(top) || !Number.isFinite(right)) return null;
+            return { top, right };
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function savePanelPosition(position: PanelPosition | null) {
+        try {
+            if (!position) {
+                window.localStorage?.removeItem(PANEL_POSITION_STORAGE_KEY);
+            } else {
+                window.localStorage?.setItem(PANEL_POSITION_STORAGE_KEY, JSON.stringify(position));
+            }
+        } catch (error) {
+            // A full or unavailable localStorage must not stop the panel working.
+        }
+    }
+
+    // Inline styles beat the stylesheet's var()-driven top/right, so setting them here is
+    // what makes a custom position override the automatic placement, and clearing them is
+    // what hands control back to it.
+    function applyPanelPosition() {
+        if (!wrapper) return;
+
+        if (customPosition) {
+            const clamped = clampPanelPosition(customPosition);
+            wrapper.style.top = `${clamped.top}px`;
+            wrapper.style.right = `${clamped.right}px`;
+            wrapper.classList.add('hk-user-positioned');
+        } else {
+            wrapper.style.removeProperty('top');
+            wrapper.style.removeProperty('right');
+            wrapper.classList.remove('hk-user-positioned');
+        }
+
+        // The row is what gets hidden, so the header keeps its own layout untouched.
+        if (positionRow) {
+            positionRow.hidden = !customPosition;
+        }
+    }
+
+    function resetPanelPosition() {
+        customPosition = null;
+        savePanelPosition(null);
+        applyPanelPosition();
+        updateLayoutMetrics();
+    }
+
+    /**
+     * Lets `grip` drag the whole wrapper. Movement below PANEL_DRAG_THRESHOLD is left alone
+     * so the handle keeps working as a toggle button; past it, the click that a pointerup
+     * would otherwise produce is swallowed.
+     */
+    function makeDraggable(grip: HTMLElement) {
+        let pointerId: number | null = null;
+        let startX = 0;
+        let startY = 0;
+        let grabRight = 0;
+        let grabTop = 0;
+        let dragging = false;
+
+        // Move and release are tracked on the document rather than the grip. The pointer
+        // leaves a 40px-tall header almost immediately, and pointer capture cannot be set
+        // until the drag threshold is crossed - which needs a move event that, bound to the
+        // grip, would never arrive.
+        const onMove = (event: PointerEvent) => {
+            if (pointerId === null || event.pointerId !== pointerId || !wrapper) return;
+
+            const dx = event.clientX - startX;
+            const dy = event.clientY - startY;
+
+            if (!dragging) {
+                if (Math.abs(dx) < PANEL_DRAG_THRESHOLD && Math.abs(dy) < PANEL_DRAG_THRESHOLD) return;
+                dragging = true;
+                wrapper.classList.add('hk-dragging');
+            }
+
+            event.preventDefault();
+            customPosition = clampPanelPosition({ top: grabTop + dy, right: grabRight - dx });
+            applyPanelPosition();
+        };
+
+        const swallow = (event: Event) => {
+            event.stopPropagation();
+            event.preventDefault();
+        };
+
+        const onUp = (event: PointerEvent) => {
+            if (pointerId === null || event.pointerId !== pointerId) return;
+            pointerId = null;
+            document.removeEventListener('pointermove', onMove, true);
+            document.removeEventListener('pointerup', onUp, true);
+            document.removeEventListener('pointercancel', onUp, true);
+
+            if (!dragging) return;
+            dragging = false;
+            wrapper?.classList.remove('hk-dragging');
+            savePanelPosition(customPosition);
+
+            // Swallow the click this pointerup is about to generate, so finishing a drag on
+            // the handle does not also toggle the panel.
+            grip.addEventListener('click', swallow, { capture: true, once: true });
+            // ...but do not leave the swallower armed if no click follows (drag ended off-grip).
+            window.setTimeout(() => grip.removeEventListener('click', swallow, true), 0);
+        };
+
+        grip.addEventListener('pointerdown', (event: PointerEvent) => {
+            if (event.button !== 0) return;
+            if (!wrapper) return;
+
+            // Never start a drag from a control sitting inside the grip - the header holds
+            // the close and reset buttons. When the grip IS the button (the collapsed
+            // handle), closest() returns the grip itself and the drag is allowed.
+            const target = event.target as HTMLElement | null;
+            const button = target?.closest('button');
+            if (button && button !== grip) return;
+
+            const rect = wrapper.getBoundingClientRect();
+            const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+
+            pointerId = event.pointerId;
+            startX = event.clientX;
+            startY = event.clientY;
+            grabRight = viewportWidth - rect.right;
+            grabTop = rect.top;
+            dragging = false;
+
+            document.addEventListener('pointermove', onMove, true);
+            document.addEventListener('pointerup', onUp, true);
+            document.addEventListener('pointercancel', onUp, true);
+        });
+    }
+
     function updateLayoutMetrics() {
         const topOffset = computeToolbarOffset();
-        const rightOffset = computeRightOffset();
+
+        // Keeping clear of ComfyUI's chrome matters less than staying on screen. On a narrow
+        // viewport the measured offset can exceed the room available, which pushed the panel
+        // off the left edge, so cap it at whatever still fits.
+        const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+        const wrapperWidth = wrapper?.offsetWidth ?? 0;
+        const maxRightOffset = Math.max(viewportWidth - wrapperWidth, 0);
+        const rightOffset = Math.min(computeRightOffset(), maxRightOffset);
         const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
         const maxHeight = Math.max(viewportHeight - topOffset - PANEL_BOTTOM_MARGIN, 280);
 
         document.documentElement.style.setProperty('--hk-top-offset', `${topOffset}px`);
         document.documentElement.style.setProperty('--hk-right-offset', `${rightOffset}px`);
         document.documentElement.style.setProperty('--hk-panel-max-height', `${maxHeight}px`);
+
+        // Re-clamp a dragged position against the new viewport, so shrinking the window (or
+        // switching monitors) cannot strand the panel off-screen.
+        if (customPosition) {
+            const clamped = clampPanelPosition(customPosition);
+            if (clamped.top !== customPosition.top || clamped.right !== customPosition.right) {
+                customPosition = clamped;
+                savePanelPosition(customPosition);
+            }
+            applyPanelPosition();
+        }
     }
 
     function ensureLayoutListeners() {
@@ -404,7 +599,10 @@ function initializeAlignmentPanel() {
     --hk-top-offset: 48px;
     --hk-right-offset: 0px;
     --hk-panel-max-height: calc(100vh - 96px);
-    --hk-panel-width: clamp(270px, 18vw, min(270px, calc(100vw - 24px)));
+    /* 270px, but never wider than the viewport allows, and never below a usable floor.
+       The previous expression had its minimum above its maximum, so it always resolved to
+       270px and the panel overflowed narrow viewports. */
+    --hk-panel-width: clamp(200px, calc(100vw - 24px), 270px);
     --hk-button-size: clamp(34px, 7vw, 40px);
     --hk-icon-size: clamp(16px, 4vw, 20px);
     --hk-button-gap: clamp(4px, 1vw, 8px);
@@ -525,7 +723,66 @@ function initializeAlignmentPanel() {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 8px;
     color: var(--hk-accent);
+    cursor: grab;
+    /* Stop the browser turning a drag into a text selection or a native scroll gesture. */
+    user-select: none;
+    touch-action: none;
+}
+
+.housekeeper-handle {
+    touch-action: none;
+}
+
+.housekeeper-wrapper.hk-dragging,
+.housekeeper-wrapper.hk-dragging .housekeeper-header {
+    cursor: grabbing;
+}
+
+/* No transition while dragging, so the panel tracks the pointer instead of easing after it. */
+.housekeeper-wrapper.hk-dragging .housekeeper-panel,
+.housekeeper-wrapper.hk-dragging .housekeeper-handle {
+    transition: none;
+}
+
+.housekeeper-position-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 6px;
+}
+
+.housekeeper-position-row[hidden] {
+    display: none;
+}
+
+.housekeeper-reset-position {
+    background: transparent;
+    border: 1px solid var(--hk-accent);
+    border-radius: 4px;
+    color: var(--hk-accent);
+    font-size: var(--hk-subtitle-font-size);
+    font-family: inherit;
+    cursor: pointer;
+    padding: 3px 10px;
+    /* Never let the label clip: it is the whole point of the control. */
+    white-space: nowrap;
+    flex: 0 0 auto;
+    max-width: 100%;
+    opacity: 0.85;
+}
+
+.housekeeper-reset-position:hover {
+    opacity: 1;
+}
+
+.housekeeper-reset-position:focus-visible {
+    outline: 2px solid var(--hk-accent);
+    outline-offset: 2px;
+}
+
+.housekeeper-reset-position[hidden] {
+    display: none;
 }
 
 .housekeeper-header-title {
@@ -534,6 +791,24 @@ function initializeAlignmentPanel() {
     gap: 10px;
     font-size: var(--hk-header-font-size);
     margin: 0;
+    /* min-width: 0 lets the title shrink inside the flex row instead of forcing the header
+       wider than the panel and pushing the close control out of reach. */
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.housekeeper-header-title span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.housekeeper-header-title img {
+    flex: 0 0 auto;
+}
+
+.housekeeper-close {
+    flex: 0 0 auto;
 }
 
 .housekeeper-header-title img {
@@ -1707,8 +1982,32 @@ function initializeAlignmentPanel() {
         closeButton.appendChild(closeIcon);
         closeButton.addEventListener('click', () => togglePanel(false));
 
+        // Only shown once the panel has actually been dragged, so it stays out of the way
+        // for anyone happy with the default placement.
+        resetPositionButton = document.createElement('button');
+        resetPositionButton.type = 'button';
+        resetPositionButton.className = 'housekeeper-reset-position';
+        resetPositionButton.textContent = 'Reset position';
+        resetPositionButton.title = 'Return the panel to its default position';
+        resetPositionButton.setAttribute('aria-label', 'Reset Housekeeper panel position');
+        resetPositionButton.addEventListener('click', () => resetPanelPosition());
+
         header.appendChild(headerTitle);
         header.appendChild(closeButton);
+
+        // "Reset position" sits on its own row rather than in the header. At the panel's
+        // width the header cannot hold the title, this button and the close control at once -
+        // the title ran into the button and its label clipped to "Reset pos...". A separate
+        // row keeps the label fully readable at every supported width, and costs nothing
+        // when hidden, which is the common case.
+        positionRow = document.createElement('div');
+        positionRow.className = 'housekeeper-position-row';
+        positionRow.hidden = true;
+        positionRow.appendChild(resetPositionButton);
+
+        // The header doubles as a drag grip while the panel is open; the handle is the grip
+        // when it is collapsed. Both move the same wrapper.
+        makeDraggable(header);
 
         const divider = document.createElement('div');
         divider.className = 'housekeeper-divider';
@@ -1863,6 +2162,7 @@ function initializeAlignmentPanel() {
         });
         customRow.addEventListener('dblclick', () => applyColor());
         content.appendChild(header);
+        content.appendChild(positionRow);
         content.appendChild(divider);
         content.appendChild(alignmentSection);
         const colorDivider = document.createElement('div');
@@ -1876,6 +2176,15 @@ function initializeAlignmentPanel() {
         wrapper.appendChild(toggleHandle);
         wrapper.appendChild(panel);
         document.body.appendChild(wrapper);
+
+        makeDraggable(toggleHandle);
+
+        // Restore a previously dragged position. Applied after the wrapper is in the document
+        // so clamping can measure it, and re-clamped against the current viewport in case the
+        // window is smaller than it was when the position was stored.
+        customPosition = loadPanelPosition();
+        applyPanelPosition();
+
         ensureLayoutListeners();
         updateLayoutMetrics();
     }
