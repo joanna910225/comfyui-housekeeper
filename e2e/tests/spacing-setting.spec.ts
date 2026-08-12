@@ -155,3 +155,83 @@ test.describe('configurable node spacing', () => {
     for (const gap of gaps) expect(gap).toBeGreaterThanOrEqual(0)
   })
 })
+
+test.describe('in-panel spacing control', () => {
+  test.beforeEach(async ({ page }) => {
+    await openComfyUI(page)
+    await openHousekeeper(page)
+  })
+
+  test.afterEach(async ({ page }) => {
+    await setSpacing(page, 30)
+  })
+
+  test('the control is visible in the panel', async ({ page }) => {
+    // #23 asked for this "in the UI", and the panel is where the buttons it affects live -
+    // ComfyUI's global settings dialog is a context switch away from the work.
+    await expect(page.locator('.housekeeper-spacing-slider')).toBeVisible()
+    await expect(page.locator('.housekeeper-spacing-value')).toBeVisible()
+    await expect(page.locator('.housekeeper-spacing-value')).toHaveValue('30')
+  })
+
+  test('typing a value changes the spacing actually applied', async ({ page }) => {
+    await page.locator('.housekeeper-spacing-value').fill('75')
+    await page.locator('.housekeeper-spacing-value').press('Enter')
+    await page.waitForTimeout(200)
+
+    expect(await getSpacing(page)).toBe(75)
+
+    await threeNodes(page)
+    await alignmentButton(page, 'Align left edges').click()
+    expect(await verticalGaps(page)).toEqual([75, 75])
+  })
+
+  test('the slider changes the spacing applied', async ({ page }) => {
+    await page.locator('.housekeeper-spacing-slider').fill('120')
+    await page.waitForTimeout(200)
+
+    expect(await getSpacing(page)).toBe(120)
+    await expect(page.locator('.housekeeper-spacing-value')).toHaveValue('120')
+
+    await threeNodes(page)
+    await alignmentButton(page, 'Align left edges').click()
+    expect(await verticalGaps(page)).toEqual([120, 120])
+  })
+
+  test('the panel control and ComfyUI settings stay in sync', async ({ page }) => {
+    // Changing it in ComfyUI's settings dialog must not leave the panel showing a stale value.
+    await setSpacing(page, 65)
+    await page.waitForTimeout(300)
+    await expect(page.locator('.housekeeper-spacing-value')).toHaveValue('65')
+    await expect(page.locator('.housekeeper-spacing-slider')).toHaveValue('65')
+  })
+
+  test('the control persists its value across a reload', async ({ page }) => {
+    await page.locator('.housekeeper-spacing-value').fill('55')
+    await page.locator('.housekeeper-spacing-value').press('Enter')
+    await page.waitForTimeout(200)
+
+    // Not openComfyUI(): that restores the baseline this test needs to survive.
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => {
+      const app = (window as any).app
+      return Boolean(app?.graph && app?.canvas && (window as any).LiteGraph)
+    })
+    await openHousekeeper(page)
+
+    await expect(page.locator('.housekeeper-spacing-value')).toHaveValue('55')
+  })
+
+  test('a nonsense entry falls back rather than breaking layout', async ({ page }) => {
+    await page.locator('.housekeeper-spacing-value').fill('-40')
+    await page.locator('.housekeeper-spacing-value').press('Enter')
+    await page.waitForTimeout(200)
+
+    const shown = Number(await page.locator('.housekeeper-spacing-value').inputValue())
+    expect(shown).toBeGreaterThanOrEqual(0)
+
+    await threeNodes(page)
+    await alignmentButton(page, 'Align left edges').click()
+    for (const gap of await verticalGaps(page)) expect(gap).toBeGreaterThanOrEqual(0)
+  })
+})
