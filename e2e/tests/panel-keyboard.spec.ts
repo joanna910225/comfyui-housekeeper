@@ -25,7 +25,6 @@ test.describe('keyboard panel positioning', () => {
     await page.evaluate(key => window.localStorage.removeItem(key), STORAGE_KEY)
     await page.reload({ waitUntil: 'domcontentloaded' })
     await openComfyUI(page)
-    await page.waitForTimeout(600)
   })
 
   test('arrow keys move the panel while the handle has focus', async ({ page }) => {
