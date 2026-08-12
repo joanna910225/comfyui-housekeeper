@@ -44,7 +44,7 @@ function De() {
   const t0 = "housekeeper-recent-colors", W2 = "housekeeper-panel-position";
   let _ = null;
   const m2 = 48, i0 = 4, F0 = 10, P0 = 50, c2 = 9, r0 = ["#353535", "#3f5159", "#593930", "#335533", "#333355", "#335555", "#553355", "#665533", "#000000"];
-  let i2 = te(), h2 = null, E = null, N = null, M2 = !1;
+  let i2 = te(), h2 = null, A = null, N = null, M2 = !1;
   const A2 = /* @__PURE__ */ new WeakMap();
   let C2 = null, o0 = !1;
   const w2 = ((k0 = window.LiteGraph) == null ? void 0 : k0.NODE_TITLE_HEIGHT) ?? 30;
@@ -1133,7 +1133,7 @@ function De() {
   }
   function m0(e) {
     const t = J(e);
-    t && (E && (E.value = t), N && (N.value = t.toUpperCase()), g0(t));
+    t && (A && (A.value = t), N && (N.value = t.toUpperCase()), g0(t));
   }
   function re(e) {
     const t = J(e);
@@ -1341,8 +1341,8 @@ function De() {
     x.addEventListener("click", () => j(-1)), B.addEventListener("click", () => j(1)), x0(O, t2), P();
     const u = document.createElement("div");
     u.className = "housekeeper-custom-inline";
-    const M = document.createElement("span");
-    M.textContent = "Custom", u.appendChild(M), E = document.createElement("input"), E.type = "color", E.className = "hk-custom-inline-picker", u.appendChild(E), N = document.createElement("input"), N.type = "text", N.placeholder = "#RRGGBB", N.maxLength = 7, N.className = "hk-custom-hex-inline", u.appendChild(N);
+    const E = document.createElement("span");
+    E.textContent = "Custom", u.appendChild(E), A = document.createElement("input"), A.type = "color", A.className = "hk-custom-inline-picker", u.appendChild(A), N = document.createElement("input"), N.type = "text", N.placeholder = "#RRGGBB", N.maxLength = 7, N.className = "hk-custom-hex-inline", u.appendChild(N);
     const H = document.createElement("button");
     H.type = "button", H.className = "hk-custom-apply-inline", H.textContent = "✓", H.setAttribute("aria-label", "Apply custom color"), H.title = "Apply custom color", u.appendChild(H), L.appendChild(u);
     const I = y2("Recent colors");
@@ -1351,14 +1351,14 @@ function De() {
     m0(Q);
     const n2 = (F, G) => {
       const W = J(F);
-      if (!W || (G === "color" && N && (N.value = W.toUpperCase()), G === "text" && E && (E.value = W), g0(W), !y.length && !p2.length)) return;
+      if (!W || (G === "color" && N && (N.value = W.toUpperCase()), G === "text" && A && (A.value = W), g0(W), !y.length && !p2.length)) return;
       const r = u2(W);
       P2(r), q2(r);
     };
-    E == null || E.addEventListener("input", () => n2(E.value, "color")), E == null || E.addEventListener("change", () => j2(E.value)), E == null || E.addEventListener("click", () => P2(u2(E.value))), E == null || E.addEventListener("blur", () => d2()), N == null || N.addEventListener("input", () => n2(N.value, "text")), N == null || N.addEventListener("keydown", (F) => {
+    A == null || A.addEventListener("input", () => n2(A.value, "color")), A == null || A.addEventListener("change", () => j2(A.value)), A == null || A.addEventListener("click", () => P2(u2(A.value))), A == null || A.addEventListener("blur", () => d2()), N == null || N.addEventListener("input", () => n2(N.value, "text")), N == null || N.addEventListener("keydown", (F) => {
       F.key === "Enter" && (F.preventDefault(), j2(N.value));
     }), N == null || N.addEventListener("blur", () => d2());
-    const a2 = () => j2((N == null ? void 0 : N.value) || (E == null ? void 0 : E.value) || Q);
+    const a2 = () => j2((N == null ? void 0 : N.value) || (A == null ? void 0 : A.value) || Q);
     H.addEventListener("click", () => a2()), u.addEventListener("keydown", (F) => {
       (F.metaKey || F.ctrlKey) && F.key.toLowerCase() === "enter" && (F.preventDefault(), a2());
     }), u.addEventListener("dblclick", () => a2()), o.appendChild(n), o.appendChild(e2), o.appendChild(k), o.appendChild(b);
@@ -1471,13 +1471,13 @@ function De() {
         const j = Math.min(...t.map((i) => i.pos[0])), u = Math.max(...t.map((i) => {
           let c = 150;
           return i.size && Array.isArray(i.size) && i.size[0] ? c = i.size[0] : typeof i.width == "number" ? c = i.width : i.properties && typeof i.properties.width == "number" && (c = i.properties.width), i.pos[0] + c;
-        })), M = (j + u) / 2, H = [...t].sort((i, c) => i.pos[1] - c.pos[1]);
+        })), E = (j + u) / 2, H = [...t].sort((i, c) => i.pos[1] - c.pos[1]);
         let I = H[0].pos[1];
         const Q = /* @__PURE__ */ new Map();
         H.forEach((i) => {
           let c = 150, m = 100;
           i.size && Array.isArray(i.size) ? (i.size[0] && (c = i.size[0]), i.size[1] && (m = i.size[1])) : (typeof i.width == "number" && (c = i.width), typeof i.height == "number" && (m = i.height), i.properties && (typeof i.properties.width == "number" && (c = i.properties.width), typeof i.properties.height == "number" && (m = i.properties.height))), Q.set(i.id, {
-            x: M - c / 2,
+            x: E - c / 2,
             y: I,
             width: c,
             height: m
@@ -1530,16 +1530,14 @@ function De() {
         Object.entries(L2).forEach(([i, c]) => {
           const m = parseInt(i);
           if (c && c.length > 0) {
-            c.sort((C, A) => {
-              const $ = C && C.id != null && k2[C.id] ? k2[C.id].order : 0, T = A && A.id != null && k2[A.id] ? k2[A.id].order : 0;
+            c.sort((C, M) => {
+              const $ = C && C.id != null && k2[C.id] ? k2[C.id].order : 0, T = M && M.id != null && k2[M.id] ? k2[M.id].order : 0;
               return $ - T;
             });
             let X = v;
             if (m > 0)
               for (let C = 0; C < m; C++) {
-                const A = L2[C] || [], $ = Math.max(...A.map(
-                  (T) => g2(T)[0]
-                ));
+                const M = L2[C] || [], $ = M.length ? Math.max(...M.map((T) => g2(T)[0])) : 0;
                 X += $ + me + we;
               }
             let U = S;
@@ -1582,16 +1580,14 @@ function De() {
         Object.entries(E2).forEach(([i, c]) => {
           const m = parseInt(i);
           if (c && c.length > 0) {
-            c.sort((C, A) => {
-              const $ = C && C.id != null && z2[C.id] ? z2[C.id].order : 0, T = A && A.id != null && z2[A.id] ? z2[A.id].order : 0;
+            c.sort((C, M) => {
+              const $ = C && C.id != null && z2[C.id] ? z2[C.id].order : 0, T = M && M.id != null && z2[M.id] ? z2[M.id].order : 0;
               return $ - T;
             });
             let X = xe;
             if (m > 0)
               for (let C = 0; C < m; C++) {
-                const A = E2[C] || [], $ = Math.max(...A.map(
-                  (T) => T2(T)[1]
-                ));
+                const M = E2[C] || [], $ = M.length ? Math.max(...M.map((T) => T2(T)[1])) : 0;
                 X += $ + ve + Le;
               }
             let U = be;
@@ -1627,8 +1623,8 @@ function De() {
             const C = A2.get(i) || i.computeSize;
             if (C)
               try {
-                const A = C.call(i);
-                A && A.length >= 2 && A[0] !== void 0 && A[1] !== void 0 ? (X = A[0], U = A[1] + w2) : typeof A == "number" ? (X = c, U = A + w2) : (X = c, U = m);
+                const M = C.call(i);
+                M && M.length >= 2 && M[0] !== void 0 && M[1] !== void 0 ? (X = M[0], U = M[1] + w2) : typeof M == "number" ? (X = c, U = M + w2) : (X = c, U = m);
               } catch {
                 X = c, U = m;
               }
@@ -1636,11 +1632,11 @@ function De() {
           if (e === "height-max" || e === "size-max")
             U = Math.max(...t.map((C) => r2(C)));
           else if (e === "height-min") {
-            const C = Math.min(...t.map((T) => r2(T))), A = A2.get(i) || i.computeSize;
+            const C = Math.min(...t.map((T) => r2(T))), M = A2.get(i) || i.computeSize;
             let $ = null;
-            if (A)
+            if (M)
               try {
-                const T = A.call(i);
+                const T = M.call(i);
                 T && T.length >= 2 && T[1] !== void 0 ? $ = T[1] + w2 : typeof T == "number" && ($ = T + w2);
               } catch {
               }
@@ -1737,7 +1733,7 @@ function De() {
       }
       const f = k.shift();
       n.has(f) || (n.add(f), l.get(f).forEach((s) => {
-        d.get(s) < d.get(f) + 1 && d.set(s, d.get(f) + 1);
+        !n.has(s) && d.get(s) < d.get(f) + 1 && d.set(s, d.get(f) + 1);
         const g = h.get(s) - 1;
         h.set(s, g), g <= 0 && !n.has(s) && k.push(s);
       }));
@@ -1814,10 +1810,10 @@ function De() {
           });
           break;
         case "height-center":
-          const M = Math.min(...y.map((r) => r.pos[0])), H = Math.max(...y.map((r) => {
+          const E = Math.min(...y.map((r) => r.pos[0])), H = Math.max(...y.map((r) => {
             let v = 150;
             return r.size && Array.isArray(r.size) && r.size[0] ? v = r.size[0] : typeof r.width == "number" ? v = r.width : r.properties && typeof r.properties.width == "number" && (v = r.properties.width), r.pos[0] + v;
-          })), I = (M + H) / 2, Q = [...y].sort((r, v) => r.pos[1] - v.pos[1]);
+          })), I = (E + H) / 2, Q = [...y].sort((r, v) => r.pos[1] - v.pos[1]);
           let n2 = Q[0].pos[1];
           Q.forEach((r) => {
             const v = V();
@@ -1921,12 +1917,12 @@ function De() {
       }), Object.entries(f).forEach(([s, g]) => {
         const x = parseInt(s);
         if (g && g.length > 0) {
-          g.sort((u, M) => {
-            const H = u && u.id != null && l[u.id] ? l[u.id].order : 0, I = M && M.id != null && l[M.id] ? l[M.id].order : 0;
+          g.sort((u, E) => {
+            const H = u && u.id != null && l[u.id] ? l[u.id].order : 0, I = E && E.id != null && l[E.id] ? l[E.id].order : 0;
             return H - I;
           });
-          const O = g.reduce((u, M, H) => {
-            const I = h(M)[1];
+          const O = g.reduce((u, E, H) => {
+            const I = h(E)[1];
             return u + I + (H < g.length - 1 ? b : 0);
           }, 0), B = Math.max(...g.map(
             (u) => h(u)[0]
@@ -1934,13 +1930,11 @@ function De() {
           let P = n;
           if (x > 0)
             for (let u = 0; u < x; u++) {
-              const M = f[u] || [], H = Math.max(...M.map(
-                (I) => h(I)[0]
-              ));
+              const E = f[u] || [], H = E.length ? Math.max(...E.map((I) => h(I)[0])) : 0;
               P += H + d + L;
             }
           let j = a;
-          g.forEach((u, M) => {
+          g.forEach((u, E) => {
             if (u && u.pos) {
               const H = [u.pos[0], u.pos[1]];
               u.pos[0] = P, u.pos[1] = j, j += h(u)[1] + b, typeof u.x == "number" && (u.x = u.pos[0]), typeof u.y == "number" && (u.y = u.pos[1]);
@@ -1977,12 +1971,12 @@ function De() {
       }), Object.entries(f).forEach(([s, g]) => {
         const x = parseInt(s);
         if (g && g.length > 0) {
-          g.sort((u, M) => {
-            const H = u && u.id != null && l[u.id] ? l[u.id].order : 0, I = M && M.id != null && l[M.id] ? l[M.id].order : 0;
+          g.sort((u, E) => {
+            const H = u && u.id != null && l[u.id] ? l[u.id].order : 0, I = E && E.id != null && l[E.id] ? l[E.id].order : 0;
             return H - I;
           });
-          const O = g.reduce((u, M, H) => {
-            const I = h(M)[0];
+          const O = g.reduce((u, E, H) => {
+            const I = h(E)[0];
             return u + I + k;
           }, 0), B = Math.max(...g.map(
             (u) => h(u)[1]
@@ -1990,13 +1984,11 @@ function De() {
           let P = a;
           if (x > 0)
             for (let u = 0; u < x; u++) {
-              const M = f[u] || [], H = Math.max(...M.map(
-                (I) => h(I)[1]
-              ));
+              const E = f[u] || [], H = E.length ? Math.max(...E.map((I) => h(I)[1])) : 0;
               P += H + d + L;
             }
           let j = n;
-          g.forEach((u, M) => {
+          g.forEach((u, E) => {
             if (u && u.pos) {
               const H = [u.pos[0], u.pos[1]];
               u.pos[0] = j, u.pos[1] = P, j += h(u)[0] + k, typeof u.x == "number" && (u.x = u.pos[0]), typeof u.y == "number" && (u.y = u.pos[1]);
