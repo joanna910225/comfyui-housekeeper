@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased]
+
+### Internal
+
+- **The TypeScript is now type-checked.** Vite strips the annotations on the way to
+  `js/main.js` without verifying them, so nothing in the project had ever compiled the
+  source. CI now runs `tsc --noEmit` before the tests.
+
+  The 19 errors this surfaced were mostly not type debt: 16 were the icon imports, which
+  use Vite's `?url` suffix that tsc has no notion of, one was ComfyUI's own host script —
+  which exists only in the browser — and one was `node:url` in the build config. All are
+  now declared rather than worked around. The single real gap was `comfyClass`, a property
+  ComfyUI adds to the node constructor that litegraph does not declare. Closes #55.
+
 ## [0.6.2] - 2026-08-12
 
 ### Fixed
