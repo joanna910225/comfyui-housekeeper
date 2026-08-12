@@ -11,6 +11,17 @@ name: Browser tests
 on:
   push:
     branches: [main, test]
+    # Only what can actually change browser behaviour. A README or changelog edit triggering
+    # a nine-minute ComfyUI install teaches people to ignore the result.
+    paths:
+      - 'src/**'
+      - 'js/**'
+      - '__init__.py'
+      - 'e2e/**'
+      - '.github/workflows/e2e.yml'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.mts'
   workflow_dispatch:
     inputs:
       comfyui_ref:

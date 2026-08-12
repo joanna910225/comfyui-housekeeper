@@ -81,9 +81,7 @@ test.describe('panel header layout', () => {
   for (const width of WIDTHS) {
     test(`header controls never collide at ${width}px, before and after dragging`, async ({ page }) => {
       await page.setViewportSize({ width, height: 800 })
-      await openComfyUI(page)
-      await page.evaluate(key => window.localStorage.removeItem(key), STORAGE_KEY)
-      await page.reload({ waitUntil: 'domcontentloaded' })
+      // Fresh context per test: localStorage is already empty.
       await openComfyUI(page)
       await openHousekeeper(page)
       // Expanding changes the wrapper's width, so its placement is recomputed again.
@@ -110,9 +108,6 @@ test.describe('panel header layout', () => {
 
   test('the reset label reads in full rather than being truncated', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 })
-    await openComfyUI(page)
-    await page.evaluate(key => window.localStorage.removeItem(key), STORAGE_KEY)
-    await page.reload({ waitUntil: 'domcontentloaded' })
     await openComfyUI(page)
     await openHousekeeper(page)
     await waitForPanelSettled(page)

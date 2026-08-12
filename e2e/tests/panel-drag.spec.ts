@@ -30,9 +30,8 @@ test.describe('draggable panel position', () => {
   test.use({ viewport: { width: 1280, height: 800 } })
 
   test.beforeEach(async ({ page }) => {
-    await openComfyUI(page)
-    await page.evaluate(key => window.localStorage.removeItem(key), STORAGE_KEY)
-    await page.reload({ waitUntil: 'domcontentloaded' })
+    // No need to clear localStorage: Playwright gives each test a fresh browser context, so
+    // it is already empty. Clearing it used to cost a second full ComfyUI page load per test.
     await openComfyUI(page)
   })
 
