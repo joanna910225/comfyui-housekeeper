@@ -120,6 +120,39 @@ test('cycles terminate and still place every node', () => {
   }
 });
 
+test('levels are contiguous, so no level is left empty', () => {
+  // The property that actually matters, and the one the old tests missed. They asserted that
+  // cycles terminate and place every node - both true while levels 1,2,3 were used and 0 was
+  // empty. The layout walks every level from 0 up and takes Math.max() of each; an empty one
+  // yields -Infinity and sends the entire graph there.
+  //
+  // Longest-path relaxation can vacate a level if it raises a node that was already placed,
+  // which a cycle makes reachable: in A -> B -> C -> A the cycle breaks at A on level 0, then
+  // C's edge back to A used to raise A and leave level 0 empty.
+  const fixtures = [
+    ['3-cycle with a tail', [1, 2, 3, 4], [[1, 2], [2, 3], [3, 1], [3, 4]]],
+    ['root feeding a cycle', [0, 1, 2, 3], [[0, 1], [1, 2], [2, 3], [3, 1]]],
+    ['two cycles joined downstream', [1, 2, 3, 4, 5], [[1, 2], [2, 1], [3, 4], [4, 3], [2, 5], [4, 5]]],
+    ['cycle with a long tail', [1, 2, 3, 4, 5, 6], [[1, 2], [2, 3], [3, 1], [3, 4], [4, 5], [5, 6]]],
+    ['nested cycles', [1, 2, 3, 4, 5], [[1, 2], [2, 3], [3, 2], [3, 4], [4, 5], [5, 3]]]
+  ]
+
+  for (const [name, ids, edges] of fixtures) {
+    const graph = levelsOf(graphOf(ids, edges))
+    const used = [...new Set(Object.values(graph).map(d => d.level))].sort((a, b) => a - b)
+    for (let i = 0; i <= Math.max(...used); i++) {
+      assert.ok(used.includes(i), `${name}: level ${i} is empty, used levels are ${JSON.stringify(used)}`)
+    }
+  }
+})
+
+test('a node that has already been placed is never raised', () => {
+  // The mechanism behind the empty level, asserted directly: in A -> B -> C -> A the cycle
+  // breaks at A, and C's back-edge must not move A afterwards.
+  const graph = levelsOf(graphOf(['A', 'B', 'C', 'D'], [['A', 'B'], ['B', 'C'], ['C', 'A'], ['C', 'D']]))
+  assert.equal(graph.A.level, 0, 'A was placed first and must stay where it was placed')
+})
+
 test('node id 0 is treated as a real id, not a missing one', () => {
   const graph = levelsOf(graphOf([0, 1, 2], [[0, 1], [1, 2]]));
   assert.equal(graph[0].level, 0);
