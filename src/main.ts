@@ -40,6 +40,9 @@ const DEFAULT_NODE_SPACING = 30;
 const NODE_SPACING_SETTING_ID = 'Housekeeper.NodeSpacing';
 const MAX_NODE_SPACING = 400;
 let nodeSpacingValue = DEFAULT_NODE_SPACING;
+// Set by the panel so a change made in ComfyUI's settings dialog updates the in-panel
+// control too, instead of the two drifting apart while both are open.
+let spacingControlSync: (() => void) | null = null;
 
 /** Current gap between nodes. Single source of truth for every layout site. */
 function nodeGap(): number {
@@ -107,7 +110,10 @@ comfyApp.registerExtension({
             type: 'slider',
             attrs: { min: 0, max: 200, step: 5 },
             defaultValue: DEFAULT_NODE_SPACING,
-            onChange: (value: unknown) => setNodeSpacing(value)
+            onChange: (value: unknown) => {
+                setNodeSpacing(value);
+                spacingControlSync?.();
+            }
         }
     ],
 
@@ -843,6 +849,46 @@ function initializeAlignmentPanel() {
     transition: none;
 }
 
+.housekeeper-spacing-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.housekeeper-spacing-slider {
+    /* min-width: 0 so the slider yields instead of forcing the row past the panel width. */
+    flex: 1 1 auto;
+    min-width: 0;
+    accent-color: var(--hk-accent);
+    cursor: pointer;
+}
+
+.housekeeper-spacing-value {
+    flex: 0 0 auto;
+    width: 52px;
+    background: rgba(12, 14, 18, 0.85);
+    border: 1px solid rgba(120, 170, 255, 0.35);
+    border-radius: 4px;
+    color: var(--hk-text-strong);
+    font-family: inherit;
+    font-size: var(--hk-body-font-size);
+    padding: 3px 6px;
+    text-align: right;
+}
+
+.housekeeper-spacing-value:focus-visible,
+.housekeeper-spacing-slider:focus-visible {
+    outline: 2px solid var(--hk-accent);
+    outline-offset: 2px;
+}
+
+.housekeeper-spacing-unit {
+    flex: 0 0 auto;
+    color: var(--hk-text-muted);
+    font-size: var(--hk-subtitle-font-size);
+}
+
 .housekeeper-position-row {
     display: flex;
     justify-content: flex-end;
@@ -1382,6 +1428,73 @@ function initializeAlignmentPanel() {
         subtitle.className = 'housekeeper-subtitle';
         subtitle.textContent = text;
         return subtitle;
+    }
+
+    /**
+     * In-panel control for the node gap. Writes through to the ComfyUI setting rather than
+     * keeping its own copy, so the panel and ComfyUI's settings dialog cannot disagree, and
+     * so the value is persisted by ComfyUI per user like every other setting.
+     */
+    function createSpacingControl() {
+        const row = document.createElement('div');
+        row.className = 'housekeeper-spacing-row';
+
+        const slider = document.createElement('input');
+        slider.type = 'range';
+        slider.className = 'housekeeper-spacing-slider';
+        slider.min = '0';
+        slider.max = '200';
+        slider.step = '5';
+        slider.setAttribute('aria-label', 'Gap between nodes when aligning, in pixels');
+
+        // A number input beside it, because a slider alone cannot be set precisely and is
+        // awkward to operate for anyone who wants an exact value.
+        const readout = document.createElement('input');
+        readout.type = 'number';
+        readout.className = 'housekeeper-spacing-value';
+        readout.min = '0';
+        readout.max = String(MAX_NODE_SPACING);
+        readout.step = '1';
+        readout.setAttribute('aria-label', 'Gap between nodes when aligning, in pixels');
+
+        const unit = document.createElement('span');
+        unit.className = 'housekeeper-spacing-unit';
+        unit.textContent = 'px';
+
+        const render = () => {
+            const current = String(nodeGap());
+            slider.value = current;
+            readout.value = current;
+        };
+
+        const commit = (raw: string) => {
+            const parsed = Number(raw);
+            if (!Number.isFinite(parsed)) { render(); return; }
+
+            setNodeSpacing(parsed);
+            // Persist through ComfyUI so the settings dialog reflects it and it survives a
+            // reload. setNodeSpacing has already clamped, so store the clamped value rather
+            // than what was typed.
+            try {
+                (window as any).app?.extensionManager?.setting?.set(NODE_SPACING_SETTING_ID, nodeGap());
+            } catch (error) {
+                console.error('[housekeeper] could not persist node spacing:', error);
+            }
+            render();
+        };
+
+        slider.addEventListener('input', () => commit(slider.value));
+        readout.addEventListener('change', () => commit(readout.value));
+
+        // Keep the control honest if the value is changed from ComfyUI's settings dialog
+        // while the panel is open.
+        spacingControlSync = render;
+        render();
+
+        row.appendChild(slider);
+        row.appendChild(readout);
+        row.appendChild(unit);
+        return row;
     }
 
     function createButtonGrid(buttons: AlignmentButtonConfig[], group: AlignmentButtonConfig['group']) {
@@ -2118,6 +2231,12 @@ function initializeAlignmentPanel() {
         alignmentSection.appendChild(createButtonGrid(sizeAlignments, 'size'));
         alignmentSection.appendChild(createSubtitle('Flow Alignment'));
         alignmentSection.appendChild(createButtonGrid(flowAlignments, 'flow'));
+
+        // The gap is also a ComfyUI setting, but it belongs here too: it changes what every
+        // button above does, and looking for it in ComfyUI's global settings dialog means
+        // leaving the panel you are working in.
+        alignmentSection.appendChild(createSubtitle('Spacing'));
+        alignmentSection.appendChild(createSpacingControl());
 
         const buildPalette = (colors: string[], className: string, interactive = true) => {
             const palette = document.createElement('div');
