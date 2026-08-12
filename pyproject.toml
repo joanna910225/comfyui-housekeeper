@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "housekeeper"
-version = "0.0.1"
+version = "0.2.0"
 description = "A tool that organizes workflow nodes into clean, user-friendly layouts"
 authors = [
   {name = "Feifei Rong", email = "feifei.rong2@gmail.com"}
@@ -30,9 +30,9 @@ dev = [
 ]
 
 [project.urls]
-Repository = "https://github.com/joanna910225/housekeeper"
-BugTracker = "https://github.com/joanna910225/housekeeper/issues"
-Documentation = "https://github.com/joanna910225/housekeeper/wiki"
+Repository = "https://github.com/joanna910225/comfyui-housekeeper"
+BugTracker = "https://github.com/joanna910225/comfyui-housekeeper/issues"
+Documentation = "https://github.com/joanna910225/comfyui-housekeeper/wiki"
 
 
 [tool.comfy]
@@ -40,7 +40,7 @@ PublisherId = "joanna910225"
 DisplayName = "HouseKeeper"
 Icon = ""
 Tags = []
-Repository = "https://github.com/joanna910225/housekeeper"
+Repository = "https://github.com/joanna910225/comfyui-housekeeper"
 includes = ["js"]
 
 [tool.setuptools.package-data]
@@ -53,7 +53,9 @@ testpaths = [
 ]
 
 [tool.mypy]
-files = "."
+# Not `files = "."`: the checkout directory name contains a hyphen, so mypy aborts with
+# "contains __init__.py but is not a valid Python package name" before checking anything.
+files = ["__init__.py"]
 
 # Use strict defaults
 strict = true
@@ -70,7 +72,7 @@ disable_error_code = "attr-defined"
 # extend-exclude = ["static", "ci/templates"]
 line-length = 140
 src = ["src", "tests"]
-target-version = "py39"
+target-version = "py310"
 
 # Add rules to ban exec/eval
 [tool.ruff.lint]
