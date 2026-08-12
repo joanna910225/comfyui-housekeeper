@@ -2,6 +2,42 @@
 
 All notable changes to this project are documented here.
 
+## [0.3.0] - 2026-08-12
+
+Flow-layout correctness, plus the project's first tests. Detail in
+[#27](https://github.com/joanna910225/comfyui-housekeeper/issues/27).
+
+### Fixed
+
+- **Flow alignment collapsed dependency stages into the same column.** Levels were assigned on the
+  first visit during a breadth-first walk, which is the *shortest* path from a root, so any link that
+  skipped ahead pulled a node into the same column as its own producer. On the stock ComfyUI workflow
+  this produced 3 columns instead of 5, placing `KSampler` beside all three of the nodes feeding it
+  and `VAEDecode` beside `KSampler`. Layout now uses longest path, so every link points forwards.
+  Cycles are broken deterministically rather than looping.
+- **Repeating a flow alignment used stale node sizes.** Sizes were cached on the node the first time
+  a layout ran and never recalculated, so after resizing a node the next layout still reserved its old
+  dimensions — a node grown from 100 to 400 tall left its neighbour drawn inside it. Sizes are now
+  measured fresh on every run, which also covers collapsing a node (that changes a node's height
+  without firing a resize, so it would have defeated any cache-invalidation approach).
+- **Preview disagreed with the applied result** from the second flow alignment onward, for the same
+  reason: the preview always recalculated while the applied layout reused the cache. Both now measure
+  identically.
+- **The panel covered ComfyUI's right-hand controls.** The offset added in 0.2.0 measured the width of
+  `#comfyui-body-right`, which still exists but is 0px wide in current ComfyUI, so no offset was
+  applied and the collapsed handle sat on top of the properties toggle. The panel now measures the
+  leftmost edge of ComfyUI's right-docked interface instead, which works whether the side panel is
+  open or closed and does not depend on class names that have already changed twice. Reopens #25 —
+  see that issue for what remains.
+- Flow alignment no longer writes `(0, 0)` into node positions before laying out. This was invisible
+  on the classic canvas but reached the layout store under the Vue node renderer.
+
+### Added
+
+- **Test suite** — 18 tests covering flow leveling and node measurement, run with `npm test`. The
+  project previously had none. Both suites were verified to fail against the previous implementation
+  rather than passing vacuously.
+
 ## [0.2.0] - 2026-08-12
 
 Correctness release. Findings and verification detail are in
