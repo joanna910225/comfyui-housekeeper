@@ -29,6 +29,22 @@ npm run report
 COMFYUI_URL=http://127.0.0.1:8188 npm test
 ```
 
+## 渲染器
+
+`COMFYUI_RENDERER` 决定这一轮跑在哪个渲染器上，默认 `canvas`（传统 litegraph 画布）：
+
+```bash
+COMFYUI_RENDERER=vue npm test    # Nodes 2.0，每个节点是一个 Vue 组件
+```
+
+helper 通过 `Comfy.VueNodes.Enabled` 设置渲染器，并在 `openComfyUI()` 里断言
+`LiteGraph.vueNodesMode` 与请求一致——这个设置存在服务端，不断言的话
+上一轮留下的值会静悄悄地决定这一轮真正测的是哪个渲染器。
+
+Nodes 2.0 目前跑不过：扩展写 `node.pos` 时绕过了 litegraph 的访问器，
+Vue 渲染器的布局 store 看不到这个写入，对齐后节点在屏幕上不动（#52）。
+CI 里这条腿每晚跑但不作为门禁。
+
 ## 当前测试
 
 套件覆盖 issue #27 的完整浏览器检查表：

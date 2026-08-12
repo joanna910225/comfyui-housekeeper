@@ -30,6 +30,22 @@ export type NodeSnapshot = {
 export type Rect = { x: number; y: number; width: number; height: number }
 
 /**
+ * Which node renderer the run is aimed at.
+ *
+ * ComfyUI ships two. The legacy one paints every node into a single <canvas>, so the DOM
+ * contains one element and the extension reads geometry from litegraph. Nodes 2.0 renders
+ * each node as a Vue component - one `.lg-node` element per node, laid out by the browser.
+ * They are genuinely different surfaces for an extension that measures nodes and places a
+ * panel against ComfyUI's own chrome, so which one is in force is part of the run, not a
+ * detail.
+ *
+ * Read from the environment rather than left to whatever the server last had, because the
+ * setting is persisted server-side like everything else below: an unset run would silently
+ * inherit the previous run's renderer.
+ */
+export const RENDERER = process.env.COMFYUI_RENDERER === 'vue' ? 'vue' : 'canvas'
+
+/**
  * UI state that tests toggle and that ComfyUI persists SERVER-SIDE, in
  * user/default/comfy.settings.json - not in localStorage, so clearing browser storage or
  * using a fresh context does not reset it.
@@ -49,7 +65,11 @@ const UI_STATE_BASELINE: Record<string, unknown> = {
   'Comfy.Queue.History.Expanded': false,
   // Housekeeper's own node spacing is persisted the same way, so a test that changes it
   // would otherwise silently alter every layout assertion that runs after it.
-  'Housekeeper.NodeSpacing': 30
+  'Housekeeper.NodeSpacing': 30,
+  // Nodes 2.0. Named `Comfy.VueNodes.Enabled` in the frontend's settings schema - checked
+  // against the shipped bundle rather than guessed, and asserted below, so a rename upstream
+  // turns into a failure instead of a run that quietly tests the legacy canvas twice.
+  'Comfy.VueNodes.Enabled': RENDERER === 'vue'
 }
 
 /**
@@ -114,6 +134,18 @@ export async function openComfyUI(page: Page) {
 
   await expect(page.locator('canvas').first()).toBeVisible()
   await expect(page.locator('.housekeeper-wrapper')).toBeAttached()
+
+  // Prove the renderer the run asked for is the one that engaged. The frontend mirrors the
+  // setting onto this flag, so it reports what is in force rather than what was requested -
+  // and it is absent on frontends predating Nodes 2.0, which reads as the canvas renderer.
+  // Without this check a renamed setting would leave the Vue run green against the canvas,
+  // which is worse than no coverage: it would claim coverage that does not exist.
+  const vueNodes = await page.evaluate(() => Boolean((window as any).LiteGraph?.vueNodesMode))
+  expect(
+    vueNodes,
+    `asked for the ${RENDERER} renderer, but LiteGraph.vueNodesMode is ${vueNodes} - ` +
+      'Comfy.VueNodes.Enabled may have been renamed or removed in this frontend'
+  ).toBe(RENDERER === 'vue')
 
   // Every caller wants a panel that has finished placing itself. Doing it here rather than in
   // each spec is what stops this being rediscovered a fourth time.
