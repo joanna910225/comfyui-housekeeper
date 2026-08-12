@@ -46,7 +46,10 @@ export type Rect = { x: number; y: number; width: number; height: number }
  */
 const UI_STATE_BASELINE: Record<string, unknown> = {
   'Comfy.RightSidePanel.IsOpen': false,
-  'Comfy.Queue.History.Expanded': false
+  'Comfy.Queue.History.Expanded': false,
+  // Housekeeper's own node spacing is persisted the same way, so a test that changes it
+  // would otherwise silently alter every layout assertion that runs after it.
+  'Housekeeper.NodeSpacing': 30
 }
 
 /**

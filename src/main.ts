@@ -28,6 +28,31 @@ const comfyApp: ComfyApp = app;
 // Global alignment panel instance
 let alignmentPanel: any = null;
 
+// Gap left between nodes when aligning or arranging, in graph units.
+//
+// Every alignment re-stacks the selection along the other axis using this gap, which is what
+// #20 reports: aligning vertically also re-spaces horizontally. That behaviour is deliberate,
+// but the amount should be the user's choice (#20, #23).
+//
+// Module scope because the panel closure reads it while the ComfyUI setting that writes it is
+// registered out here.
+const DEFAULT_NODE_SPACING = 30;
+const NODE_SPACING_SETTING_ID = 'Housekeeper.NodeSpacing';
+const MAX_NODE_SPACING = 400;
+let nodeSpacingValue = DEFAULT_NODE_SPACING;
+
+/** Current gap between nodes. Single source of truth for every layout site. */
+function nodeGap(): number {
+    return nodeSpacingValue;
+}
+
+function setNodeSpacing(value: unknown) {
+    const parsed = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(parsed)) return;
+    // Clamped so a hand-edited setting cannot produce negative or absurd layouts.
+    nodeSpacingValue = Math.min(Math.max(Math.round(parsed), 0), MAX_NODE_SPACING);
+}
+
 // Commented out Vue-based extension - uncomment if you need Vue components
 /*
 comfyApp.registerExtension({
@@ -69,7 +94,23 @@ comfyApp.registerExtension({
 // Register alignment panel extension that loads immediately
 comfyApp.registerExtension({
     name: 'housekeeper-alignment',
-    
+
+    // Declared here so it appears in ComfyUI's own settings dialog rather than as a bespoke
+    // control, and so ComfyUI persists it per user. onChange fires with the stored value on
+    // load as well as on edit, which is what seeds nodeSpacingValue.
+    settings: [
+        {
+            id: NODE_SPACING_SETTING_ID,
+            category: ['Housekeeper', 'Layout', 'Node spacing'],
+            name: 'Node spacing',
+            tooltip: 'Gap left between nodes when aligning or arranging them, in pixels.',
+            type: 'slider',
+            attrs: { min: 0, max: 200, step: 5 },
+            defaultValue: DEFAULT_NODE_SPACING,
+            onChange: (value: unknown) => setNodeSpacing(value)
+        }
+    ],
+
     async setup() {
         
         // Create the alignment panel immediately without waiting for a specific node
@@ -2320,7 +2361,7 @@ function initializeAlignmentPanel() {
                         width: nodeWidth,
                         height: nodeHeight
                     });
-                    currentY += nodeHeight + 30;
+                    currentY += nodeHeight + nodeGap();
                 });
 
                 // Push positions in the original node order
@@ -2355,7 +2396,7 @@ function initializeAlignmentPanel() {
                         width: nodeWidth,
                         height: nodeHeight
                     });
-                    currentYRight += nodeHeight + 30;
+                    currentYRight += nodeHeight + nodeGap();
                 });
 
                 nodes.forEach((node: any) => {
@@ -2389,7 +2430,7 @@ function initializeAlignmentPanel() {
                         width: nodeWidth,
                         height: nodeHeight
                     });
-                    currentX += nodeWidth + 30;
+                    currentX += nodeWidth + nodeGap();
                 });
 
                 nodes.forEach((node: any) => {
@@ -2423,7 +2464,7 @@ function initializeAlignmentPanel() {
                         width: nodeWidth,
                         height: nodeHeight
                     });
-                    currentXBottom += nodeWidth + 30;
+                    currentXBottom += nodeWidth + nodeGap();
                 });
 
                 nodes.forEach((node: any) => {
@@ -2474,7 +2515,7 @@ function initializeAlignmentPanel() {
                         width: nodeWidth,
                         height: nodeHeight
                     });
-                    currentYWidthCenter += nodeHeight + 30;
+                    currentYWidthCenter += nodeHeight + nodeGap();
                 });
 
                 nodes.forEach((node: any) => {
@@ -2525,7 +2566,7 @@ function initializeAlignmentPanel() {
                         width: nodeWidth,
                         height: nodeHeight
                     });
-                    currentXHeightCenter += nodeWidth + 30;
+                    currentXHeightCenter += nodeWidth + nodeGap();
                 });
 
                 nodes.forEach((node: any) => {
@@ -2579,8 +2620,8 @@ function initializeAlignmentPanel() {
                 const hFlowNodeGraph = buildNodeGraph(hFlowNodeCopies, hFlowConnections);
 
                 // Exact spacing constants from H-Flow
-                const H_COLUMN_SPACING = 30;
-                const H_NODE_SPACING_Y = 30;
+                const H_COLUMN_SPACING = nodeGap();
+                const H_NODE_SPACING_Y = nodeGap();
                 const H_LEVEL_PADDING = 0;
 
                 // Group by levels exactly like H-Flow
@@ -2680,8 +2721,8 @@ function initializeAlignmentPanel() {
                 const vFlowNodeGraph = buildNodeGraph(vFlowNodeCopies, vFlowConnections);
 
                 // Exact spacing constants from V-Flow
-                const V_ROW_SPACING = 30;
-                const V_NODE_SPACING_X = 30;
+                const V_ROW_SPACING = nodeGap();
+                const V_NODE_SPACING_X = nodeGap();
                 const V_LEVEL_PADDING = 0;
 
                 // Group by levels exactly like V-Flow
@@ -3144,7 +3185,7 @@ function initializeAlignmentPanel() {
                     // Calculate positions to ensure no overlapping
                     let currentY = leftSortedNodes[0].pos[1]; // Start from the topmost node's position
                     leftSortedNodes.forEach((node: any, index: number) => {
-                        const nodeSpacing = 30; // Extra spacing for safety
+                        const nodeSpacing = nodeGap();
                         
                         // Get node height from multiple possible sources
                         let nodeHeight = 100; // Default fallback
@@ -3182,7 +3223,7 @@ function initializeAlignmentPanel() {
                     // Calculate positions to ensure no overlapping
                     let currentYRight = rightSortedNodes[0].pos[1]; // Start from the topmost node's position
                     rightSortedNodes.forEach((node: any, index: number) => {
-                        const nodeSpacing = 30; // Extra spacing for safety
+                        const nodeSpacing = nodeGap();
                         
                         // Get node dimensions from multiple possible sources
                         let nodeHeight = 100; // Default fallback
@@ -3224,7 +3265,7 @@ function initializeAlignmentPanel() {
                     // Calculate positions to ensure no overlapping
                     let currentX = topSortedNodes[0].pos[0]; // Start from the leftmost node's position
                     topSortedNodes.forEach((node: any, index: number) => {
-                        const nodeSpacing = 30; // Extra spacing for safety
+                        const nodeSpacing = nodeGap();
                         
                         // Get node width from multiple possible sources
                         let nodeWidth = 150; // Default fallback
@@ -3263,7 +3304,7 @@ function initializeAlignmentPanel() {
                     
                     
                     bottomSortedNodes.forEach((node: any, index: number) => {
-                        const nodeSpacing = 30; // Extra spacing for safety
+                        const nodeSpacing = nodeGap();
                         
                         // Get node dimensions from multiple possible sources
                         let nodeWidth = 150; // Default fallback
@@ -3324,7 +3365,7 @@ function initializeAlignmentPanel() {
                     let currentYWidthCenterAlign = widthCenterSortedNodes[0].pos[1];
                     
                     widthCenterSortedNodes.forEach((node: any) => {
-                        const nodeSpacing = 30;
+                        const nodeSpacing = nodeGap();
                         
                         let nodeWidth = 150, nodeHeight = 100;
                         if (node.size && Array.isArray(node.size)) {
@@ -3374,7 +3415,7 @@ function initializeAlignmentPanel() {
                     let currentXHeightCenterAlign = heightCenterSortedNodes[0].pos[0];
                     
                     heightCenterSortedNodes.forEach((node: any) => {
-                        const nodeSpacing = 30;
+                        const nodeSpacing = nodeGap();
                         
                         let nodeWidth = 150, nodeHeight = 100;
                         if (node.size && Array.isArray(node.size)) {
@@ -3566,9 +3607,9 @@ function initializeAlignmentPanel() {
             const sizeOf = measureFlowNodes(validNodes);
             
             // Configuration for horizontal flow - OPTIMIZED for staying near original location
-            const COLUMN_SPACING = 30;      // Spacing between columns
-            const NODE_SPACING_X = 30;      // Horizontal space between node edges
-            const NODE_SPACING_Y = 30;      // Vertical space between node edges
+            const COLUMN_SPACING = nodeGap();      // Spacing between columns
+            const NODE_SPACING_X = nodeGap();      // Horizontal space between node edges
+            const NODE_SPACING_Y = nodeGap();      // Vertical space between node edges
             const LEVEL_PADDING = 0;        // Minimal padding between levels
             
             // Group nodes by level
@@ -3732,9 +3773,9 @@ function initializeAlignmentPanel() {
             const sizeOf = measureFlowNodes(validNodes);
             
             // Configuration for vertical flow - ENHANCED spacing to prevent overlapping
-            const ROW_SPACING = 30;         // Spacing between rows
-            const NODE_SPACING_X = 30;      // Horizontal space between node edges
-            const NODE_SPACING_Y = 30;      // Vertical space between node edges
+            const ROW_SPACING = nodeGap();         // Spacing between rows
+            const NODE_SPACING_X = nodeGap();      // Horizontal space between node edges
+            const NODE_SPACING_Y = nodeGap();      // Vertical space between node edges
             const LEVEL_PADDING = 0;        // Minimal padding between levels
             
             // Group nodes by level
