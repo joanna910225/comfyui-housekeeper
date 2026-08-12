@@ -65,6 +65,31 @@ jobs:
       - name: Format check
         run: ruff format --check .
 
+      # setuptools' src-layout auto-discovery used to select src/components and publish five
+      # unused .vue files as a top-level `components` package - shipping none of the actual
+      # extension and a name that collides with anything else called `components`. Nothing
+      # detected that, so assert the build stays free of importable top-level packages.
+      - name: Wheel ships no stray top-level package
+        run: |
+          pip install --quiet build setuptools wheel
+          python -m build --wheel --no-isolation --outdir dist-check
+          python - <<'PY'
+          import glob, zipfile
+
+          wheel = glob.glob('dist-check/*.whl')[0]
+          names = zipfile.ZipFile(wheel).namelist()
+          stray = sorted({
+              n.split('/')[0] for n in names
+              if '/' in n and not n.split('/')[0].endswith('.dist-info')
+          })
+          if stray:
+              print(f'::error::the wheel ships top-level package(s): {stray}')
+              print('ComfyUI loads this extension from custom_nodes/, not site-packages, so')
+              print('the wheel should carry metadata only. Check [tool.setuptools] packages.')
+              raise SystemExit(1)
+          print(f'{wheel.split("/")[-1]} carries metadata only, as intended')
+          PY
+
       # The extension is frontend-only: __init__.py must import with no ComfyUI present, and
       # must still export NODE_CLASS_MAPPINGS or ComfyUI reports it as an import failure.
       - name: Import smoke test
