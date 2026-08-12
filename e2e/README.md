@@ -39,9 +39,23 @@ COMFYUI_URL=http://127.0.0.1:8188 npm test
 - `flow-measurement.spec.ts`：第二次运行时重新测量大小、折叠节点及预览/应用一致性。
 - `history-input-color.spec.ts`：单步撤销、输入框快捷键隔离和颜色撤销。
 - `panel-toast.spec.ts`：面板位置、刷新、侧栏/属性按钮碰撞和 toast 点击穿透。
+- `panel-drag.spec.ts`：拖动手柄/标题栏、点击仍可切换、位置持久化与重置、越界钳制。
+- `panel-header.spec.ts`：标题与控件在 320–1600px 各宽度下不重叠、不截断（默认 / 拖动后 / 刷新后）。
 
-最新 `origin/test` (`774ec13`) 完整 Google Chrome 结果：**16 passed, 1 failed, 1 skipped**。
-唯一失败是折叠后的 Housekeeper 手柄覆盖 ComfyUI 属性按钮；legacy docked sidebar 在当前前端不存在，因此相应 resize 检查跳过。
+## 测试隔离
+
+ComfyUI 把部分界面状态存在**服务端**（`user/default/comfy.settings.json`），
+不是 localStorage，所以换 context 或清浏览器存储都重置不了。
+任何切换右侧面板的用例都会改变后续用例的初始状态，结果因执行顺序而变：
+同一份代码连续跑两次曾分别得到 2 个和 1 个失败，而单独跑这些用例都能通过。
+
+因此 `openComfyUI()` 会先调用 `resetComfyUIState()`，
+通过 `POST /api/settings` 把这些键恢复到固定基线后再导航。
+基线特意让右侧面板保持关闭——这是面板定位更难的情况：
+面板打开时有一大块明显的障碍物可测量，关闭时只剩右上角一小组控件需要避让。
+
+新增依赖服务端状态的用例时，请把对应的键加入 helper 里的 `UI_STATE_BASELINE`，
+否则套件会重新变得依赖执行顺序，无法作为合并门禁。
 
 默认运行使用 headless Chrome，避免测试窗口抢占当前桌面焦点。只有明确需要观察交互时才运行 `npm run test:headed`。
 

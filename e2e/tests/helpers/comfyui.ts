@@ -29,7 +29,42 @@ export type NodeSnapshot = {
 
 export type Rect = { x: number; y: number; width: number; height: number }
 
+/**
+ * UI state that tests toggle and that ComfyUI persists SERVER-SIDE, in
+ * user/default/comfy.settings.json - not in localStorage, so clearing browser storage or
+ * using a fresh context does not reset it.
+ *
+ * Without this, a test that opens the right side panel changes the starting conditions of
+ * every test after it, and results depend on execution order: the same suite run twice on
+ * identical code produced 2 failures and then 1, and tests that failed in sequence passed
+ * in isolation. That makes the suite unusable as a merge gate, because a real regression is
+ * indistinguishable from ordering noise.
+ *
+ * The baseline deliberately closes the right side panel. That is the harder case for panel
+ * placement - with the panel open there is a wide, obvious obstacle to measure against;
+ * closed, only the narrow top-right control cluster is there to avoid.
+ */
+const UI_STATE_BASELINE: Record<string, unknown> = {
+  'Comfy.RightSidePanel.IsOpen': false,
+  'Comfy.Queue.History.Expanded': false
+}
+
+/**
+ * Put ComfyUI's persisted UI state back to a known baseline. Must run before navigation so
+ * the page loads with it already applied.
+ */
+export async function resetComfyUIState(page: Page) {
+  const response = await page.request.post('/api/settings', { data: UI_STATE_BASELINE })
+  // Fail loudly rather than silently reintroducing order-dependence if the endpoint moves.
+  expect(
+    response.ok(),
+    `could not reset ComfyUI UI state (HTTP ${response.status()}) - tests would be order-dependent`
+  ).toBe(true)
+}
+
 export async function openComfyUI(page: Page) {
+  await resetComfyUIState(page)
+
   await page.goto('/', { waitUntil: 'domcontentloaded' })
   await page.waitForFunction(() => {
     const app = (window as any).app
