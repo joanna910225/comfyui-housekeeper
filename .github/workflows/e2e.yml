@@ -1,0 +1,145 @@
+name: Browser tests
+
+# Not on every pull request: this installs ComfyUI and PyTorch and takes several minutes.
+# It runs on pushes to main and test, and on demand.
+#
+# ComfyUI is checked out at its default branch rather than pinned, so a failure here can mean
+# either "we broke something" or "ComfyUI changed under us". The second is worth knowing about
+# - this extension reaches into frontend internals that have already moved twice - but it does
+# mean this workflow can go red without anything in this repository changing. Read a failure
+# before assuming it is ours.
+on:
+  push:
+    branches: [main, test]
+  workflow_dispatch:
+    inputs:
+      comfyui_ref:
+        description: 'ComfyUI ref to test against (branch, tag or SHA)'
+        required: false
+        default: 'master'
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser:
+    name: Playwright against a real ComfyUI
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out the extension
+        uses: actions/checkout@v4
+        with:
+          path: extension
+
+      - name: Check out ComfyUI
+        uses: actions/checkout@v4
+        with:
+          repository: comfyanonymous/ComfyUI
+          ref: ${{ github.event.inputs.comfyui_ref || 'master' }}
+          path: ComfyUI
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: extension/e2e/package-lock.json
+
+      # CPU-only torch: these tests never execute a workflow, they only need ComfyUI's
+      # frontend to load. The default wheels would pull in CUDA for no benefit.
+      - name: Install ComfyUI dependencies
+        working-directory: ComfyUI
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements.txt
+
+      - name: Install the extension into ComfyUI
+        run: cp -r extension ComfyUI/custom_nodes/comfyui-housekeeper
+
+      - name: Install browser test dependencies
+        working-directory: extension/e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chrome
+
+      - name: Start ComfyUI
+        working-directory: ComfyUI
+        run: |
+          nohup python main.py --listen 127.0.0.1 --port 8188 --cpu > comfyui.log 2>&1 &
+          for attempt in $(seq 1 60); do
+            if curl -sf -o /dev/null http://127.0.0.1:8188/; then
+              echo "ComfyUI is up after ${attempt}0s"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::ComfyUI did not start within 10 minutes"
+          tail -50 comfyui.log
+          exit 1
+
+      # Guards the frontend-only contract: the extension must load cleanly and register no
+      # node types. A regression here is invisible to the browser tests themselves.
+      - name: Extension loaded cleanly
+        working-directory: ComfyUI
+        run: |
+          if grep -q "IMPORT FAILED" comfyui.log; then
+            echo "::error::ComfyUI reported an import failure"
+            grep -B5 -A5 "IMPORT FAILED" comfyui.log
+            exit 1
+          fi
+          curl -sf -o /dev/null http://127.0.0.1:8188/extensions/comfyui-housekeeper/main.js \
+            || { echo "::error::the extension bundle is not being served"; exit 1; }
+          echo "extension loaded and its bundle is served"
+
+      # The first page load pays for ComfyUI's frontend initialising, which on a 2-core
+      # runner exceeded the per-test timeout and failed whichever test happened to run
+      # first - in beforeEach, before it asserted anything. Paying that cost here keeps it
+      # out of the suite instead of masking it with retries.
+      - name: Warm up the frontend
+        working-directory: extension/e2e
+        run: |
+          node --input-type=module -e "
+          import { chromium } from '@playwright/test';
+          const browser = await chromium.launch({ channel: 'chrome' });
+          const page = await browser.newPage();
+          await page.goto('http://127.0.0.1:8188/', { waitUntil: 'domcontentloaded' });
+          await page.waitForFunction(
+            () => Boolean(window.app?.graph && window.app?.canvas && window.LiteGraph),
+            null,
+            { timeout: 180000 }
+          );
+          await page.waitForSelector('.housekeeper-wrapper', { timeout: 60000 });
+          console.log('frontend warm: app ready and the Housekeeper panel is attached');
+          await browser.close();
+          "
+
+      - name: Run browser tests
+        working-directory: extension/e2e
+        env:
+          COMFYUI_URL: http://127.0.0.1:8188
+        run: npx playwright test
+
+      - name: Upload report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            extension/e2e/playwright-report/
+            extension/e2e/test-results/
+          retention-days: 7
+
+      - name: Upload ComfyUI log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: comfyui-log
+          path: ComfyUI/comfyui.log
+          retention-days: 7
