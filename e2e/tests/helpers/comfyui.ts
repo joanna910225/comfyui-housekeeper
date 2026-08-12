@@ -29,6 +29,19 @@ export type NodeSnapshot = {
 
 export type Rect = { x: number; y: number; width: number; height: number }
 
+export type GroupSnapshot = { title: string; color?: string; selected: boolean }
+
+// ROOT GRAPH vs DISPLAYED GRAPH.
+//
+// app.graph is always the root graph - upstream defines it as
+// `get graph() { return this.rootGraphInternal }`. While the canvas is showing a subgraph,
+// app.graph still answers with the root, so anything that reads it is looking at a different node
+// list from the one on screen. app.canvas.graph is what is being displayed.
+//
+// The helpers below therefore act on app.canvas.graph (falling back to app.graph), so the same
+// helper works at the root and inside a subgraph. The one exception is installGraph(), which
+// deliberately builds the root fixture and clears it first.
+
 /**
  * UI state that tests toggle and that ComfyUI persists SERVER-SIDE, in
  * user/default/comfy.settings.json - not in localStorage, so clearing browser storage or
@@ -141,6 +154,7 @@ export async function installGraph(
     ({ specs, links, selectedTitles }) => {
       const runtime = window as any
       const app = runtime.app
+      // Fixtures are always built in the root graph - see the note above - and this clears it.
       const graph = app.graph
       const canvas = app.canvas
 
@@ -213,18 +227,98 @@ export async function installGraph(
 export async function selectNodes(page: Page, titles: string[]) {
   await page.evaluate((titles) => {
     const app = (window as any).app
-    const selected = app.graph._nodes.filter((node: any) => titles.includes(node.title))
+    const graph = app.canvas?.graph ?? app.graph
+    const selected = graph.nodes.filter((node: any) => titles.includes(node.title))
     app.canvas.deselectAll?.()
     app.canvas.selectNodes?.(selected)
-    for (const node of app.graph._nodes) node.is_selected = selected.includes(node)
+    for (const node of graph.nodes) node.is_selected = selected.includes(node)
     app.canvas.setDirty?.(true, true)
   }, titles)
   await page.waitForTimeout(650)
 }
 
+/**
+ * Convert nodes in the root graph into a subgraph and open it, the way the frontend does when a
+ * user picks "Convert to Subgraph" and then clicks into the resulting node. Defaults to every
+ * node currently in the root graph.
+ */
+export async function enterSubgraph(page: Page, titles?: string[]) {
+  await page.evaluate((titles) => {
+    const app = (window as any).app
+    const canvas = app.canvas
+    const rootGraph = app.graph
+    const nodes = rootGraph.nodes.filter(
+      (node: any) => !titles || titles.includes(node.title)
+    )
+    if (!nodes.length) throw new Error(`No nodes to convert to a subgraph: ${titles}`)
+
+    const created = rootGraph.convertToSubgraph(new Set(nodes))
+    if (!created?.subgraph) throw new Error('convertToSubgraph returned no subgraph')
+    // openSubgraph is what the subgraph node's own title button and double-click handler call.
+    canvas.openSubgraph(created.subgraph, created.node)
+    if (canvas.graph === app.graph) {
+      throw new Error('canvas is still displaying the root graph after openSubgraph')
+    }
+  }, titles)
+  await page.waitForTimeout(650)
+}
+
+/** Back to the root graph, which is what the breadcrumb navigation does. */
+export async function leaveSubgraph(page: Page) {
+  await page.evaluate(() => {
+    const app = (window as any).app
+    app.canvas.setGraph(app.rootGraph ?? app.graph)
+    if (app.canvas.graph !== app.graph) {
+      throw new Error('canvas did not return to the root graph')
+    }
+  })
+  await page.waitForTimeout(650)
+}
+
+export async function addGroup(page: Page, group: { title: string } & Rect) {
+  await page.evaluate((group) => {
+    const runtime = window as any
+    const app = runtime.app
+    const graph = app.canvas?.graph ?? app.graph
+    const created = new runtime.LGraphGroup(group.title)
+    created.pos = [group.x, group.y]
+    created.size = [group.width, group.height]
+    graph.add(created)
+    app.canvas.setDirty?.(true, true)
+  }, group)
+  await page.waitForTimeout(100)
+}
+
+export async function selectGroup(page: Page, title: string) {
+  await page.evaluate((title) => {
+    const app = (window as any).app
+    const graph = app.canvas?.graph ?? app.graph
+    const group = graph.groups.find((candidate: any) => candidate.title === title)
+    if (!group) throw new Error(`Missing group ${title}`)
+    app.canvas.deselectAll?.()
+    app.canvas.select?.(group)
+    if (!group.selected) throw new Error(`select() did not take effect on group ${title}`)
+    app.canvas.setDirty?.(true, true)
+  }, title)
+  await page.waitForTimeout(650)
+}
+
+export async function groupSnapshots(page: Page): Promise<GroupSnapshot[]> {
+  return page.evaluate(() => {
+    const app = (window as any).app
+    const graph = app.canvas?.graph ?? app.graph
+    return (graph.groups as any[]).map((group) => ({
+      title: group.title,
+      color: group.color,
+      selected: Boolean(group.selected)
+    }))
+  })
+}
+
 export async function snapshots(page: Page): Promise<NodeSnapshot[]> {
   return page.evaluate(() => {
-    const nodes = (window as any).app.graph._nodes as any[]
+    const app = (window as any).app
+    const nodes = (app.canvas?.graph ?? app.graph).nodes as any[]
     return nodes
       .map((node) => ({
         id: node.id,
@@ -247,7 +341,9 @@ export async function setNodeSize(page: Page, title: string, size: [number, numb
   await page.evaluate(
     ({ title, size }) => {
       const app = (window as any).app
-      const node = app.graph._nodes.find((candidate: any) => candidate.title === title)
+      const node = (app.canvas?.graph ?? app.graph).nodes.find(
+        (candidate: any) => candidate.title === title
+      )
       if (!node) throw new Error(`Missing node ${title}`)
       node.setSize(size)
       app.canvas.setDirty?.(true, true)
@@ -261,7 +357,9 @@ export async function setCollapsed(page: Page, title: string, collapsed: boolean
   await page.evaluate(
     ({ title, collapsed }) => {
       const app = (window as any).app
-      const node = app.graph._nodes.find((candidate: any) => candidate.title === title)
+      const node = (app.canvas?.graph ?? app.graph).nodes.find(
+        (candidate: any) => candidate.title === title
+      )
       if (!node) throw new Error(`Missing node ${title}`)
       node.flags = { ...(node.flags ?? {}), collapsed }
       app.canvas.setDirty?.(true, true)
@@ -281,7 +379,9 @@ export async function setPinned(page: Page, title: string, pinned: boolean) {
   await page.evaluate(
     ({ title, pinned }) => {
       const app = (window as any).app
-      const node = app.graph._nodes.find((candidate: any) => candidate.title === title)
+      const node = (app.canvas?.graph ?? app.graph).nodes.find(
+        (candidate: any) => candidate.title === title
+      )
       if (!node) throw new Error(`Missing node ${title}`)
       if (typeof node.pin === 'function') node.pin(pinned)
       else node.flags = { ...(node.flags ?? {}), pinned }
@@ -324,7 +424,7 @@ export async function projectedNodeRects(page: Page): Promise<Rect[]> {
     const app = (window as any).app
     const canvasRect = app.canvas.canvas.getBoundingClientRect()
     const { scale, offset } = app.canvas.ds
-    return app.graph._nodes.map((node: any) => ({
+    return (app.canvas?.graph ?? app.graph).nodes.map((node: any) => ({
       x: canvasRect.left + (node.pos[0] + offset[0]) * scale,
       y: canvasRect.top + (node.pos[1] + offset[1]) * scale - 30 * scale,
       width: Number(node.width ?? node.size[0]) * scale,
