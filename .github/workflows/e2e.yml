@@ -35,9 +35,16 @@ concurrency:
 
 jobs:
   browser:
-    name: Playwright against a real ComfyUI
+    name: Browser tests (shard ${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
+
+    strategy:
+      # Keep the other shards running when one fails: a red shard usually means one broken
+      # test, and cancelling the rest hides whether anything else broke too.
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
 
     steps:
       - name: Check out the extension
@@ -64,6 +71,13 @@ jobs:
 
       # CPU-only torch: these tests never execute a workflow, they only need ComfyUI's
       # frontend to load. The default wheels would pull in CUDA for no benefit.
+      - name: Cache pip downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('ComfyUI/requirements.txt') }}
+          restore-keys: pip-${{ runner.os }}-
+
       - name: Install ComfyUI dependencies
         working-directory: ComfyUI
         run: |
@@ -135,13 +149,13 @@ jobs:
         working-directory: extension/e2e
         env:
           COMFYUI_URL: http://127.0.0.1:8188
-        run: npx playwright test
+        run: npx playwright test --shard=${{ matrix.shard }}/3
 
       - name: Upload report
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-shard-${{ matrix.shard }}
           path: |
             extension/e2e/playwright-report/
             extension/e2e/test-results/
@@ -151,6 +165,6 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: comfyui-log
+          name: comfyui-log-shard-${{ matrix.shard }}
           path: ComfyUI/comfyui.log
           retention-days: 7
