@@ -5,22 +5,19 @@
 
 </div>
 
-A ComfyUI extension that provides node alignment tools and color management for organizing your workflows. It runs entirely in the browser and adds no nodes to your node menu.
+A ComfyUI extension for aligning, arranging and colouring the nodes in a workflow. It runs entirely in the browser and adds nothing to your node menu.
 
-## Updates
+## What's new
 
-### 2026-08-12 — v0.2.0
-- **Hover preview now appears where it should.** It was being drawn about a screen height above the canvas on most installs, so it looked like the feature did nothing ([#24](https://github.com/joanna910225/comfyui-housekeeper/issues/24))
-- **Panel no longer covers ComfyUI's right sidebar** ([#25](https://github.com/joanna910225/comfyui-housekeeper/issues/25))
-- **Ctrl+Z now undoes an alignment** in a single step
-- **Keyboard shortcuts no longer fire while you are typing** in a prompt widget
-- **Flow alignment orders nodes within a column by vertical position**, as documented
-- Housekeeper is now frontend-only — the three unused placeholder nodes have been removed, and it no longer fails to load on ComfyUI builds without `comfy_config`
+**v0.5.0** — the gap between nodes is now yours to set, from a **Spacing** control on the panel or ComfyUI's settings. The panel can also be repositioned from the keyboard.
 
-See [CHANGELOG.md](CHANGELOG.md) for the full list.
+**v0.4.0** — the panel can be **dragged anywhere and remembers where you put it**, and no longer covers ComfyUI's own right-hand controls.
 
-### 2025-12-02
-- **Compatible with recent Vue changes of ComfyUI official package**
+**v0.3.0** — flow arrangement now lays nodes out one column per dependency stage instead of collapsing several into one, and repeating it after resizing a node uses the node's real size.
+
+**v0.2.0** — the hover preview appears where it should (it had been drawing about a screen height above the canvas), `Ctrl+Z` undoes an alignment in one step, and shortcuts no longer fire while you are typing in a prompt.
+
+Full detail in [CHANGELOG.md](CHANGELOG.md).
 
 <div align="center">
 <img src="doc/screenshot.png" alt="Housekeeper Panel" height="400">
@@ -43,73 +40,77 @@ See [CHANGELOG.md](CHANGELOG.md) for the full list.
 
 ## Features
 
-- 6 alignment options — four edge and two center alignments
-- Size normalization for consistent node dimensions
-- Flow-based arrangement using workflow connections
-- Preset color palettes for node styling
-- Custom color picker with recent colors memory
-- Hover preview showing alignment results before applying
+- Six alignment options — four edges and two centre lines
+- Size normalisation, to make a selection match in width, height or both
+- Dependency-aware arrangement that follows the links in your workflow
+- Adjustable spacing between nodes
+- Preset colour palettes, a custom colour picker, and recently used colours
+- Hover preview showing where nodes will land before you commit
+- A panel you can drag anywhere, by mouse or keyboard, which stays where you put it
 
 ## Installation
 
-Navigate to your ComfyUI custom nodes directory and clone:
+Clone into your ComfyUI custom nodes directory:
 
 ```bash
 cd ComfyUI/custom_nodes/
 git clone https://github.com/joanna910225/comfyui-housekeeper.git
 ```
 
-Restart ComfyUI to load the custom node.
+Restart ComfyUI. The Housekeeper handle appears at the right of the canvas.
 
 ## Usage
 
 <img src="doc/handler.png" alt="Housekeeper Handler" height="200">
 
-The Housekeeper handle appears on the right side of the canvas after installation. Click to open the panel. Select 2 or more nodes to use alignment features.
+Click the handle to open the panel. Select two or more nodes to use the alignment and arrangement tools — **Match smallest size** is the exception and works on a single node.
 
-### Basic Alignment
+### Moving the panel
 
-**Edge Alignment:**
-- **Left**: Align all nodes to the leftmost edge with vertical spacing
-- **Right**: Align all nodes to the rightmost edge with vertical spacing
-- **Top**: Align all nodes to the topmost edge with horizontal spacing
-- **Bottom**: Align all nodes to the bottommost edge with horizontal spacing
+Drag the handle, or the panel's title bar while it is open, to put it anywhere on screen. The position is remembered. With the handle focused you can also move it with the arrow keys, or **Shift + arrow** to move further. A **Reset position** button appears in the panel once you have moved it.
 
-**Center Alignment:**
-- **Height-Center**: Align horizontal centers on a vertical line with vertical spacing
-- **Width-Center**: Align vertical centers on a horizontal line with horizontal spacing
+### Alignment
+
+| Button | Effect |
+| --- | --- |
+| **Align left edges** | Line the selection up on its leftmost edge |
+| **Align right edges** | Line it up on its rightmost edge |
+| **Align top edges** | Line it up on its topmost edge |
+| **Align bottom edges** | Line it up on its bottommost edge |
+| **Center horizontally** | Line the selection up on a shared vertical centre line |
+| **Center vertically** | Line it up on a shared horizontal centre line |
+
+Aligning on one axis also re-spaces the selection evenly along the other, using the gap set under **Spacing**.
 
 ### Size Adjustment
 
-Match node dimensions for consistent layouts:
-- **Width-Max**: Set all nodes to the widest width
-- **Width-Min**: Set all nodes to the narrowest width
-- **Height-Max**: Set all nodes to the tallest height
-- **Height-Min**: Set all nodes to the shortest height
-- **Size-Max**: Set all nodes to the largest dimensions (width × height)
-- **Size-Min**: Shrink each node to its minimum accepted size
+| Button | Effect |
+| --- | --- |
+| **Match widest width** | Every node takes the widest width in the selection |
+| **Match narrowest width** | Every node takes the narrowest |
+| **Match tallest height** | Every node takes the tallest height |
+| **Match shortest height** | Every node takes the shortest |
+| **Match largest size** | Every node takes the largest width and height |
+| **Match smallest size** | Each node shrinks to the smallest size it will accept |
 
 ### Flow Alignment
 
-Arrange nodes based on workflow connections:
-- **H-Flow**: Arrange nodes left-to-right in columns by workflow dependencies
-- **V-Flow**: Arrange nodes top-to-bottom in rows by workflow dependencies
+Arranges the selection by following the links between nodes, so each node sits past everything that feeds it:
 
-### Preset Palettes
+- **Distribute horizontally** — dependencies run left to right, one column per stage
+- **Distribute vertically** — the same, top to bottom
 
-Browse curated color sets with arrow navigation. Click any color chip to apply it to all selected nodes.
+### Spacing
 
-### Custom Colors
+The **Spacing** slider sets the gap left between nodes by every alignment and arrangement above. The same setting is available in ComfyUI's settings under **Housekeeper → Layout**, and the two stay in sync.
 
-Pick any color using the color picker or enter hex codes. Click the checkmark to apply.
+### Colours
 
-### Recent Colors
-
-The panel automatically remembers your last used colors for quick access.
+Browse the preset palettes with the arrows and click a chip to apply it to the selection; hovering previews the colour first. **Custom** takes any colour from the picker or a hex code. Recently used colours are kept for quick reuse.
 
 ## Keyboard Shortcuts
 
-Use `Cmd` in place of `Ctrl` on macOS. Shortcuts are ignored while the focus is in a text field, so they will not interfere with typing in a prompt widget.
+Use `Cmd` in place of `Ctrl` on macOS. Shortcuts are ignored while the focus is in a text field, so they will not interfere with typing a prompt.
 
 | Shortcut | Action |
 | --- | --- |
@@ -118,7 +119,29 @@ Use `Cmd` in place of `Ctrl` on macOS. Shortcuts are ignored while the focus is 
 | `Ctrl+Shift+→` | Align right edges |
 | `Ctrl+Shift+↑` | Align top edges |
 | `Ctrl+Shift+↓` | Align bottom edges |
-| `Ctrl+Alt+→` | Horizontal flow |
-| `Ctrl+Alt+↓` | Vertical flow |
+| `Ctrl+Alt+→` | Distribute horizontally |
+| `Ctrl+Alt+↓` | Distribute vertically |
+| `←` `→` `↑` `↓` | Move the panel, while the handle has focus |
+| `Shift` + arrow | Move the panel further |
 
 Every operation is a single undo step — press `Ctrl+Z` once to revert it.
+
+Making these rebindable is tracked in [#43](https://github.com/joanna910225/comfyui-housekeeper/issues/43).
+
+## Contributing
+
+The extension is built from TypeScript. **`js/main.js` is a build artifact — do not edit it directly**, as the next build overwrites it and CI rejects a bundle that does not match its source.
+
+```bash
+npm ci
+npm run build     # regenerates js/main.js from src/main.ts
+npm test          # unit tests
+```
+
+Commit the rebuilt `js/main.js` alongside your source change: it is what ComfyUI actually serves, so the two must stay in step.
+
+Browser tests run against a real ComfyUI — see [e2e/README.md](e2e/README.md).
+
+## License
+
+MIT — see [LICENSE](LICENSE).
