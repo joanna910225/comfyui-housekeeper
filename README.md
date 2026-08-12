@@ -9,6 +9,8 @@ A ComfyUI extension for aligning, arranging and colouring the nodes in a workflo
 
 ## What's new
 
+**v0.6.1** — arranging a selection whose links form a loop no longer throws the layout off the canvas, and the panel stays clear of the menu bar on ComfyUI's V1 and Desktop layouts.
+
 **v0.5.0** — the gap between nodes is now yours to set, from a **Spacing** control on the panel or ComfyUI's settings. The panel can also be repositioned from the keyboard.
 
 **v0.4.0** — the panel can be **dragged anywhere and remembers where you put it**, and no longer covers ComfyUI's own right-hand controls.
@@ -17,7 +19,8 @@ A ComfyUI extension for aligning, arranging and colouring the nodes in a workflo
 
 **v0.2.0** — the hover preview appears where it should (it had been drawing about a screen height above the canvas), `Ctrl+Z` undoes an alignment in one step, and shortcuts no longer fire while you are typing in a prompt.
 
-Full detail in [CHANGELOG.md](CHANGELOG.md).
+Full detail in [CHANGELOG.md](CHANGELOG.md), or on the
+[releases page](https://github.com/joanna910225/comfyui-housekeeper/releases).
 
 <div align="center">
 <img src="doc/screenshot.png" alt="Housekeeper Panel" height="400">
