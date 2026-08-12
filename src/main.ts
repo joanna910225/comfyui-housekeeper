@@ -56,6 +56,24 @@ function setNodeSpacing(value: unknown) {
     nodeSpacingValue = Math.min(Math.max(Math.round(parsed), 0), MAX_NODE_SPACING);
 }
 
+/**
+ * Pinning a node means "leave this where it is". litegraph enforces that in its own
+ * movement path (`!pinned && (this._pos[0] += ...)`), but every write here is an indexed
+ * write straight into node.pos, which never reaches that guard - so the check has to be
+ * explicit at the layout boundary.
+ *
+ * `node.pinned` is the accessor on current builds; `flags.pinned` is where the state
+ * actually lives and is read as a fallback for frontends predating the getter.
+ */
+function isPinned(node: any): boolean {
+    return !!(node?.pinned ?? node?.flags?.pinned);
+}
+
+/** The nodes a layout operation is allowed to move or resize. */
+function movable(nodes: any[]): any[] {
+    return nodes.filter(node => !isPinned(node));
+}
+
 // Commented out Vue-based extension - uncomment if you need Vue components
 /*
 comfyApp.registerExtension({
@@ -2416,8 +2434,12 @@ function initializeAlignmentPanel() {
 
     // Preview functionality
     function showPreview(alignmentType: string) {
+        // Preview must be drawn from the same node list the alignment will act on, or it
+        // promises to move a pinned node that then stays put.
+        const previewNodes = movable(selectedNodes);
+
         // Allow size-min with 1 node, others need at least 2
-        if (selectedNodes.length < 1 || (selectedNodes.length < 2 && alignmentType !== 'size-min')) return;
+        if (previewNodes.length < 1 || (previewNodes.length < 2 && alignmentType !== 'size-min')) return;
         hidePreview(); // Clear any existing previews
 
         const canvas = (window as any).app?.canvas;
@@ -2426,10 +2448,10 @@ function initializeAlignmentPanel() {
 
 
         // Calculate preview positions using the same logic as the alignment functions
-        const previewPositions = calculatePreviewPositions(alignmentType, selectedNodes);
-        
+        const previewPositions = calculatePreviewPositions(alignmentType, previewNodes);
+
         previewPositions.forEach((pos, index) => {
-            if (pos && selectedNodes[index]) {
+            if (pos && previewNodes[index]) {
                 const previewEl = document.createElement('div');
                 previewEl.style.cssText = `
                     position: fixed;
@@ -3334,9 +3356,20 @@ function initializeAlignmentPanel() {
 
     // Align nodes function with advanced options
     function alignNodes(alignmentType: string) {
+        // Pinned nodes take no part in the layout: they are neither moved nor measured, so a
+        // pinned node cannot supply a reference edge either. Treating them instead as fixed
+        // anchors that the rest arranges around is a larger feature - see #58.
+        const movableNodes = movable(selectedNodes);
+        const pinnedCount = selectedNodes.length - movableNodes.length;
+
         // Allow size-min with 1 node, others need at least 2
-        if (selectedNodes.length < 1 || (selectedNodes.length < 2 && alignmentType !== 'size-min')) {
-            showMessage('Please select at least 2 nodes to align', 'warning');
+        if (movableNodes.length < 1 || (movableNodes.length < 2 && alignmentType !== 'size-min')) {
+            showMessage(
+                pinnedCount > 0
+                    ? `Select at least 2 unpinned nodes — ${pinnedCount} pinned node${pinnedCount === 1 ? ' is' : 's are'} skipped`
+                    : 'Please select at least 2 nodes to align',
+                'warning'
+            );
             return;
         }
 
@@ -3349,20 +3382,20 @@ function initializeAlignmentPanel() {
 
         try {
             // Calculate all reference positions and sizes at the start to avoid drift on consecutive clicks
-            const originalLeftPos = Math.min(...selectedNodes.map((node: any) => node.pos[0]));
+            const originalLeftPos = Math.min(...movableNodes.map((node: any) => node.pos[0]));
             // Positioning bounds use the rendered (title-inclusive) box, so that every node's
             // rendered edge lands the same distance from the reference value regardless of size.
-            const originalRightPos = Math.max(...selectedNodes.map((node: any) => node.pos[0] + nodeWidth(node)));
-            const originalTopPos = Math.min(...selectedNodes.map((node: any) => node.pos[1]));
-            const originalBottomPos = Math.max(...selectedNodes.map((node: any) => node.pos[1] + outerHeight(node)));
+            const originalRightPos = Math.max(...movableNodes.map((node: any) => node.pos[0] + nodeWidth(node)));
+            const originalTopPos = Math.min(...movableNodes.map((node: any) => node.pos[1]));
+            const originalBottomPos = Math.max(...movableNodes.map((node: any) => node.pos[1] + outerHeight(node)));
 
             // Size bounds are body-only, because the size operations below write node.size[1].
             // Mixing these two conventions is the trap this block used to hide behind dead
             // Array.isArray() guards - keep them explicitly separate.
-            const originalMaxWidth = Math.max(...selectedNodes.map((node: any) => nodeWidth(node)));
-            const originalMinWidth = Math.min(...selectedNodes.map((node: any) => nodeWidth(node)));
-            const originalMaxHeight = Math.max(...selectedNodes.map((node: any) => bodyHeight(node)));
-            const originalMinHeight = Math.min(...selectedNodes.map((node: any) => bodyHeight(node)));
+            const originalMaxWidth = Math.max(...movableNodes.map((node: any) => nodeWidth(node)));
+            const originalMinWidth = Math.min(...movableNodes.map((node: any) => nodeWidth(node)));
+            const originalMaxHeight = Math.max(...movableNodes.map((node: any) => bodyHeight(node)));
+            const originalMinHeight = Math.min(...movableNodes.map((node: any) => bodyHeight(node)));
 
             let referenceValue: number;
 
@@ -3372,7 +3405,7 @@ function initializeAlignmentPanel() {
                     referenceValue = originalLeftPos;
                     
                     // Sort nodes by vertical position to maintain order
-                    const leftSortedNodes = [...selectedNodes].sort((a: any, b: any) => a.pos[1] - b.pos[1]);
+                    const leftSortedNodes = [...movableNodes].sort((a: any, b: any) => a.pos[1] - b.pos[1]);
                     
                     // Calculate positions to ensure no overlapping
                     let currentY = leftSortedNodes[0].pos[1]; // Start from the topmost node's position
@@ -3410,7 +3443,7 @@ function initializeAlignmentPanel() {
                     referenceValue = originalRightPos;
                     
                     // Sort nodes by vertical position to maintain order
-                    const rightSortedNodes = [...selectedNodes].sort((a: any, b: any) => a.pos[1] - b.pos[1]);
+                    const rightSortedNodes = [...movableNodes].sort((a: any, b: any) => a.pos[1] - b.pos[1]);
                     
                     // Calculate positions to ensure no overlapping
                     let currentYRight = rightSortedNodes[0].pos[1]; // Start from the topmost node's position
@@ -3452,7 +3485,7 @@ function initializeAlignmentPanel() {
                     referenceValue = originalTopPos;
                     
                     // Sort nodes by horizontal position to maintain order
-                    const topSortedNodes = [...selectedNodes].sort((a: any, b: any) => a.pos[0] - b.pos[0]);
+                    const topSortedNodes = [...movableNodes].sort((a: any, b: any) => a.pos[0] - b.pos[0]);
                     
                     // Calculate positions to ensure no overlapping
                     let currentX = topSortedNodes[0].pos[0]; // Start from the leftmost node's position
@@ -3489,7 +3522,7 @@ function initializeAlignmentPanel() {
                     
                     
                     // Sort nodes by horizontal position to maintain order
-                    const bottomSortedNodes = [...selectedNodes].sort((a: any, b: any) => a.pos[0] - b.pos[0]);
+                    const bottomSortedNodes = [...movableNodes].sort((a: any, b: any) => a.pos[0] - b.pos[0]);
                     
                     // Calculate positions to ensure no overlapping  
                     let currentXBottom = originalLeftPos; // Start from the leftmost edge of selected area
@@ -3537,8 +3570,8 @@ function initializeAlignmentPanel() {
                 case 'height-center':
                     // Align all nodes' horizontal centers on the same vertical line, maintain vertical spacing
                     // Calculate the horizontal center line of all nodes
-                    const leftmostXAlign = Math.min(...selectedNodes.map((node: any) => node.pos[0]));
-                    const rightmostXAlign = Math.max(...selectedNodes.map((node: any) => {
+                    const leftmostXAlign = Math.min(...movableNodes.map((node: any) => node.pos[0]));
+                    const rightmostXAlign = Math.max(...movableNodes.map((node: any) => {
                         let nodeWidth = 150;
                         if (node.size && Array.isArray(node.size) && node.size[0]) {
                             nodeWidth = node.size[0];
@@ -3552,7 +3585,7 @@ function initializeAlignmentPanel() {
                     const horizontalCenterAlign = (leftmostXAlign + rightmostXAlign) / 2;
 
                     // Sort nodes by vertical position to maintain order
-                    const widthCenterSortedNodes = [...selectedNodes].sort((a: any, b: any) => a.pos[1] - b.pos[1]);
+                    const widthCenterSortedNodes = [...movableNodes].sort((a: any, b: any) => a.pos[1] - b.pos[1]);
                     
                     let currentYWidthCenterAlign = widthCenterSortedNodes[0].pos[1];
                     
@@ -3587,8 +3620,8 @@ function initializeAlignmentPanel() {
                 case 'width-center':
                     // Align all nodes' vertical centers on the same horizontal line, maintain horizontal spacing
                     // Calculate the vertical center line of all nodes
-                    const topmostYAlign = Math.min(...selectedNodes.map((node: any) => node.pos[1]));
-                    const bottommostYAlign = Math.max(...selectedNodes.map((node: any) => {
+                    const topmostYAlign = Math.min(...movableNodes.map((node: any) => node.pos[1]));
+                    const bottommostYAlign = Math.max(...movableNodes.map((node: any) => {
                         let nodeHeight = 100;
                         if (node.size && Array.isArray(node.size) && node.size[1]) {
                             nodeHeight = node.size[1];
@@ -3602,7 +3635,7 @@ function initializeAlignmentPanel() {
                     const verticalCenterAlign = (topmostYAlign + bottommostYAlign) / 2;
 
                     // Sort nodes by horizontal position to maintain order
-                    const heightCenterSortedNodes = [...selectedNodes].sort((a: any, b: any) => a.pos[0] - b.pos[0]);
+                    const heightCenterSortedNodes = [...movableNodes].sort((a: any, b: any) => a.pos[0] - b.pos[0]);
                     
                     let currentXHeightCenterAlign = heightCenterSortedNodes[0].pos[0];
                     
@@ -3635,7 +3668,7 @@ function initializeAlignmentPanel() {
                     break;
 
                 case 'width-max':
-                    selectedNodes.forEach((node: any) => {
+                    movableNodes.forEach((node: any) => {
                         if (node.size) {
                             node.size[0] = originalMaxWidth;
                         }
@@ -3643,7 +3676,7 @@ function initializeAlignmentPanel() {
                     break;
 
                 case 'width-min':
-                    selectedNodes.forEach((node: any) => {
+                    movableNodes.forEach((node: any) => {
                         if (node.size) {
                             node.size[0] = originalMinWidth;
                         }
@@ -3651,7 +3684,7 @@ function initializeAlignmentPanel() {
                     break;
 
                 case 'height-max':
-                    selectedNodes.forEach((node: any) => {
+                    movableNodes.forEach((node: any) => {
                         if (node.size) {
                             node.size[1] = originalMaxHeight;
                         }
@@ -3659,7 +3692,7 @@ function initializeAlignmentPanel() {
                     break;
 
                 case 'height-min':
-                    selectedNodes.forEach((node: any) => {
+                    movableNodes.forEach((node: any) => {
                         if (node.size) {
                             const computeSizeMethod = originalComputeSizeMethods.get(node) || node.computeSize;
                             if (computeSizeMethod) {
@@ -3671,7 +3704,7 @@ function initializeAlignmentPanel() {
                     break;
 
                 case 'size-max':
-                    selectedNodes.forEach((node: any) => {
+                    movableNodes.forEach((node: any) => {
                         if (node.size) {
                             node.size[0] = originalMaxWidth;
                             node.size[1] = originalMaxHeight;
@@ -3680,7 +3713,7 @@ function initializeAlignmentPanel() {
                     break;
 
                 case 'size-min':
-                    selectedNodes.forEach((node: any) => {
+                    movableNodes.forEach((node: any) => {
                         if (node.size) {
                             // Get the node's minimum accepted size from computeSize
                             // Use original computeSize if it was overridden by size-max
@@ -3706,6 +3739,15 @@ function initializeAlignmentPanel() {
             // Mark canvas as dirty to trigger redraw (only for basic alignment)
             markCanvasDirty();
 
+            // Say so rather than leaving the user to wonder why part of the selection did not
+            // move. The flow cases return above and report this themselves.
+            if (pinnedCount > 0) {
+                showMessage(
+                    `${pinnedCount} pinned node${pinnedCount === 1 ? '' : 's'} left in place`,
+                    'info'
+                );
+            }
+
         } catch (error) {
             console.error('[housekeeper] alignment failed:', alignmentType, error);
             showMessage('Error during alignment', 'error');
@@ -3722,9 +3764,16 @@ function initializeAlignmentPanel() {
     function alignHorizontalFlow() {
         try {
             debugNodeStructure(selectedNodes);
-            
+
+            // Pinned nodes are dropped before the dependency graph is built, not after. A pinned
+            // node left in would be assigned a column it then cannot occupy, and everything
+            // downstream of it would be spaced around a gap that stays empty. See #58 for
+            // arranging around them deliberately.
+            const unpinnedNodes = movable(selectedNodes);
+            const pinnedCount = selectedNodes.length - unpinnedNodes.length;
+
             // More lenient validation - check for essential properties
-            const validNodes = selectedNodes.filter(node => {
+            const validNodes = unpinnedNodes.filter(node => {
                 if (!node) return false;
                 
                 // Check for position (might be different property names)
@@ -3742,7 +3791,12 @@ function initializeAlignmentPanel() {
             
             
             if (validNodes.length < 2) {
-                showMessage(`Not enough valid nodes: ${validNodes.length}/${selectedNodes.length} nodes are valid`, 'warning');
+                showMessage(
+                    pinnedCount > 0
+                        ? `Select at least 2 unpinned nodes — ${pinnedCount} pinned node${pinnedCount === 1 ? ' is' : 's are'} skipped`
+                        : `Not enough valid nodes: ${validNodes.length}/${selectedNodes.length} nodes are valid`,
+                    'warning'
+                );
                 return;
             }
             
@@ -3883,6 +3937,12 @@ function initializeAlignmentPanel() {
             markCanvasDirty();
             
             // Success message removed - clean prompt window
+            if (pinnedCount > 0) {
+                showMessage(
+                    `${pinnedCount} pinned node${pinnedCount === 1 ? '' : 's'} left in place`,
+                    'info'
+                );
+            }
         } catch (error) {
             console.error('[housekeeper] horizontal flow alignment failed:', error);
             showMessage('Error in horizontal flow alignment', 'error');
@@ -3891,9 +3951,13 @@ function initializeAlignmentPanel() {
     
     function alignVerticalFlow() {
         try {
-            
+            // See alignHorizontalFlow: pinned nodes leave the selection before the dependency
+            // graph is built, so no column is reserved for a node that cannot move into it.
+            const unpinnedNodes = movable(selectedNodes);
+            const pinnedCount = selectedNodes.length - unpinnedNodes.length;
+
             // More lenient validation - check for essential properties
-            const validNodes = selectedNodes.filter(node => {
+            const validNodes = unpinnedNodes.filter(node => {
                 if (!node) return false;
                 
                 // Check for position (might be different property names)
@@ -3908,7 +3972,12 @@ function initializeAlignmentPanel() {
             
             
             if (validNodes.length < 2) {
-                showMessage(`Not enough valid nodes: ${validNodes.length}/${selectedNodes.length} nodes are valid`, 'warning');
+                showMessage(
+                    pinnedCount > 0
+                        ? `Select at least 2 unpinned nodes — ${pinnedCount} pinned node${pinnedCount === 1 ? ' is' : 's are'} skipped`
+                        : `Not enough valid nodes: ${validNodes.length}/${selectedNodes.length} nodes are valid`,
+                    'warning'
+                );
                 return;
             }
             
@@ -4051,6 +4120,12 @@ function initializeAlignmentPanel() {
             markCanvasDirty();
             
             // Success message removed - clean prompt window
+            if (pinnedCount > 0) {
+                showMessage(
+                    `${pinnedCount} pinned node${pinnedCount === 1 ? '' : 's'} left in place`,
+                    'info'
+                );
+            }
         } catch (error) {
             console.error('[housekeeper] vertical flow alignment failed:', error);
             showMessage('Error in vertical flow alignment', 'error');

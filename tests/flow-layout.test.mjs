@@ -44,7 +44,7 @@ const REQUIRED_MODULE_SCOPE = ['nodeGap'];
 // Optional helpers: pulled in when present. Keeping these optional means the suite can be
 // run against an older revision of src/main.ts to confirm it actually catches the bug,
 // instead of erroring out during extraction and looking like a pass/fail either way.
-const OPTIONAL = ['bodyHeight', 'measureFlowNodes'];
+const OPTIONAL = ['bodyHeight', 'measureFlowNodes', 'movable', 'isPinned'];
 
 /** Load alignHorizontalFlow() bound to a given selection. */
 function loadFlow(selectedNodes) {

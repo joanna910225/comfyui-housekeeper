@@ -68,6 +68,8 @@ Restart ComfyUI. The Housekeeper handle appears at the right of the canvas.
 
 Click the handle to open the panel. Select two or more nodes to use the alignment and arrangement tools — **Match smallest size** is the exception and works on a single node.
 
+**Pinned nodes are left alone.** Pin anything you want to stay exactly where it is and Housekeeper will not move or resize it, however it is selected. The rest of the selection arranges among itself, and the panel says how many nodes were skipped.
+
 ### Moving the panel
 
 Drag the handle, or the panel's title bar while it is open, to put it anywhere on screen. The position is remembered. With the handle focused you can also move it with the arrow keys, or **Shift + arrow** to move further. A **Reset position** button appears in the panel once you have moved it.
