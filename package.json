@@ -13,7 +13,10 @@
   },
   "scripts": {
     "build": "vite build",
-    "test": "node --test 'tests/**/*.test.mjs'",
+    "test": "node --test tests/*.test.mjs",
     "test:leveling": "node --test tests/leveling.test.mjs"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

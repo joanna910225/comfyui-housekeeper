@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main, test]
+  pull_request:
+  workflow_dispatch:
+
+# A newer push to the same branch makes the in-flight run redundant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Unit tests
+        run: npm test
+
+      # The check that matters most. js/main.js is a committed build artifact and it is what
+      # ComfyUI actually serves - src/main.ts never reaches a user. It is minified, so a
+      # divergence is invisible in review. Nothing else in the project detects it.
+      - name: Bundle is reproducible from source
+        run: |
+          npm run build
+          if ! git diff --quiet -- js/; then
+            echo "::error::js/main.js does not match a fresh build of src/main.ts."
+            echo "Run 'npm run build' and commit the result - users run the committed bundle,"
+            echo "not the TypeScript, so the two must not drift."
+            git diff --stat -- js/
+            exit 1
+          fi
+          echo "js/main.js reproduces exactly from src/main.ts"
+
+  python:
+    name: Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Pinned to the version .pre-commit-config.yaml declares, so CI and the pre-commit hook
+      # cannot disagree about what passes.
+      - name: Install ruff
+        run: pip install ruff==0.4.9
+
+      - name: Lint
+        run: ruff check --output-format=github .
+
+      - name: Format check
+        run: ruff format --check .
+
+      # The extension is frontend-only: __init__.py must import with no ComfyUI present, and
+      # must still export NODE_CLASS_MAPPINGS or ComfyUI reports it as an import failure.
+      - name: Import smoke test
+        run: |
+          python - <<'PY'
+          import importlib.util, pathlib, sys
+
+          spec = importlib.util.spec_from_file_location('housekeeper', '__init__.py')
+          module = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(module)
+
+          assert module.WEB_DIRECTORY == './js', module.WEB_DIRECTORY
+          # ComfyUI checks `is not None`, so an empty dict is what keeps it from logging
+          # "(IMPORT FAILED)" next to this pack on every startup.
+          assert module.NODE_CLASS_MAPPINGS is not None
+          assert module.NODE_DISPLAY_NAME_MAPPINGS is not None
+          assert pathlib.Path('js/main.js').is_file(), 'WEB_DIRECTORY has no bundle to serve'
+          print('__init__.py imports standalone; WEB_DIRECTORY resolves to a real bundle')
+          PY
