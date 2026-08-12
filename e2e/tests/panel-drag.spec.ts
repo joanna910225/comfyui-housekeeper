@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { openComfyUI, openHousekeeper } from './helpers/comfyui'
+import { openComfyUI, openHousekeeper, waitForPanelSettled } from './helpers/comfyui'
 
 const STORAGE_KEY = 'housekeeper-panel-position'
 
@@ -34,11 +34,6 @@ test.describe('draggable panel position', () => {
     await page.evaluate(key => window.localStorage.removeItem(key), STORAGE_KEY)
     await page.reload({ waitUntil: 'domcontentloaded' })
     await openComfyUI(page)
-    // ComfyUI reflows its own chrome asynchronously after load, and the panel measures its
-    // placement against it. Grabbing the handle before that settles starts the drag from a
-    // stale box, and the move clamps back to where it began. Fast enough locally to hide
-    // this; a 2-core CI runner is not.
-    await page.waitForTimeout(600)
   })
 
   test('the collapsed handle can be dragged, and the drag does not toggle the panel', async ({ page }) => {
@@ -53,8 +48,8 @@ test.describe('draggable panel position', () => {
 
   test('the panel header can be dragged while open, without closing it', async ({ page }) => {
     await openHousekeeper(page)
-    // Expanding changes the wrapper's width, which re-measures the placement again.
-    await page.waitForTimeout(600)
+    // Expanding changes the wrapper's width, so its placement is recomputed again.
+    await waitForPanelSettled(page)
     const before = await wrapperPosition(page)
     await dragBy(page, '.housekeeper-header', -250, 180)
 
@@ -82,7 +77,6 @@ test.describe('draggable panel position', () => {
 
     await page.reload({ waitUntil: 'domcontentloaded' })
     await openComfyUI(page)
-    await page.waitForTimeout(600)
     expect(await storedPosition(page)).toBe(stored)
     const restored = await wrapperPosition(page)
     expect(restored.y).toBeGreaterThan(100)

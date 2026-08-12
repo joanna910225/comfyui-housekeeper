@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { openComfyUI, openHousekeeper } from './helpers/comfyui'
+import { openComfyUI, openHousekeeper, waitForPanelSettled } from './helpers/comfyui'
 
 const STORAGE_KEY = 'housekeeper-panel-position'
 type Page = import('@playwright/test').Page
@@ -86,9 +86,8 @@ test.describe('panel header layout', () => {
       await page.reload({ waitUntil: 'domcontentloaded' })
       await openComfyUI(page)
       await openHousekeeper(page)
-      // ComfyUI reflows its own chrome asynchronously after a viewport change, and the panel
-      // measures against it. Let both settle before asserting or dragging.
-      await page.waitForTimeout(600)
+      // Expanding changes the wrapper's width, so its placement is recomputed again.
+      await waitForPanelSettled(page)
 
       const initial = await headerLayout(page)
       expectNoCollisions(initial, `default @${width}`)
@@ -116,7 +115,7 @@ test.describe('panel header layout', () => {
     await page.reload({ waitUntil: 'domcontentloaded' })
     await openComfyUI(page)
     await openHousekeeper(page)
-    await page.waitForTimeout(600)
+    await waitForPanelSettled(page)
     await dragHeader(page, -150, 120)
 
     const reset = page.locator('.housekeeper-reset-position')

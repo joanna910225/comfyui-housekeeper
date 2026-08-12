@@ -65,6 +65,44 @@ export async function resetComfyUIState(page: Page) {
   ).toBe(true)
 }
 
+/**
+ * Block until the panel has stopped moving.
+ *
+ * ComfyUI reflows its own chrome asynchronously after load, and the panel measures its
+ * placement against it - so for a few hundred milliseconds the wrapper is still being
+ * repositioned. A test that grabs it during that window drags from a stale box and the move
+ * clamps back to where it started, which is a failure that only appears on slower machines.
+ *
+ * Waits for the wrapper's geometry to be identical across several consecutive samples rather
+ * than sleeping a fixed amount: it returns as soon as things are actually stable, and keeps
+ * waiting on a machine that needs longer.
+ */
+export async function waitForPanelSettled(page: Page, requiredStableSamples = 3) {
+  await page.evaluate(() => {
+    delete (window as any).__hkSettle
+  })
+
+  await page.waitForFunction(
+    (needed: number) => {
+      const element = document.querySelector('.housekeeper-wrapper')
+      if (!element) return false
+
+      const rect = element.getBoundingClientRect()
+      const sample = [rect.x, rect.y, rect.width, rect.height]
+      const state = ((window as any).__hkSettle ??= { last: null, stable: 0 })
+
+      const unchanged =
+        state.last !== null && state.last.every((value: number, i: number) => Math.abs(value - sample[i]) < 0.5)
+
+      state.stable = unchanged ? state.stable + 1 : 0
+      state.last = sample
+      return state.stable >= needed
+    },
+    requiredStableSamples,
+    { polling: 150, timeout: 20_000 }
+  )
+}
+
 export async function openComfyUI(page: Page) {
   await resetComfyUIState(page)
 
@@ -76,6 +114,10 @@ export async function openComfyUI(page: Page) {
 
   await expect(page.locator('canvas').first()).toBeVisible()
   await expect(page.locator('.housekeeper-wrapper')).toBeAttached()
+
+  // Every caller wants a panel that has finished placing itself. Doing it here rather than in
+  // each spec is what stops this being rediscovered a fourth time.
+  await waitForPanelSettled(page)
 }
 
 export async function openHousekeeper(page: Page) {
