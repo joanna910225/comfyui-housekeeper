@@ -2602,47 +2602,82 @@ function initializeAlignmentPanel() {
         // leave a hole in `levels`, and Math.max(...[]) on an empty level yields -Infinity.
         const validNodes = nodes.filter(node => node && node.id != null);
         
-        // Find root nodes (nodes with no inputs)
-        const rootNodes = validNodes.filter(node => {
-            const nodeId = node.id;
-            return !connections[nodeId] || 
-                   !connections[nodeId].inputs.length || 
-                   connections[nodeId].inputs.every((input: any) => !input.sourceNode);
-        });
-        
-        // If no root nodes found, use the first node as root
-        if (rootNodes.length === 0 && validNodes.length > 0) {
-            rootNodes.push(validNodes[0]);
-        }
-        
-        // Assign levels using BFS
-        const queue = rootNodes.map(node => ({node, level: 0}));
-        
-        while (queue.length > 0) {
-            const {node, level} = queue.shift()!;
-            
-            if (!node || node.id == null || visited.has(node.id)) continue;
-            visited.add(node.id);
-            
-            graph[node.id] = {level, order: 0};
-            
-            // Add connected nodes to queue
-            if (connections[node.id] && connections[node.id].outputs) {
-                connections[node.id].outputs.forEach((output: any) => {
-                    if (output && output.targetNode && output.targetNode.id != null && !visited.has(output.targetNode.id)) {
-                        queue.push({node: output.targetNode, level: level + 1});
-                    }
-                });
-            }
-        }
-        
-        // Handle disconnected nodes (assign them to level 0)
+        // Level assignment is LONGEST path from a root, not shortest.
+        //
+        // A plain BFS commits a node's level the first time it is reached, which is the
+        // SHORTEST path. Any "skip link" then drags a node forward into the same column as
+        // its own producer. On the stock ComfyUI workflow this collapses 5 columns to 3:
+        // EmptySD3LatentImage -> KSampler and VAELoader -> VAEDecode are both edges straight
+        // from a root, so KSampler lands beside the encoders that feed it and VAEDecode
+        // beside KSampler. Longest path is what makes every edge point strictly forward.
+        //
+        // Kahn's algorithm with relaxation, over the SELECTED nodes only: edges to nodes
+        // outside the selection are ignored, so aligning a subset behaves sensibly.
+
+        const idOf = (node: any) => String(node.id);
+        const successors = new Map<string, Set<string>>();
+        const indegree = new Map<string, number>();
+        const level = new Map<string, number>();
+
         validNodes.forEach(node => {
-            if (node && node.id != null && !graph[node.id]) {
-                graph[node.id] = {level: 0, order: 0};
-            }
+            successors.set(idOf(node), new Set());
+            indegree.set(idOf(node), 0);
+            level.set(idOf(node), 0);
         });
-        
+
+        validNodes.forEach(node => {
+            const from = idOf(node);
+            const outputs = connections[node.id]?.outputs ?? [];
+            outputs.forEach((output: any) => {
+                const target = output?.targetNode;
+                if (!target || target.id == null) return;
+                const to = String(target.id);
+                // Skip targets outside the selection, self-loops, and duplicate edges
+                // (two links between the same pair must count as one for in-degree).
+                if (to === from || !successors.has(to) || successors.get(from)!.has(to)) return;
+                successors.get(from)!.add(to);
+                indegree.set(to, indegree.get(to)! + 1);
+            });
+        });
+
+        const ready = validNodes.map(idOf).filter(id => indegree.get(id) === 0);
+
+        while (visited.size < validNodes.length) {
+            if (ready.length === 0) {
+                // Every remaining node is inside a cycle, so none will ever reach in-degree 0.
+                // Break it deterministically at the lowest-level, lowest-id node still waiting
+                // and carry on. This is what keeps a cyclic selection from looping forever.
+                let breakAt: string | null = null;
+                for (const node of validNodes) {
+                    const id = idOf(node);
+                    if (visited.has(id)) continue;
+                    if (breakAt === null || level.get(id)! < level.get(breakAt)!) breakAt = id;
+                }
+                if (breakAt === null) break;
+                indegree.set(breakAt, 0);
+                ready.push(breakAt);
+            }
+
+            const current = ready.shift()!;
+            if (visited.has(current)) continue;
+            visited.add(current);
+
+            successors.get(current)!.forEach(next => {
+                // Relaxation: a node sits one past its DEEPEST producer, not its first.
+                if (level.get(next)! < level.get(current)! + 1) {
+                    level.set(next, level.get(current)! + 1);
+                }
+                const remaining = indegree.get(next)! - 1;
+                indegree.set(next, remaining);
+                if (remaining <= 0 && !visited.has(next)) ready.push(next);
+            });
+        }
+
+        // Disconnected nodes never gain an in-edge, so they stay at level 0.
+        validNodes.forEach(node => {
+            graph[node.id] = {level: level.get(idOf(node)) ?? 0, order: 0};
+        });
+
         // Assign order within each level
         const levels: {[level: number]: any[]} = {};
         // `nodeId` is an Object.entries key, so always a string, while node.id is a number on
