@@ -66,8 +66,8 @@ Restart ComfyUI. The Housekeeper handle appears at the right of the canvas.
 
 ## Tested versions
 
-The browser suite runs against a real ComfyUI. These are the combinations it runs against, so
-these are the ones a change has to survive:
+The browser suite runs against a real ComfyUI. These are the combinations it covers, so these
+are the ones a change has to survive:
 
 | ComfyUI | Frontend | Renderer | Runs |
 | --- | --- | --- | --- |
@@ -85,7 +85,7 @@ comfyui-frontend-package version: 1.48.7
 ```
 
 **Nodes 2.0 is not supported yet.** ComfyUI's Vue renderer — **Settings → Comfy → Nodes 2.0 →
-Modern Node Design**, still marked experimental, and on by default on Desktop and Cloud
+Modern Node Design**, still marked experimental, and on by default on recent Desktop and Cloud
 installs — draws each node as a DOM element positioned from its own layout store. Housekeeper
 writes node positions straight into litegraph's arrays, which that store does not see, so the
 buttons appear to do nothing. Tracked in

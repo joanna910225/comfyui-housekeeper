@@ -84,11 +84,13 @@ jobs:
         run: |
           stable='{"comfyui":"v0.32.0","frontend":"1.48.7","renderer":"canvas","required":true}'
           latest='{"comfyui":"master","frontend":"latest","renderer":"canvas","required":true}'
-          # Nodes 2.0 is not a gate yet, because it does not work yet: under the Vue renderer
-          # the extension's position writes land in litegraph's arrays but not in the layout
-          # store the DOM nodes are drawn from, so aligning changes node.pos and moves nothing
-          # on screen (#52). A leg that is red every night is a leg people stop reading, so it
-          # runs without gating until the fix lands - then flip `required` to true.
+          # Nodes 2.0 is not a gate yet, because it does not work yet: the extension's position
+          # writes land in litegraph's arrays but not in the layout store the DOM nodes are
+          # drawn from, so aligning changes node.pos and moves nothing on screen (#52).
+          # e2e/tests/vue-renderer.spec.ts is the spec that asserts that - the rest of the
+          # suite measures litegraph, which still updates, and so mostly passes here. A leg
+          # that is red every night is a leg people stop reading, so it runs without gating
+          # until the fix lands; then flip `required` to true.
           vue='{"comfyui":"v0.32.0","frontend":"1.48.7","renderer":"vue","required":false}'
 
           if [ "$FULL" = "true" ]; then

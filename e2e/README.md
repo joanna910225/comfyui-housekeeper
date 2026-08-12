@@ -43,6 +43,8 @@ helper 通过 `Comfy.VueNodes.Enabled` 设置渲染器，并在 `openComfyUI()` 
 
 Nodes 2.0 目前跑不过：扩展写 `node.pos` 时绕过了 litegraph 的访问器，
 Vue 渲染器的布局 store 看不到这个写入，对齐后节点在屏幕上不动（#52）。
+注意其余用例断言的是 `app.graph._nodes`，而这些值照常会变——所以它们在
+Nodes 2.0 下大多是通过的，真正盯着「画出来的位置」的只有 `vue-renderer.spec.ts`。
 CI 里这条腿每晚跑但不作为门禁。
 
 ## 当前测试
@@ -57,6 +59,7 @@ CI 里这条腿每晚跑但不作为门禁。
 - `panel-toast.spec.ts`：面板位置、刷新、侧栏/属性按钮碰撞和 toast 点击穿透。
 - `panel-drag.spec.ts`：拖动手柄/标题栏、点击仍可切换、位置持久化与重置、越界钳制。
 - `panel-header.spec.ts`：标题与控件在 320–1600px 各宽度下不重叠、不截断（默认 / 拖动后 / 刷新后）。
+- `vue-renderer.spec.ts`：Nodes 2.0 下节点**画在屏幕上的位置**是否跟着对齐动（canvas 渲染器下跳过）。
 
 ## 测试隔离
 
