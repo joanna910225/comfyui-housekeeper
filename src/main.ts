@@ -111,6 +111,7 @@ function initializeAlignmentPanel() {
     let infoPanel: HTMLElement | null = null;
     let toggleHandle: HTMLButtonElement | null = null;
     let resetPositionButton: HTMLButtonElement | null = null;
+    let positionRow: HTMLElement | null = null;
     let isExpanded = false;
     let selectedNodes: any[] = [];
     let selectedGroups: any[] = [];
@@ -379,8 +380,9 @@ function initializeAlignmentPanel() {
             wrapper.classList.remove('hk-user-positioned');
         }
 
-        if (resetPositionButton) {
-            resetPositionButton.hidden = !customPosition;
+        // The row is what gets hidden, so the header keeps its own layout untouched.
+        if (positionRow) {
+            positionRow.hidden = !customPosition;
         }
     }
 
@@ -478,7 +480,14 @@ function initializeAlignmentPanel() {
 
     function updateLayoutMetrics() {
         const topOffset = computeToolbarOffset();
-        const rightOffset = computeRightOffset();
+
+        // Keeping clear of ComfyUI's chrome matters less than staying on screen. On a narrow
+        // viewport the measured offset can exceed the room available, which pushed the panel
+        // off the left edge, so cap it at whatever still fits.
+        const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+        const wrapperWidth = wrapper?.offsetWidth ?? 0;
+        const maxRightOffset = Math.max(viewportWidth - wrapperWidth, 0);
+        const rightOffset = Math.min(computeRightOffset(), maxRightOffset);
         const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
         const maxHeight = Math.max(viewportHeight - topOffset - PANEL_BOTTOM_MARGIN, 280);
 
@@ -590,7 +599,10 @@ function initializeAlignmentPanel() {
     --hk-top-offset: 48px;
     --hk-right-offset: 0px;
     --hk-panel-max-height: calc(100vh - 96px);
-    --hk-panel-width: clamp(270px, 18vw, min(270px, calc(100vw - 24px)));
+    /* 270px, but never wider than the viewport allows, and never below a usable floor.
+       The previous expression had its minimum above its maximum, so it always resolved to
+       270px and the panel overflowed narrow viewports. */
+    --hk-panel-width: clamp(200px, calc(100vw - 24px), 270px);
     --hk-button-size: clamp(34px, 7vw, 40px);
     --hk-icon-size: clamp(16px, 4vw, 20px);
     --hk-button-gap: clamp(4px, 1vw, 8px);
@@ -734,6 +746,16 @@ function initializeAlignmentPanel() {
     transition: none;
 }
 
+.housekeeper-position-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 6px;
+}
+
+.housekeeper-position-row[hidden] {
+    display: none;
+}
+
 .housekeeper-reset-position {
     background: transparent;
     border: 1px solid var(--hk-accent);
@@ -742,9 +764,11 @@ function initializeAlignmentPanel() {
     font-size: var(--hk-subtitle-font-size);
     font-family: inherit;
     cursor: pointer;
-    padding: 2px 8px;
-    margin-left: auto;
+    padding: 3px 10px;
+    /* Never let the label clip: it is the whole point of the control. */
     white-space: nowrap;
+    flex: 0 0 auto;
+    max-width: 100%;
     opacity: 0.85;
 }
 
@@ -767,6 +791,24 @@ function initializeAlignmentPanel() {
     gap: 10px;
     font-size: var(--hk-header-font-size);
     margin: 0;
+    /* min-width: 0 lets the title shrink inside the flex row instead of forcing the header
+       wider than the panel and pushing the close control out of reach. */
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.housekeeper-header-title span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.housekeeper-header-title img {
+    flex: 0 0 auto;
+}
+
+.housekeeper-close {
+    flex: 0 0 auto;
 }
 
 .housekeeper-header-title img {
@@ -1948,12 +1990,20 @@ function initializeAlignmentPanel() {
         resetPositionButton.textContent = 'Reset position';
         resetPositionButton.title = 'Return the panel to its default position';
         resetPositionButton.setAttribute('aria-label', 'Reset Housekeeper panel position');
-        resetPositionButton.hidden = true;
         resetPositionButton.addEventListener('click', () => resetPanelPosition());
 
         header.appendChild(headerTitle);
-        header.appendChild(resetPositionButton);
         header.appendChild(closeButton);
+
+        // "Reset position" sits on its own row rather than in the header. At the panel's
+        // width the header cannot hold the title, this button and the close control at once -
+        // the title ran into the button and its label clipped to "Reset pos...". A separate
+        // row keeps the label fully readable at every supported width, and costs nothing
+        // when hidden, which is the common case.
+        positionRow = document.createElement('div');
+        positionRow.className = 'housekeeper-position-row';
+        positionRow.hidden = true;
+        positionRow.appendChild(resetPositionButton);
 
         // The header doubles as a drag grip while the panel is open; the handle is the grip
         // when it is collapsed. Both move the same wrapper.
@@ -2112,6 +2162,7 @@ function initializeAlignmentPanel() {
         });
         customRow.addEventListener('dblclick', () => applyColor());
         content.appendChild(header);
+        content.appendChild(positionRow);
         content.appendChild(divider);
         content.appendChild(alignmentSection);
         const colorDivider = document.createElement('div');
