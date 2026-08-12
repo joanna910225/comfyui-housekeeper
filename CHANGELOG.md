@@ -2,10 +2,26 @@
 
 All notable changes to this project are documented here.
 
-## [Unreleased]
+## [0.6.1] - 2026-08-12
+
+Two ways the extension could get the geometry wrong: one that destroyed a layout, one that hid the
+panel.
 
 ### Fixed
 
+- **Flow arrangement could send every node in the selection to `-Infinity`.** If the selection
+  contained a cycle, the whole layout was destroyed in place — silently, with no error and nothing
+  to see until the nodes vanished off the far left of the canvas. Undo could not help, because the
+  positions were already gone by the time it had anything to restore.
+
+  The cause: arranging a cycle could leave a dependency level with no nodes in it, and the layout
+  takes `Math.max()` of each level in turn to decide where the next column starts. `Math.max()` of
+  nothing is `-Infinity`, and every column after it inherits that. The level is no longer left
+  empty, and an empty one now contributes zero rather than negative infinity — the second change is
+  redundant if the first is correct, which is the point of having it.
+
+  Present in v0.3.0 through v0.6.0. Only selections with a cycle were affected; an acyclic
+  workflow, which is what ComfyUI can actually execute, never hit it.
 - **The panel could sit under the menu bar on ComfyUI V1 and Desktop.** Its top offset is measured
   from ComfyUI's menu, but the selectors used to find that menu matched none of the elements those
   layouts use, so the panel fell back to a fixed default and overlapped. Reported with a working fix
@@ -13,6 +29,16 @@ All notable changes to this project are documented here.
   [#26](https://github.com/joanna910225/comfyui-housekeeper/pull/26); the selectors are theirs.
 - The same measurement compared a DOM rectangle against zero with exact float equality, so it
   silently failed at any browser zoom other than 100%.
+
+### Internal
+
+- The README described buttons that do not exist. It now lists the real ones, and covers spacing,
+  the movable panel and the keyboard shortcuts, none of which it mentioned.
+- The browser suite runs in 4.3 minutes instead of 8.1, by splitting across three runners and by
+  not reloading the page between tests that do not need it.
+- The suite no longer depends on the order its tests run in. ComfyUI keeps UI state on the server,
+  so tests were inheriting settings from whichever test ran before them; each now starts from a
+  known baseline.
 
 ## [0.6.0] - 2026-08-12
 
