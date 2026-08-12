@@ -2,6 +2,33 @@
 
 All notable changes to this project are documented here.
 
+## [0.5.0] - 2026-08-12
+
+Spacing you can set, and a panel you can move without a mouse. Detail in
+[#27](https://github.com/joanna910225/comfyui-housekeeper/issues/27).
+
+### Added
+
+- **The gap between nodes is now yours to set.** Every alignment re-stacks the selection along
+  the other axis — aligning vertically also re-spaces horizontally — and that gap was fixed at
+  30px with no way to change it. There is now a **Spacing** control on the panel, a slider with
+  a number field beside it for an exact value, and the same setting appears under
+  *Settings → Housekeeper → Layout* for anyone who prefers it there. The two stay in sync.
+  Closes #20. Closes #23.
+
+  If you never touch it, nothing changes: the default reproduces the previous 30px gap exactly,
+  and there is a test asserting that.
+
+- **The panel can be repositioned from the keyboard.** Arrow keys move it while the handle has
+  focus, Shift+arrow moves further. The full round trip is now possible without a pointer:
+  focus the handle, nudge it, open the panel, tab to *Reset position*. Dragging, added in 0.4.0,
+  was pointer-only.
+
+### Internal
+
+- 23 further browser tests, covering keyboard positioning, the spacing setting and the in-panel
+  control. The browser suite is now 57 tests and runs reproducibly.
+
 ## [0.4.0] - 2026-08-12
 
 Panel placement you control. Detail in
