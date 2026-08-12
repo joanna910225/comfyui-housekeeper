@@ -174,6 +174,10 @@ function initializeAlignmentPanel() {
     const PANEL_MIN_VISIBLE = 48;
     // Pointer travel before a press on the handle counts as a drag rather than a click.
     const PANEL_DRAG_THRESHOLD = 4;
+    // Arrow-key nudge distance from the focused handle, and the coarser Shift+arrow step.
+    // Dragging is pointer-only, so without these the panel cannot be moved from the keyboard.
+    const PANEL_NUDGE_STEP = 10;
+    const PANEL_NUDGE_STEP_LARGE = 50;
     const RECENT_COLOR_LIMIT = 9;
     const FALLBACK_RECENT_COLORS = ['#353535', '#3f5159', '#593930', '#335533', '#333355', '#335555', '#553355', '#665533', '#000000'];
 
@@ -432,6 +436,58 @@ function initializeAlignmentPanel() {
         savePanelPosition(null);
         applyPanelPosition();
         updateLayoutMetrics();
+    }
+
+    /**
+     * Move the panel by a delta, seeding a custom position from wherever it currently sits if
+     * it has not been moved before. Used by the keyboard nudge; the pointer drag tracks an
+     * absolute position from its grab offset instead, but both end up in clampPanelPosition
+     * and savePanelPosition so they behave identically once the move is applied.
+     */
+    function movePanelBy(dx: number, dy: number) {
+        if (!wrapper) return;
+
+        if (!customPosition) {
+            const rect = wrapper.getBoundingClientRect();
+            const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+            customPosition = { top: rect.top, right: viewportWidth - rect.right };
+        }
+
+        // `right` grows leftwards, hence the sign flip on the horizontal delta.
+        customPosition = clampPanelPosition({
+            top: customPosition.top + dy,
+            right: customPosition.right - dx
+        });
+        applyPanelPosition();
+        savePanelPosition(customPosition);
+    }
+
+    /**
+     * Arrow keys reposition the panel while the handle has focus. Buttons do nothing with
+     * arrow keys by default, so this claims nothing the user would otherwise get, and it is
+     * the only way to move the panel without a pointer.
+     */
+    function makeKeyboardMovable(grip: HTMLElement) {
+        grip.addEventListener('keydown', (event: KeyboardEvent) => {
+            // Leave modified combos alone - Ctrl/Cmd+Shift+Arrow is the alignment shortcut.
+            if (event.ctrlKey || event.metaKey || event.altKey) return;
+
+            const step = event.shiftKey ? PANEL_NUDGE_STEP_LARGE : PANEL_NUDGE_STEP;
+            let dx = 0;
+            let dy = 0;
+
+            switch (event.key) {
+                case 'ArrowLeft': dx = -step; break;
+                case 'ArrowRight': dx = step; break;
+                case 'ArrowUp': dy = -step; break;
+                case 'ArrowDown': dy = step; break;
+                default: return;
+            }
+
+            // Otherwise the arrow scrolls the page behind the panel.
+            event.preventDefault();
+            movePanelBy(dx, dy);
+        });
     }
 
     /**
@@ -1966,7 +2022,8 @@ function initializeAlignmentPanel() {
         toggleHandle = document.createElement('button');
         toggleHandle.type = 'button';
         toggleHandle.className = 'housekeeper-handle';
-        toggleHandle.title = 'Toggle Housekeeper panel (Ctrl+Shift+H)';
+        toggleHandle.title = 'Toggle Housekeeper panel (Ctrl+Shift+H). Arrow keys move the panel, Shift+arrow moves further.';
+        toggleHandle.setAttribute('aria-keyshortcuts', 'Control+Shift+H ArrowUp ArrowDown ArrowLeft ArrowRight');
 
         const handleIcon = document.createElement('img');
         handleIcon.src = homeIconUrl;
@@ -2219,6 +2276,7 @@ function initializeAlignmentPanel() {
         document.body.appendChild(wrapper);
 
         makeDraggable(toggleHandle);
+        makeKeyboardMovable(toggleHandle);
 
         // Restore a previously dragged position. Applied after the wrapper is in the document
         // so clamping can measure it, and re-clamped against the current viewport in case the
