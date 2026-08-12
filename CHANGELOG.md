@@ -2,6 +2,44 @@
 
 All notable changes to this project are documented here.
 
+## [0.6.0] - 2026-08-12
+
+Housekeeping. Nothing changes in the panel — this release is about what the project ships and
+how that stays true. Detail in
+[#27](https://github.com/joanna910225/comfyui-housekeeper/issues/27).
+
+### Fixed
+
+- **The build published the wrong package entirely.** `python -m build` produced a wheel whose
+  only contents were five unused Vue components, installed as a top-level `components` package —
+  no `__init__.py`, no `js/main.js`, none of the extension, and a name that would collide with
+  anything else called `components`. Because a `src/` directory exists, setuptools' auto-discovery
+  had been selecting it since the first commit.
+
+  ComfyUI loads a custom node by scanning `custom_nodes/`, not by importing from site-packages, so
+  no wheel content can make `pip install` work. The build now declares no packages and ships
+  metadata only, which is the honest result. Installation is unchanged: clone into `custom_nodes`,
+  or use the ComfyUI Registry.
+
+### Removed
+
+- The five Vue components the wheel had been shipping: 1,004 lines reachable only through two
+  commented-out imports, absent from the built bundle, untouched since the first commit. With them
+  gone the Vue build toolchain has nothing to compile, so the `vue`, `vue-i18n` and `primevue`
+  dependencies go too. The built `js/main.js` is byte-identical afterwards, which is how we know
+  none of it was doing anything.
+
+### Internal
+
+- **Continuous integration**, which the project had none of. Every push and pull request now runs
+  the unit tests, checks the committed `js/main.js` still reproduces from source, lints the Python
+  and asserts the extension imports with no ComfyUI present. A separate workflow runs the 57-test
+  browser suite against a real ComfyUI on pushes to `main` and `test`.
+
+  The bundle check is the one that matters: `js/main.js` is what ComfyUI actually serves, it is
+  committed by hand, and it is minified — so it could drift from the source it is reviewed as, and
+  nothing would have noticed.
+
 ## [0.5.0] - 2026-08-12
 
 Spacing you can set, and a panel you can move without a mouse. Detail in
