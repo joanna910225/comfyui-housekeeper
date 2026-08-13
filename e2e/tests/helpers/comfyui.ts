@@ -29,6 +29,35 @@ export type NodeSnapshot = {
 
 export type Rect = { x: number; y: number; width: number; height: number }
 
+export type GroupSnapshot = { title: string; color?: string; selected: boolean }
+
+// ROOT GRAPH vs DISPLAYED GRAPH.
+//
+// app.graph is always the root graph - upstream defines it as
+// `get graph() { return this.rootGraphInternal }`. While the canvas is showing a subgraph,
+// app.graph still answers with the root, so anything that reads it is looking at a different node
+// list from the one on screen. app.canvas.graph is what is being displayed.
+//
+// The helpers below therefore act on app.canvas.graph (falling back to app.graph), so the same
+// helper works at the root and inside a subgraph. The one exception is installGraph(), which
+// deliberately builds the root fixture and clears it first.
+
+/**
+ * Which node renderer the run is aimed at.
+ *
+ * ComfyUI ships two. The legacy one paints every node into a single <canvas>, so the DOM
+ * contains one element and the extension reads geometry from litegraph. Nodes 2.0 renders
+ * each node as a Vue component - one `.lg-node` element per node, laid out by the browser.
+ * They are genuinely different surfaces for an extension that measures nodes and places a
+ * panel against ComfyUI's own chrome, so which one is in force is part of the run, not a
+ * detail.
+ *
+ * Read from the environment rather than left to whatever the server last had, because the
+ * setting is persisted server-side like everything else below: an unset run would silently
+ * inherit the previous run's renderer.
+ */
+export const RENDERER = process.env.COMFYUI_RENDERER === 'vue' ? 'vue' : 'canvas'
+
 /**
  * UI state that tests toggle and that ComfyUI persists SERVER-SIDE, in
  * user/default/comfy.settings.json - not in localStorage, so clearing browser storage or
@@ -49,15 +78,30 @@ const UI_STATE_BASELINE: Record<string, unknown> = {
   'Comfy.Queue.History.Expanded': false,
   // Housekeeper's own node spacing is persisted the same way, so a test that changes it
   // would otherwise silently alter every layout assertion that runs after it.
-  'Housekeeper.NodeSpacing': 30
+  'Housekeeper.NodeSpacing': 30,
+  // Housekeeper's shortcuts are ComfyUI commands, so a user rebinding is persisted here too.
+  // A test that rebinds one would otherwise leave every later test running someone else's
+  // keymap.
+  'Comfy.Keybinding.NewBindings': [],
+  'Comfy.Keybinding.UnsetBindings': [],
+  // Nodes 2.0. Named `Comfy.VueNodes.Enabled` in the frontend's settings schema - checked
+  // against the shipped bundle rather than guessed, and asserted below, so a rename upstream
+  // turns into a failure instead of a run that quietly tests the legacy canvas twice.
+  'Comfy.VueNodes.Enabled': RENDERER === 'vue'
 }
 
 /**
  * Put ComfyUI's persisted UI state back to a known baseline. Must run before navigation so
  * the page loads with it already applied.
+ *
+ * `overrides` is for state that has to be in place before the page boots - ComfyUI reads
+ * user keybindings once, at startup - and is merged over the baseline rather than replacing
+ * it, so the reset still happens.
  */
-export async function resetComfyUIState(page: Page) {
-  const response = await page.request.post('/api/settings', { data: UI_STATE_BASELINE })
+export async function resetComfyUIState(page: Page, overrides: Record<string, unknown> = {}) {
+  const response = await page.request.post('/api/settings', {
+    data: { ...UI_STATE_BASELINE, ...overrides }
+  })
   // Fail loudly rather than silently reintroducing order-dependence if the endpoint moves.
   expect(
     response.ok(),
@@ -103,8 +147,8 @@ export async function waitForPanelSettled(page: Page, requiredStableSamples = 3)
   )
 }
 
-export async function openComfyUI(page: Page) {
-  await resetComfyUIState(page)
+export async function openComfyUI(page: Page, settings: Record<string, unknown> = {}) {
+  await resetComfyUIState(page, settings)
 
   await page.goto('/', { waitUntil: 'domcontentloaded' })
   await page.waitForFunction(() => {
@@ -114,6 +158,18 @@ export async function openComfyUI(page: Page) {
 
   await expect(page.locator('canvas').first()).toBeVisible()
   await expect(page.locator('.housekeeper-wrapper')).toBeAttached()
+
+  // Prove the renderer the run asked for is the one that engaged. The frontend mirrors the
+  // setting onto this flag, so it reports what is in force rather than what was requested -
+  // and it is absent on frontends predating Nodes 2.0, which reads as the canvas renderer.
+  // Without this check a renamed setting would leave the Vue run green against the canvas,
+  // which is worse than no coverage: it would claim coverage that does not exist.
+  const vueNodes = await page.evaluate(() => Boolean((window as any).LiteGraph?.vueNodesMode))
+  expect(
+    vueNodes,
+    `asked for the ${RENDERER} renderer, but LiteGraph.vueNodesMode is ${vueNodes} - ` +
+      'Comfy.VueNodes.Enabled may have been renamed or removed in this frontend'
+  ).toBe(RENDERER === 'vue')
 
   // Every caller wants a panel that has finished placing itself. Doing it here rather than in
   // each spec is what stops this being rediscovered a fourth time.
@@ -141,6 +197,7 @@ export async function installGraph(
     ({ specs, links, selectedTitles }) => {
       const runtime = window as any
       const app = runtime.app
+      // Fixtures are always built in the root graph - see the note above - and this clears it.
       const graph = app.graph
       const canvas = app.canvas
 
@@ -213,18 +270,98 @@ export async function installGraph(
 export async function selectNodes(page: Page, titles: string[]) {
   await page.evaluate((titles) => {
     const app = (window as any).app
-    const selected = app.graph._nodes.filter((node: any) => titles.includes(node.title))
+    const graph = app.canvas?.graph ?? app.graph
+    const selected = graph.nodes.filter((node: any) => titles.includes(node.title))
     app.canvas.deselectAll?.()
     app.canvas.selectNodes?.(selected)
-    for (const node of app.graph._nodes) node.is_selected = selected.includes(node)
+    for (const node of graph.nodes) node.is_selected = selected.includes(node)
     app.canvas.setDirty?.(true, true)
   }, titles)
   await page.waitForTimeout(650)
 }
 
+/**
+ * Convert nodes in the root graph into a subgraph and open it, the way the frontend does when a
+ * user picks "Convert to Subgraph" and then clicks into the resulting node. Defaults to every
+ * node currently in the root graph.
+ */
+export async function enterSubgraph(page: Page, titles?: string[]) {
+  await page.evaluate((titles) => {
+    const app = (window as any).app
+    const canvas = app.canvas
+    const rootGraph = app.graph
+    const nodes = rootGraph.nodes.filter(
+      (node: any) => !titles || titles.includes(node.title)
+    )
+    if (!nodes.length) throw new Error(`No nodes to convert to a subgraph: ${titles}`)
+
+    const created = rootGraph.convertToSubgraph(new Set(nodes))
+    if (!created?.subgraph) throw new Error('convertToSubgraph returned no subgraph')
+    // openSubgraph is what the subgraph node's own title button and double-click handler call.
+    canvas.openSubgraph(created.subgraph, created.node)
+    if (canvas.graph === app.graph) {
+      throw new Error('canvas is still displaying the root graph after openSubgraph')
+    }
+  }, titles)
+  await page.waitForTimeout(650)
+}
+
+/** Back to the root graph, which is what the breadcrumb navigation does. */
+export async function leaveSubgraph(page: Page) {
+  await page.evaluate(() => {
+    const app = (window as any).app
+    app.canvas.setGraph(app.rootGraph ?? app.graph)
+    if (app.canvas.graph !== app.graph) {
+      throw new Error('canvas did not return to the root graph')
+    }
+  })
+  await page.waitForTimeout(650)
+}
+
+export async function addGroup(page: Page, group: { title: string } & Rect) {
+  await page.evaluate((group) => {
+    const runtime = window as any
+    const app = runtime.app
+    const graph = app.canvas?.graph ?? app.graph
+    const created = new runtime.LGraphGroup(group.title)
+    created.pos = [group.x, group.y]
+    created.size = [group.width, group.height]
+    graph.add(created)
+    app.canvas.setDirty?.(true, true)
+  }, group)
+  await page.waitForTimeout(100)
+}
+
+export async function selectGroup(page: Page, title: string) {
+  await page.evaluate((title) => {
+    const app = (window as any).app
+    const graph = app.canvas?.graph ?? app.graph
+    const group = graph.groups.find((candidate: any) => candidate.title === title)
+    if (!group) throw new Error(`Missing group ${title}`)
+    app.canvas.deselectAll?.()
+    app.canvas.select?.(group)
+    if (!group.selected) throw new Error(`select() did not take effect on group ${title}`)
+    app.canvas.setDirty?.(true, true)
+  }, title)
+  await page.waitForTimeout(650)
+}
+
+export async function groupSnapshots(page: Page): Promise<GroupSnapshot[]> {
+  return page.evaluate(() => {
+    const app = (window as any).app
+    const graph = app.canvas?.graph ?? app.graph
+    return (graph.groups as any[]).map((group) => ({
+      title: group.title,
+      color: group.color,
+      selected: Boolean(group.selected)
+    }))
+  })
+}
+
 export async function snapshots(page: Page): Promise<NodeSnapshot[]> {
   return page.evaluate(() => {
-    const nodes = (window as any).app.graph._nodes as any[]
+    const app = (window as any).app
+    const nodes = (app.canvas?.graph ?? app.graph).nodes as any[]
     return nodes
       .map((node) => ({
         id: node.id,
@@ -247,7 +384,9 @@ export async function setNodeSize(page: Page, title: string, size: [number, numb
   await page.evaluate(
     ({ title, size }) => {
       const app = (window as any).app
-      const node = app.graph._nodes.find((candidate: any) => candidate.title === title)
+      const node = (app.canvas?.graph ?? app.graph).nodes.find(
+        (candidate: any) => candidate.title === title
+      )
       if (!node) throw new Error(`Missing node ${title}`)
       node.setSize(size)
       app.canvas.setDirty?.(true, true)
@@ -261,7 +400,9 @@ export async function setCollapsed(page: Page, title: string, collapsed: boolean
   await page.evaluate(
     ({ title, collapsed }) => {
       const app = (window as any).app
-      const node = app.graph._nodes.find((candidate: any) => candidate.title === title)
+      const node = (app.canvas?.graph ?? app.graph).nodes.find(
+        (candidate: any) => candidate.title === title
+      )
       if (!node) throw new Error(`Missing node ${title}`)
       node.flags = { ...(node.flags ?? {}), collapsed }
       app.canvas.setDirty?.(true, true)
@@ -281,7 +422,9 @@ export async function setPinned(page: Page, title: string, pinned: boolean) {
   await page.evaluate(
     ({ title, pinned }) => {
       const app = (window as any).app
-      const node = app.graph._nodes.find((candidate: any) => candidate.title === title)
+      const node = (app.canvas?.graph ?? app.graph).nodes.find(
+        (candidate: any) => candidate.title === title
+      )
       if (!node) throw new Error(`Missing node ${title}`)
       if (typeof node.pin === 'function') node.pin(pinned)
       else node.flags = { ...(node.flags ?? {}), pinned }
@@ -324,7 +467,7 @@ export async function projectedNodeRects(page: Page): Promise<Rect[]> {
     const app = (window as any).app
     const canvasRect = app.canvas.canvas.getBoundingClientRect()
     const { scale, offset } = app.canvas.ds
-    return app.graph._nodes.map((node: any) => ({
+    return (app.canvas?.graph ?? app.graph).nodes.map((node: any) => ({
       x: canvasRect.left + (node.pos[0] + offset[0]) * scale,
       y: canvasRect.top + (node.pos[1] + offset[1]) * scale - 30 * scale,
       width: Number(node.width ?? node.size[0]) * scale,

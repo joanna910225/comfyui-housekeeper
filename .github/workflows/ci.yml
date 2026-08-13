@@ -26,6 +26,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Vite strips the types on the way to js/main.js without ever checking them, so until
+      # this step existed nothing in the project compiled the TypeScript. It is cheap and it
+      # fails on the annotations themselves, before the tests have to run anything.
+      - name: Type check
+        run: npm run typecheck
+
       - name: Unit tests
         run: npm test
 

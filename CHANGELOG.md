@@ -2,6 +2,50 @@
 
 All notable changes to this project are documented here.
 
+## [0.7.0] - 2026-08-13
+
+Shortcuts you can change, and a panel that works inside subgraphs.
+
+### Fixed
+
+- **Nothing worked inside a subgraph.** Open one, select nodes, and every button on the panel
+  stayed disabled — no error, no message, just a panel that looked like nothing was selected.
+  The selection was read from `app.graph`, which is always the root graph; the canvas mean-
+  while was displaying the subgraph. It now reads the graph actually on screen. Closes #51.
+
+### Added
+
+- **The keyboard shortcuts can be rebound.** They are now declared to ComfyUI as commands with
+  default keybindings, so they appear in ComfyUI's own Keybinding settings alongside
+  everything else and can be changed or unbound there. The defaults are unchanged. Frontends
+  too old to understand the commands keep the previous behaviour. Closes #43.
+
+  The extension keeps its own text-field guard rather than relying on ComfyUI's: ComfyUI
+  suppresses only `Ctrl+Shift+←` and `Ctrl+Shift+→` during text entry, so the other five
+  shortcuts would otherwise fire while you were typing a prompt — the bug fixed in v0.2.0.
+
+### Internal
+
+- **The TypeScript is now type-checked.** Vite strips the annotations on the way to
+  `js/main.js` without verifying them, so nothing in the project had ever compiled the
+  source. CI now runs `tsc --noEmit` before the tests.
+
+  The 19 errors this surfaced were mostly not type debt: 16 were the icon imports, which
+  use Vite's `?url` suffix that tsc has no notion of, one was ComfyUI's own host script —
+  which exists only in the browser — and one was `node:url` in the build config. All are
+  now declared rather than worked around. The single real gap was `comfyClass`, a property
+  ComfyUI adds to the node constructor that litegraph does not declare. Closes #55.
+
+- **The browser suite runs against more than one frontend.** Every push tests ComfyUI v0.32.0
+  with its bundled frontend 1.48.7; a nightly run adds the newest published frontend and a
+  pass over the Vue renderer (Nodes 2.0). The tested combinations are published in the README,
+  so a user can tell whether a problem is their version. Closes #57.
+
+  The Vue leg does not gate a merge, because it fails today: aligning under Nodes 2.0 updates
+  `node.pos` and moves nothing on screen. That is #52, and it now has a test that proves it —
+  the leg initially passed because every existing test measures graph state rather than what
+  is drawn.
+
 ## [0.6.2] - 2026-08-12
 
 ### Fixed

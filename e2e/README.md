@@ -29,6 +29,24 @@ npm run report
 COMFYUI_URL=http://127.0.0.1:8188 npm test
 ```
 
+## 渲染器
+
+`COMFYUI_RENDERER` 决定这一轮跑在哪个渲染器上，默认 `canvas`（传统 litegraph 画布）：
+
+```bash
+COMFYUI_RENDERER=vue npm test    # Nodes 2.0，每个节点是一个 Vue 组件
+```
+
+helper 通过 `Comfy.VueNodes.Enabled` 设置渲染器，并在 `openComfyUI()` 里断言
+`LiteGraph.vueNodesMode` 与请求一致——这个设置存在服务端，不断言的话
+上一轮留下的值会静悄悄地决定这一轮真正测的是哪个渲染器。
+
+Nodes 2.0 目前跑不过：扩展写 `node.pos` 时绕过了 litegraph 的访问器，
+Vue 渲染器的布局 store 看不到这个写入，对齐后节点在屏幕上不动（#52）。
+注意其余用例断言的是 `app.graph._nodes`，而这些值照常会变——所以它们在
+Nodes 2.0 下大多是通过的，真正盯着「画出来的位置」的只有 `vue-renderer.spec.ts`。
+CI 里这条腿每晚跑但不作为门禁。
+
 ## 当前测试
 
 套件覆盖 issue #27 的完整浏览器检查表：
@@ -41,6 +59,11 @@ COMFYUI_URL=http://127.0.0.1:8188 npm test
 - `panel-toast.spec.ts`：面板位置、刷新、侧栏/属性按钮碰撞和 toast 点击穿透。
 - `panel-drag.spec.ts`：拖动手柄/标题栏、点击仍可切换、位置持久化与重置、越界钳制。
 - `panel-header.spec.ts`：标题与控件在 320–1600px 各宽度下不重叠、不截断（默认 / 拖动后 / 刷新后）。
+- `vue-renderer.spec.ts`：Nodes 2.0 下节点**画在屏幕上的位置**是否跟着对齐动（canvas 渲染器下跳过）。
+
+issue #27 之外的回归用例：
+
+- `subgraph.spec.ts`：子图内选择节点后按钮可用、对齐生效、组可配色，以及退出子图后根图选择仍然正常（#51）。
 
 ## 测试隔离
 

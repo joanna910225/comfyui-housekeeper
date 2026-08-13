@@ -9,6 +9,8 @@ A ComfyUI extension for aligning, arranging and colouring the nodes in a workflo
 
 ## What's new
 
+**v0.7.0** — the **shortcuts are yours to change**, from ComfyUI's own *Settings → Keybinding*. The panel also works **inside subgraphs**, where its buttons used to sit disabled with no explanation.
+
 **v0.6.2** — **pinned nodes stay pinned.** Alignment and arrangement now leave them exactly where they are, however they are selected.
 
 **v0.6.1** — arranging a selection whose links form a loop no longer throws the layout off the canvas, and the panel stays clear of the menu bar on ComfyUI's V1 and Desktop layouts.
@@ -63,6 +65,38 @@ git clone https://github.com/joanna910225/comfyui-housekeeper.git
 ```
 
 Restart ComfyUI. The Housekeeper handle appears at the right of the canvas.
+
+## Tested versions
+
+The browser suite runs against a real ComfyUI. These are the combinations it covers, so these
+are the ones a change has to survive:
+
+| ComfyUI | Frontend | Renderer | Runs |
+| --- | --- | --- | --- |
+| v0.32.0 | 1.48.7 | Legacy canvas | Every push |
+| `master` | Newest published (1.49.6 today) | Legacy canvas | Nightly |
+| v0.32.0 | 1.48.7 | Nodes 2.0 (Vue) | Nightly, not passing yet |
+
+ComfyUI does not ship its frontend in the repository — it pins the `comfyui-frontend-package`
+Python dependency and serves whichever version of that is installed, so your frontend version
+is not the same thing as your ComfyUI version. ComfyUI v0.31.0 and v0.32.0 both pin frontend
+1.48.7. To see what you are actually on, ComfyUI prints it at startup:
+
+```
+comfyui-frontend-package version: 1.48.7
+```
+
+**Nodes 2.0 is not supported yet.** ComfyUI's Vue renderer — **Settings → Comfy → Nodes 2.0 →
+Modern Node Design**, still marked experimental, and on by default on recent Desktop and Cloud
+installs — draws each node as a DOM element positioned from its own layout store. Housekeeper
+writes node positions straight into litegraph's arrays, which that store does not see, so the
+buttons appear to do nothing. Tracked in
+[#52](https://github.com/joanna910225/comfyui-housekeeper/issues/52); the nightly run covers
+that renderer so the fix has something to prove itself against.
+
+Anything not in the table is untested rather than known broken. The extension is
+frontend-only, so a version it has not seen usually works; if something looks wrong, the
+version you are on is the first thing worth checking.
 
 ## Usage
 
@@ -133,7 +167,9 @@ Use `Cmd` in place of `Ctrl` on macOS. Shortcuts are ignored while the focus is 
 
 Every operation is a single undo step — press `Ctrl+Z` once to revert it.
 
-Making these rebindable is tracked in [#43](https://github.com/joanna910225/comfyui-housekeeper/issues/43).
+The first seven are defaults, not fixed: they are registered as ComfyUI commands, so you can
+rebind or remove any of them under **Settings → Keybinding** along with every other shortcut.
+Moving the panel is bound to the focused handle rather than globally, so it is not listed there.
 
 ## Contributing
 
