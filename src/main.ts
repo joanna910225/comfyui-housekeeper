@@ -3312,12 +3312,22 @@ function initializeAlignmentPanel() {
 
     // Update selected nodes
     function updateSelectedNodes() {
-        if (!window.app?.graph) return;
-        
-        const graph = window.app.graph;
-        const allNodes = Object.values(graph._nodes || {});
+        // app.graph is the ROOT graph, not the one on screen: upstream defines it as
+        // `get graph() { return this.rootGraphInternal }`. Inside a subgraph the canvas shows the
+        // subgraph while app.graph still answers with the root, so a selection made in a subgraph
+        // is invisible here and every button disables itself with no error at all (#51).
+        // The active canvas's graph is whatever is being displayed, subgraph included; at the root
+        // it IS app.graph, so this changes nothing outside a subgraph. Falling back to app.graph
+        // keeps the previous behaviour if no canvas is reachable rather than throwing.
+        const graph: any = getActiveCanvas()?.graph ?? window.app?.graph;
+        if (!graph) return;
+
+        // .nodes/.groups are the public accessors for the private _nodes/_groups; keep reading the
+        // private fields as a fallback so an older frontend without them still works.
+        const allNodes = Object.values(graph.nodes ?? graph._nodes ?? {});
         selectedNodes = allNodes.filter((node: any) => node && node.is_selected);
-        const allGroups = Array.isArray(graph._groups) ? graph._groups : [];
+        const groupList = graph.groups ?? graph._groups;
+        const allGroups = Array.isArray(groupList) ? groupList : [];
         selectedGroups = allGroups.filter((group: any) => group && group.selected);
         
         const hasSelectedNodes = selectedNodes.length > 1;
