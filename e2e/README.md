@@ -61,6 +61,10 @@ CI 里这条腿每晚跑但不作为门禁。
 - `panel-header.spec.ts`：标题与控件在 320–1600px 各宽度下不重叠、不截断（默认 / 拖动后 / 刷新后）。
 - `vue-renderer.spec.ts`：Nodes 2.0 下节点**画在屏幕上的位置**是否跟着对齐动（canvas 渲染器下跳过）。
 
+issue #27 之外的回归用例：
+
+- `subgraph.spec.ts`：子图内选择节点后按钮可用、对齐生效、组可配色，以及退出子图后根图选择仍然正常（#51）。
+
 ## 测试隔离
 
 ComfyUI 把部分界面状态存在**服务端**（`user/default/comfy.settings.json`），

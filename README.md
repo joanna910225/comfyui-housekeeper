@@ -165,7 +165,9 @@ Use `Cmd` in place of `Ctrl` on macOS. Shortcuts are ignored while the focus is 
 
 Every operation is a single undo step — press `Ctrl+Z` once to revert it.
 
-Making these rebindable is tracked in [#43](https://github.com/joanna910225/comfyui-housekeeper/issues/43).
+The first seven are defaults, not fixed: they are registered as ComfyUI commands, so you can
+rebind or remove any of them under **Settings → Keybinding** along with every other shortcut.
+Moving the panel is bound to the focused handle rather than globally, so it is not listed there.
 
 ## Contributing
 
