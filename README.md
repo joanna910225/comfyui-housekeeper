@@ -64,6 +64,38 @@ git clone https://github.com/joanna910225/comfyui-housekeeper.git
 
 Restart ComfyUI. The Housekeeper handle appears at the right of the canvas.
 
+## Tested versions
+
+The browser suite runs against a real ComfyUI. These are the combinations it covers, so these
+are the ones a change has to survive:
+
+| ComfyUI | Frontend | Renderer | Runs |
+| --- | --- | --- | --- |
+| v0.32.0 | 1.48.7 | Legacy canvas | Every push |
+| `master` | Newest published (1.49.6 today) | Legacy canvas | Nightly |
+| v0.32.0 | 1.48.7 | Nodes 2.0 (Vue) | Nightly, not passing yet |
+
+ComfyUI does not ship its frontend in the repository — it pins the `comfyui-frontend-package`
+Python dependency and serves whichever version of that is installed, so your frontend version
+is not the same thing as your ComfyUI version. ComfyUI v0.31.0 and v0.32.0 both pin frontend
+1.48.7. To see what you are actually on, ComfyUI prints it at startup:
+
+```
+comfyui-frontend-package version: 1.48.7
+```
+
+**Nodes 2.0 is not supported yet.** ComfyUI's Vue renderer — **Settings → Comfy → Nodes 2.0 →
+Modern Node Design**, still marked experimental, and on by default on recent Desktop and Cloud
+installs — draws each node as a DOM element positioned from its own layout store. Housekeeper
+writes node positions straight into litegraph's arrays, which that store does not see, so the
+buttons appear to do nothing. Tracked in
+[#52](https://github.com/joanna910225/comfyui-housekeeper/issues/52); the nightly run covers
+that renderer so the fix has something to prove itself against.
+
+Anything not in the table is untested rather than known broken. The extension is
+frontend-only, so a version it has not seen usually works; if something looks wrong, the
+version you are on is the first thing worth checking.
+
 ## Usage
 
 <img src="doc/handler.png" alt="Housekeeper Handler" height="200">

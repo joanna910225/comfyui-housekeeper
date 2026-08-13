@@ -1,13 +1,28 @@
 name: Browser tests
 
 # Not on every pull request: this installs ComfyUI and PyTorch and takes several minutes.
-# It runs on pushes to main and test, and on demand.
+# It runs on pushes to main and test, once a night, and on demand.
 #
-# ComfyUI is checked out at its default branch rather than pinned, so a failure here can mean
-# either "we broke something" or "ComfyUI changed under us". The second is worth knowing about
-# - this extension reaches into frontend internals that have already moved twice - but it does
-# mean this workflow can go red without anything in this repository changing. Read a failure
-# before assuming it is ours.
+# ComfyUI does not vendor its frontend. requirements.txt pins comfyui-frontend-package and
+# the server hands out whatever version of that package is importable, so installing a
+# different version over the top is the whole mechanism for testing a second frontend
+# against the same backend. That is what the `leg` matrix dimension below does.
+#
+# What runs when:
+#
+#   push       one leg - ComfyUI v0.32.0, frontend 1.48.7, legacy canvas renderer. Both are
+#              pinned, so a red run here means this repository broke something.
+#   schedule   that leg, plus the newest published frontend against ComfyUI master, plus the
+#              Nodes 2.0 (Vue) renderer. This is where "ComfyUI changed under us" shows up.
+#              Worth knowing about - this extension reaches into frontend internals that have
+#              already moved twice - but not something a push should be blocked on, because
+#              it can go red without anything in this repository changing.
+#
+# Running every leg on every push would barely move wall-clock time, since the legs run in
+# parallel, but it would triple the checks a branch waits on and make an upstream release
+# look like a broken commit. The nightly run is where that belongs.
+#
+# The versions each leg covers are published in README.md - keep the two in step.
 on:
   push:
     branches: [main, test]
@@ -22,29 +37,98 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'vite.config.mts'
+  schedule:
+    # 04:17 UTC. Off the hour on purpose: scheduled runs bunch up there and get queued.
+    - cron: '17 4 * * *'
   workflow_dispatch:
     inputs:
       comfyui_ref:
-        description: 'ComfyUI ref to test against (branch, tag or SHA)'
+        description: 'ComfyUI ref to test against (branch, tag or SHA). Blank uses the ref each leg pins.'
         required: false
-        default: 'master'
+        default: ''
+      legs:
+        description: 'Which legs to run'
+        required: false
+        type: choice
+        options:
+          - full
+          - stable-only
+        default: full
 
+# A nightly run and a push run are different questions, so a push must not cancel a nightly
+# half way through.
 concurrency:
-  group: e2e-${{ github.ref }}
+  group: e2e-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  plan:
+    name: Decide the matrix
+    runs-on: ubuntu-latest
+    outputs:
+      legs: ${{ steps.legs.outputs.legs }}
+    steps:
+      # The legs live in a script rather than inline in the matrix because they are the part
+      # of this workflow most likely to be edited, and a JSON array buried in a `${{ }}`
+      # ternary is not something anyone wants to edit.
+      #
+      #   comfyui   a ref of comfyanonymous/ComfyUI.
+      #   frontend  a comfyui-frontend-package version, or `latest` to resolve at install time.
+      #   renderer  `canvas` for the legacy litegraph canvas, `vue` for Nodes 2.0.
+      #   required  false lets the leg report a result without failing the run. Reserved for
+      #             legs that are known not to pass yet - see the Vue leg.
+      - name: Choose the legs
+        id: legs
+        env:
+          FULL: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.legs == 'full') }}
+        run: |
+          stable='{"comfyui":"v0.32.0","frontend":"1.48.7","renderer":"canvas","required":true}'
+          latest='{"comfyui":"master","frontend":"latest","renderer":"canvas","required":true}'
+          # Nodes 2.0 is not a gate yet, because it does not work yet: the extension's position
+          # writes land in litegraph's arrays but not in the layout store the DOM nodes are
+          # drawn from, so aligning changes node.pos and moves nothing on screen (#52).
+          # e2e/tests/vue-renderer.spec.ts is the spec that asserts that - the rest of the
+          # suite measures litegraph, which still updates, and so mostly passes here. A leg
+          # that is red every night is a leg people stop reading, so it runs without gating
+          # until the fix lands; then flip `required` to true.
+          vue='{"comfyui":"v0.32.0","frontend":"1.48.7","renderer":"vue","required":false}'
+
+          if [ "$FULL" = "true" ]; then
+            legs="[$stable,$latest,$vue]"
+          else
+            legs="[$stable]"
+          fi
+
+          echo "legs=$legs" >> "$GITHUB_OUTPUT"
+          {
+            echo '### Legs'
+            echo
+            echo '| ComfyUI | Frontend | Renderer | Gates the run |'
+            echo '| --- | --- | --- | --- |'
+            echo "$legs" | jq -r '.[] |
+              "| \(.comfyui) | \(.frontend) | \(.renderer) | \(if .required then "yes" else "no" end) |"'
+          } >> "$GITHUB_STEP_SUMMARY"
+
   browser:
-    name: Browser tests (shard ${{ matrix.shard }}/3)
+    name: Browser tests (${{ matrix.leg.frontend }} ${{ matrix.leg.renderer }}, shard ${{ matrix.shard }}/3)
+    needs: plan
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # A non-gating leg still runs and still uploads its report on failure. It just does not
+    # fail the workflow, so a known-broken leg cannot bury a real failure in a red nightly.
+    continue-on-error: ${{ !matrix.leg.required }}
 
     strategy:
       # Keep the other shards running when one fails: a red shard usually means one broken
-      # test, and cancelling the rest hides whether anything else broke too.
+      # test, and cancelling the rest hides whether anything else broke too. The same goes
+      # across legs - a frontend that has moved on should not hide a stable-leg regression.
       fail-fast: false
       matrix:
         shard: [1, 2, 3]
+        leg: ${{ fromJSON(needs.plan.outputs.legs) }}
+
+    env:
+      COMFYUI_RENDERER: ${{ matrix.leg.renderer }}
 
     steps:
       - name: Check out the extension
@@ -56,7 +140,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: comfyanonymous/ComfyUI
-          ref: ${{ github.event.inputs.comfyui_ref || 'master' }}
+          ref: ${{ inputs.comfyui_ref || matrix.leg.comfyui }}
           path: ComfyUI
 
       - uses: actions/setup-python@v5
@@ -75,8 +159,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: pip-${{ runner.os }}-${{ hashFiles('ComfyUI/requirements.txt') }}
-          restore-keys: pip-${{ runner.os }}-
+          key: pip-${{ runner.os }}-${{ hashFiles('ComfyUI/requirements.txt') }}-fe-${{ matrix.leg.frontend }}
+          restore-keys: |
+            pip-${{ runner.os }}-${{ hashFiles('ComfyUI/requirements.txt') }}-
+            pip-${{ runner.os }}-
 
       - name: Install ComfyUI dependencies
         working-directory: ComfyUI
@@ -84,6 +170,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
           pip install -r requirements.txt
+
+      # Deliberately after requirements.txt, so this overwrites the version ComfyUI pinned.
+      # `latest` is resolved here rather than written down, and the version that actually won
+      # is recorded - "the nightly failed" is only useful alongside which frontend it was.
+      - name: Install frontend ${{ matrix.leg.frontend }}
+        run: |
+          if [ "${{ matrix.leg.frontend }}" = "latest" ]; then
+            pip install --upgrade comfyui-frontend-package
+          else
+            pip install "comfyui-frontend-package==${{ matrix.leg.frontend }}"
+          fi
+          resolved=$(python -c "from importlib.metadata import version; print(version('comfyui-frontend-package'))")
+          echo "FRONTEND_VERSION=$resolved" >> "$GITHUB_ENV"
+          echo "comfyui-frontend-package $resolved, ${{ matrix.leg.renderer }} renderer, ComfyUI ${{ inputs.comfyui_ref || matrix.leg.comfyui }}" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Install the extension into ComfyUI
         run: cp -r extension ComfyUI/custom_nodes/comfyui-housekeeper
@@ -109,6 +209,19 @@ jobs:
           tail -50 comfyui.log
           exit 1
 
+      # The server reports the frontend it is actually serving. Assert it matches what pip
+      # resolved, so a leg cannot quietly test the bundled frontend because the install step
+      # was a no-op or ComfyUI picked up a different copy.
+      - name: Serving the frontend we installed
+        working-directory: ComfyUI
+        run: |
+          if ! grep -qF "comfyui-frontend-package version: ${FRONTEND_VERSION}" comfyui.log; then
+            echo "::error::ComfyUI is not serving comfyui-frontend-package ${FRONTEND_VERSION}"
+            grep -i "frontend\|web root" comfyui.log || true
+            exit 1
+          fi
+          echo "serving comfyui-frontend-package ${FRONTEND_VERSION}"
+
       # Guards the frontend-only contract: the extension must load cleanly and register no
       # node types. A regression here is invisible to the browser tests themselves.
       - name: Extension loaded cleanly
@@ -127,13 +240,29 @@ jobs:
       # runner exceeded the per-test timeout and failed whichever test happened to run
       # first - in beforeEach, before it asserted anything. Paying that cost here keeps it
       # out of the suite instead of masking it with retries.
+      #
+      # The renderer is selected here rather than in the suite alone, because the warm-up has
+      # to warm the renderer the tests will actually use - Nodes 2.0 mounts a component per
+      # node and initialises differently. The suite re-applies the same setting per test,
+      # through the server-state baseline in e2e/tests/helpers/comfyui.ts; this is it set
+      # early enough for the load it is here to pay for.
+      #
+      # The frontend mirrors the setting onto LiteGraph.vueNodesMode, so that is what says
+      # which renderer is really in force. Failing here rather than testing the wrong one is
+      # the point: a renamed setting would otherwise produce a green Vue run that never left
+      # the canvas.
       - name: Warm up the frontend
         working-directory: extension/e2e
         run: |
           node --input-type=module -e "
           import { chromium } from '@playwright/test';
+          const vue = process.env.COMFYUI_RENDERER === 'vue';
           const browser = await chromium.launch({ channel: 'chrome' });
           const page = await browser.newPage();
+          const settings = await page.request.post('http://127.0.0.1:8188/api/settings', {
+            data: { 'Comfy.VueNodes.Enabled': vue }
+          });
+          if (!settings.ok()) throw new Error('could not set the renderer: HTTP ' + settings.status());
           await page.goto('http://127.0.0.1:8188/', { waitUntil: 'domcontentloaded' });
           await page.waitForFunction(
             () => Boolean(window.app?.graph && window.app?.canvas && window.LiteGraph),
@@ -141,7 +270,22 @@ jobs:
             { timeout: 180000 }
           );
           await page.waitForSelector('.housekeeper-wrapper', { timeout: 60000 });
-          console.log('frontend warm: app ready and the Housekeeper panel is attached');
+          await page.waitForTimeout(3000);
+          const rendered = await page.evaluate(() => ({
+            vueNodesMode: Boolean(window.LiteGraph?.vueNodesMode),
+            nodes: window.app.graph._nodes.length,
+            elements: document.querySelectorAll('.lg-node').length
+          }));
+          if (rendered.vueNodesMode !== vue) {
+            throw new Error(
+              'asked for the ' + (vue ? 'Vue' : 'canvas') + ' renderer, but ' +
+              'LiteGraph.vueNodesMode is ' + rendered.vueNodesMode + '. ' +
+              'Comfy.VueNodes.Enabled may have been renamed or removed in this frontend.'
+            );
+          }
+          console.log('frontend warm: ' + (vue ? 'Nodes 2.0' : 'legacy canvas') + ' renderer, ' +
+            rendered.nodes + ' nodes rendering as ' + rendered.elements + ' elements, ' +
+            'Housekeeper panel attached');
           await browser.close();
           "
 
@@ -151,11 +295,14 @@ jobs:
           COMFYUI_URL: http://127.0.0.1:8188
         run: npx playwright test --shard=${{ matrix.shard }}/3
 
+      # Artifact names have to be unique across the whole run, so they carry the leg as well
+      # as the shard - otherwise the second leg to finish fails the upload instead of
+      # publishing the report you need to read.
       - name: Upload report
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report-shard-${{ matrix.shard }}
+          name: playwright-report-${{ matrix.leg.frontend }}-${{ matrix.leg.renderer }}-shard-${{ matrix.shard }}
           path: |
             extension/e2e/playwright-report/
             extension/e2e/test-results/
@@ -165,6 +312,6 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: comfyui-log-shard-${{ matrix.shard }}
+          name: comfyui-log-${{ matrix.leg.frontend }}-${{ matrix.leg.renderer }}-shard-${{ matrix.shard }}
           path: ComfyUI/comfyui.log
           retention-days: 7
