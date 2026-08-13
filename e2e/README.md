@@ -42,6 +42,10 @@ COMFYUI_URL=http://127.0.0.1:8188 npm test
 - `panel-drag.spec.ts`：拖动手柄/标题栏、点击仍可切换、位置持久化与重置、越界钳制。
 - `panel-header.spec.ts`：标题与控件在 320–1600px 各宽度下不重叠、不截断（默认 / 拖动后 / 刷新后）。
 
+issue #27 之外的回归用例：
+
+- `subgraph.spec.ts`：子图内选择节点后按钮可用、对齐生效、组可配色，以及退出子图后根图选择仍然正常（#51）。
+
 ## 测试隔离
 
 ComfyUI 把部分界面状态存在**服务端**（`user/default/comfy.settings.json`），
