@@ -9,6 +9,8 @@ A ComfyUI extension for aligning, arranging and colouring the nodes in a workflo
 
 ## What's new
 
+**v0.7.0** — the **shortcuts are yours to change**, from ComfyUI's own *Settings → Keybinding*. The panel also works **inside subgraphs**, where its buttons used to sit disabled with no explanation.
+
 **v0.6.2** — **pinned nodes stay pinned.** Alignment and arrangement now leave them exactly where they are, however they are selected.
 
 **v0.6.1** — arranging a selection whose links form a loop no longer throws the layout off the canvas, and the panel stays clear of the menu bar on ComfyUI's V1 and Desktop layouts.

@@ -2,7 +2,9 @@
 
 All notable changes to this project are documented here.
 
-## [Unreleased]
+## [0.7.0] - 2026-08-13
+
+Shortcuts you can change, and a panel that works inside subgraphs.
 
 ### Fixed
 
