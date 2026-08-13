@@ -74,6 +74,214 @@ function movable(nodes: any[]): any[] {
     return nodes.filter(node => !isPinned(node));
 }
 
+// --- Keyboard shortcuts ------------------------------------------------------------------
+//
+// Each shortcut is declared to ComfyUI twice over: as a command (stable id, label) and as a
+// default keybinding pointing at that command. That is what lists them in ComfyUI's own
+// Keybinding settings panel and lets a user rebind or unbind them (#43) - the extension does
+// not need a rebinding UI of its own.
+//
+// Frontends predating the commands/keybindings arrays ignore both and would leave the user
+// with no shortcuts at all, so the extension keeps its own document listener as a fallback.
+// shortcutsDelegatedToComfy() decides which of the two paths is live; see handleKeyboard.
+
+type ShortcutAction =
+    | 'toggle-panel'
+    | 'left'
+    | 'right'
+    | 'top'
+    | 'bottom'
+    | 'horizontal-flow'
+    | 'vertical-flow';
+
+type ShortcutCombo = { key: string; ctrl?: boolean; shift?: boolean; alt?: boolean };
+
+interface ShortcutSpec {
+    /** Command id. Stable: a user's rebinding is stored against it. */
+    id: string;
+    action: ShortcutAction;
+    label: string;
+    combo: ShortcutCombo;
+}
+
+// The shipped defaults, unchanged from before the migration so existing muscle memory keeps
+// working. Labels match the panel's own button names.
+const SHORTCUTS: ShortcutSpec[] = [
+    {
+        id: 'Housekeeper.TogglePanel',
+        action: 'toggle-panel',
+        label: 'Show/hide Housekeeper panel',
+        combo: { key: 'h', ctrl: true, shift: true }
+    },
+    {
+        id: 'Housekeeper.AlignLeft',
+        action: 'left',
+        label: 'Align left edges',
+        combo: { key: 'ArrowLeft', ctrl: true, shift: true }
+    },
+    {
+        id: 'Housekeeper.AlignRight',
+        action: 'right',
+        label: 'Align right edges',
+        combo: { key: 'ArrowRight', ctrl: true, shift: true }
+    },
+    {
+        id: 'Housekeeper.AlignTop',
+        action: 'top',
+        label: 'Align top edges',
+        combo: { key: 'ArrowUp', ctrl: true, shift: true }
+    },
+    {
+        id: 'Housekeeper.AlignBottom',
+        action: 'bottom',
+        label: 'Align bottom edges',
+        combo: { key: 'ArrowDown', ctrl: true, shift: true }
+    },
+    {
+        id: 'Housekeeper.DistributeHorizontally',
+        action: 'horizontal-flow',
+        label: 'Distribute horizontally',
+        combo: { key: 'ArrowRight', ctrl: true, alt: true }
+    },
+    {
+        id: 'Housekeeper.DistributeVertically',
+        action: 'vertical-flow',
+        label: 'Distribute vertically',
+        combo: { key: 'ArrowDown', ctrl: true, alt: true }
+    }
+];
+
+/**
+ * Set once the panel exists. The commands are declared at import time, long before the
+ * closure that owns alignNodes/togglePanel has been built, so they route through here.
+ */
+let runShortcutAction: ((action: ShortcutAction) => void) | null = null;
+
+/**
+ * True when the keystroke is destined for a text field, in which case none of the shortcuts
+ * may claim it.
+ *
+ * Reads composedPath()[0] rather than activeElement so it sees through shadow roots, and
+ * matches what ComfyUI's own dispatcher inspects.
+ */
+function isTextEntryTarget(e: KeyboardEvent): boolean {
+    const path = typeof e.composedPath === 'function' ? e.composedPath() : [];
+    const target = (path[0] as HTMLElement) ?? (e.target as HTMLElement) ?? document.activeElement;
+    if (!target || !(target as any).tagName) return false;
+
+    const tag = (target as HTMLElement).tagName.toUpperCase();
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+    return (target as HTMLElement).isContentEditable === true;
+}
+
+// Why this survives the migration to ComfyUI's keybindings.
+//
+// ComfyUI's dispatcher does have a text-input guard, but it only fires for combos its
+// KeyComboImpl reports as `isReservedByTextInput`, which is `!hasModifier || isShiftOnly ||
+// RESERVED_BY_TEXT_INPUT.has(combo)`. Every Housekeeper combo carries Ctrl or Alt, so only
+// the hardcoded set decides - and as of comfyui_frontend_package 1.48.7 that set contains
+// 'Ctrl + Shift + ArrowLeft' and 'Ctrl + Shift + ArrowRight' but no Ctrl+Shift+ArrowUp/Down,
+// no Ctrl+Alt+anything and no Ctrl+Shift+h. Two of the seven are covered; the other five
+// would fire mid-sentence in a prompt widget, which is the bug fixed in v0.2.0.
+//
+// The two guards are complements, not duplicates: ComfyUI handles every modifier-less and
+// Shift-only binding, this handles the Ctrl/Alt/Meta ones it misses. So the recorded
+// keystroke only blocks a command when it carried one of those modifiers - a bare Enter in a
+// command palette's search box must still be able to run the command it selected.
+const KEYSTROKE_GUARD_WINDOW_MS = 250;
+let lastKeystroke: { textEntry: boolean; modified: boolean; at: number } | null = null;
+
+/**
+ * ComfyUI invokes a command with no reference to the event that triggered it, so the guard
+ * cannot inspect the keystroke from inside the command. Record it on the way past instead.
+ *
+ * Capture phase on window, which runs before every other listener - ComfyUI's own dispatcher
+ * is a *bubble* phase window listener (GraphView.vue), so it is guaranteed to see a record of
+ * the keystroke it is about to act on, not the one before it.
+ */
+function noteKeystroke(e: KeyboardEvent) {
+    lastKeystroke = {
+        textEntry: isTextEntryTarget(e),
+        modified: e.ctrlKey || e.metaKey || e.altKey,
+        at: Date.now()
+    };
+}
+
+if (typeof window !== 'undefined') {
+    window.addEventListener('keydown', noteKeystroke, true);
+}
+
+/** True when the command now running was triggered by a shortcut aimed at a text field. */
+function keystrokeAimedAtTextEntry(): boolean {
+    if (!lastKeystroke) return false;
+    // A command invoked from a menu or palette has no keystroke behind it; the age check stops
+    // an unrelated keypress from minutes ago vetoing it.
+    if (Date.now() - lastKeystroke.at > KEYSTROKE_GUARD_WINDOW_MS) return false;
+    return lastKeystroke.textEntry && lastKeystroke.modified;
+}
+
+/**
+ * Whether ComfyUI accepted the commands, and is therefore the one dispatching the shortcuts.
+ *
+ * Detected rather than assumed, because the arrays are silently ignored by frontends that
+ * predate them. Answered on first use rather than at import time: `app.extensionManager` is
+ * assigned while the app boots and the commands are registered as extensions load, so asking
+ * too early gets a false negative. An empty/absent command list means "not ready yet" and is
+ * deliberately not cached.
+ */
+let shortcutDelegation: boolean | null = null;
+function shortcutsDelegatedToComfy(): boolean {
+    if (shortcutDelegation !== null) return shortcutDelegation;
+
+    const commands = (comfyApp as any)?.extensionManager?.command?.commands;
+    if (!Array.isArray(commands) || commands.length === 0) return false;
+
+    shortcutDelegation = SHORTCUTS.every(spec =>
+        commands.some((command: any) => command?.id === spec.id)
+    );
+    return shortcutDelegation;
+}
+
+/**
+ * Exact match, the same way ComfyUI's KeyComboImpl compares: every modifier is significant,
+ * so Ctrl+Shift+Alt+Left is not Ctrl+Shift+Left. Ctrl and Meta are one modifier, because
+ * macOS reports Cmd as Meta and both frontends fold them together.
+ */
+function comboMatches(combo: ShortcutCombo, e: KeyboardEvent): boolean {
+    return (
+        (e.ctrlKey || e.metaKey) === !!combo.ctrl &&
+        e.shiftKey === !!combo.shift &&
+        e.altKey === !!combo.alt &&
+        typeof e.key === 'string' &&
+        e.key.toUpperCase() === combo.key.toUpperCase()
+    );
+}
+
+/** The commands handed to ComfyUI. Shared by every frontend that understands them. */
+function shortcutCommands() {
+    return SHORTCUTS.map(spec => ({
+        id: spec.id,
+        label: spec.label,
+        function: () => {
+            if (keystrokeAimedAtTextEntry()) return;
+            runShortcutAction?.(spec.action);
+        }
+    }));
+}
+
+/** The default bindings. A user's own choice is stored by ComfyUI and wins over these. */
+function shortcutKeybindings() {
+    return SHORTCUTS.map(spec => ({
+        commandId: spec.id,
+        combo: {
+            key: spec.combo.key,
+            ctrl: !!spec.combo.ctrl,
+            shift: !!spec.combo.shift,
+            alt: !!spec.combo.alt
+        }
+    }));
+}
+
 // Commented out Vue-based extension - uncomment if you need Vue components
 /*
 comfyApp.registerExtension({
@@ -115,6 +323,12 @@ comfyApp.registerExtension({
 // Register alignment panel extension that loads immediately
 comfyApp.registerExtension({
     name: 'housekeeper-alignment',
+
+    // The shortcuts, declared the way ComfyUI expects rather than as a private keydown
+    // listener, so they show up in its Keybinding settings panel and can be rebound (#43).
+    // Frontends that do not read these arrays fall back to handleKeyboard.
+    commands: shortcutCommands(),
+    keybindings: shortcutKeybindings(),
 
     // Declared here so it appears in ComfyUI's own settings dialog rather than as a bespoke
     // control, and so ComfyUI persists it per user. onChange fires with the stored value on
@@ -4213,72 +4427,50 @@ function initializeAlignmentPanel() {
     }
 
     // Keyboard shortcuts
-    // True when the keystroke is destined for a text field, in which case none of the
-    // shortcuts below may claim it. Ctrl/Cmd+Shift+Arrow is the OS word-selection binding and
-    // is used constantly in ComfyUI's prompt widgets. This must run before preventDefault():
-    // checking the selection instead is not enough, because preventDefault happens first, and
-    // a canvas selection survives while the user types (clicks into an overlaid DOM widget are
-    // never forwarded to litegraph), so the shortcut would rewrite node positions mid-sentence.
-    function isTextEntryTarget(e: KeyboardEvent): boolean {
-        const path = typeof e.composedPath === 'function' ? e.composedPath() : [];
-        const target = (path[0] as HTMLElement) ?? (e.target as HTMLElement) ?? document.activeElement;
-        if (!target || !(target as any).tagName) return false;
-
-        const tag = (target as HTMLElement).tagName.toUpperCase();
-        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
-        return (target as HTMLElement).isContentEditable === true;
-    }
-
-    function handleKeyboard(e: KeyboardEvent) {
-        if (!(e.ctrlKey || e.metaKey)) return;
-        if (isTextEntryTarget(e)) return;
-
-        if (e.shiftKey && !e.altKey && (e.key === 'H' || e.key === 'h')) {
-            e.preventDefault();
+    //
+    // What a shortcut actually does. Both dispatch paths - ComfyUI's command and the fallback
+    // listener below - come through here, so there is one definition of each action.
+    function performShortcut(action: ShortcutAction) {
+        if (action === 'toggle-panel') {
             togglePanel();
             return;
         }
-        
-        if (e.shiftKey) {
-            // Basic alignment shortcuts
-            switch(e.key) {
-                case 'ArrowLeft':
-                    e.preventDefault();
-                    alignNodes('left');
-                    break;
-                case 'ArrowRight':
-                    e.preventDefault();
-                    alignNodes('right');
-                    break;
-                case 'ArrowUp':
-                    e.preventDefault();
-                    alignNodes('top');
-                    break;
-                case 'ArrowDown':
-                    e.preventDefault();
-                    alignNodes('bottom');
-                    break;
-            }
-        } else if (e.altKey) {
-            // Advanced flow alignment shortcuts
-            switch(e.key) {
-                case 'ArrowRight':
-                    e.preventDefault();
-                    alignNodes('horizontal-flow');
-                    break;
-                case 'ArrowDown':
-                    e.preventDefault();
-                    alignNodes('vertical-flow');
-                    break;
-            }
-        }
+        alignNodes(action);
+    }
+
+    /**
+     * Fallback dispatcher, for frontends too old to read the commands/keybindings arrays.
+     *
+     * Exactly one of the two paths handles any given keystroke. This listener is on document
+     * (bubble), ComfyUI's is on window (bubble), so this one runs first and cannot see a
+     * preventDefault() from ComfyUI to stand down on - it has to decide up front, from
+     * whether the commands were accepted at all. Firing on both paths would apply the
+     * alignment twice, and the second application lands in its own undo transaction, so a
+     * single Ctrl+Z would no longer put the graph back.
+     */
+    function handleKeyboard(e: KeyboardEvent) {
+        if (shortcutsDelegatedToComfy()) return;
+        // Ctrl/Cmd+Shift+Arrow is the OS word-selection binding and is used constantly in
+        // ComfyUI's prompt widgets. This must run before preventDefault(): checking the
+        // selection instead is not enough, because preventDefault happens first, and a canvas
+        // selection survives while the user types (clicks into an overlaid DOM widget are
+        // never forwarded to litegraph), so the shortcut would rewrite node positions
+        // mid-sentence.
+        if (isTextEntryTarget(e)) return;
+
+        const spec = SHORTCUTS.find(candidate => comboMatches(candidate.combo, e));
+        if (!spec) return;
+
+        e.preventDefault();
+        performShortcut(spec.action);
     }
 
     // Initialize
     createPanel();
     setupCanvasMonitoring();
+    runShortcutAction = performShortcut;
     document.addEventListener('keydown', handleKeyboard);
-    
+
 }
     const previewState = {
         active: false,

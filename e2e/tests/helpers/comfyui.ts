@@ -62,15 +62,26 @@ const UI_STATE_BASELINE: Record<string, unknown> = {
   'Comfy.Queue.History.Expanded': false,
   // Housekeeper's own node spacing is persisted the same way, so a test that changes it
   // would otherwise silently alter every layout assertion that runs after it.
-  'Housekeeper.NodeSpacing': 30
+  'Housekeeper.NodeSpacing': 30,
+  // Housekeeper's shortcuts are ComfyUI commands, so a user rebinding is persisted here too.
+  // A test that rebinds one would otherwise leave every later test running someone else's
+  // keymap.
+  'Comfy.Keybinding.NewBindings': [],
+  'Comfy.Keybinding.UnsetBindings': []
 }
 
 /**
  * Put ComfyUI's persisted UI state back to a known baseline. Must run before navigation so
  * the page loads with it already applied.
+ *
+ * `overrides` is for state that has to be in place before the page boots - ComfyUI reads
+ * user keybindings once, at startup - and is merged over the baseline rather than replacing
+ * it, so the reset still happens.
  */
-export async function resetComfyUIState(page: Page) {
-  const response = await page.request.post('/api/settings', { data: UI_STATE_BASELINE })
+export async function resetComfyUIState(page: Page, overrides: Record<string, unknown> = {}) {
+  const response = await page.request.post('/api/settings', {
+    data: { ...UI_STATE_BASELINE, ...overrides }
+  })
   // Fail loudly rather than silently reintroducing order-dependence if the endpoint moves.
   expect(
     response.ok(),
@@ -116,8 +127,8 @@ export async function waitForPanelSettled(page: Page, requiredStableSamples = 3)
   )
 }
 
-export async function openComfyUI(page: Page) {
-  await resetComfyUIState(page)
+export async function openComfyUI(page: Page, settings: Record<string, unknown> = {}) {
+  await resetComfyUIState(page, settings)
 
   await page.goto('/', { waitUntil: 'domcontentloaded' })
   await page.waitForFunction(() => {
