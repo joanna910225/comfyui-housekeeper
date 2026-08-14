@@ -20,6 +20,24 @@ All notable changes to this project are documented here.
   frame is what falls out of the obvious implementation, and it would make `Ctrl+Z`
   untrustworthy for everything else in the session.
 
+### Fixed
+
+- **Alignment did nothing visible under Nodes 2.0.** On ComfyUI's Vue renderer every command
+  moved the nodes in the graph and left the screen exactly as it was — no error, no hint, the
+  workflow simply refused to rearrange. Positions were written straight into the underlying
+  array, which the renderer's layout store neither sees nor is updated by; they now go through
+  litegraph's accessor. Closes #52.
+
+- **"Match smallest size" quietly rewrote sizes in saved workflows.** Nodes 2.0 will not draw a
+  node narrower than 225px, and it writes the width it drew back onto the node — so asking for
+  a narrower one gave the user the renderer's number instead of theirs, in the file as well as
+  on screen, while the hover preview outlined a width they were never going to get. Sizes are
+  now raised to the renderer's own floor, read from the renderer rather than written down here,
+  so preview and result agree and nothing is saved that was not chosen. Closes #68.
+
+  The legacy canvas has no such floor and is unaffected: no floor discoverable means no
+  clamping, which is also what the unit tests exercise.
+
 ### Internal
 
 - **Browser fixtures place their nodes through the `pos` accessor.** Under the Nodes 2.0
