@@ -229,8 +229,11 @@ export async function installGraph(
         }
 
         graph.add(node)
-        node.pos[0] = spec.x
-        node.pos[1] = spec.y
+        // Through the accessor, never node.pos[0]/[1]. Nodes 2.0's layout store is only
+        // updated by `set pos`; an indexed write mutates the underlying array behind its
+        // back and the store writes its own value - litegraph's default [10, 10] - back over
+        // it within a frame of graph.add(). See #67.
+        node.pos = [spec.x, spec.y]
         node.setSize?.([spec.width ?? 180, spec.height ?? 100])
         if (spec.minSize) {
           const minSize = [...spec.minSize]
@@ -255,8 +258,10 @@ export async function installGraph(
       for (const node of graph._nodes) node.is_selected = selected.includes(node)
 
       canvas.ds.scale = 1
-      canvas.ds.offset[0] = 180
-      canvas.ds.offset[1] = 150
+      // DragAndScale.offset is an accessor pair too. Unlike node.pos the indexed form does
+      // currently survive under Nodes 2.0 (measured), but there is no reason to keep the
+      // pattern that #67 is about where the setter is right there.
+      canvas.ds.offset = [180, 150]
       canvas.setDirty?.(true, true)
       graph.setDirtyCanvas?.(true, true)
       canvas.emitAfterChange?.()
@@ -265,6 +270,22 @@ export async function installGraph(
   )
 
   await page.waitForTimeout(650)
+
+  // The fixture is a precondition of every caller, so prove it took rather than letting a
+  // collapsed layout reach the assertions. Under #67 it did not take on the Vue renderer and
+  // five tests failed on arithmetic that read as five unrelated bugs; sampled after the settle
+  // above, because that is where the layout store's write-back landed.
+  const placed = await page.evaluate(() =>
+    ((window as any).app.graph.nodes as any[]).map((node) => [
+      String(node.title),
+      Math.round(node.pos[0]),
+      Math.round(node.pos[1])
+    ])
+  )
+  expect(
+    placed,
+    'installGraph could not place its nodes - the fixture is wrong, so nothing measured against it means anything'
+  ).toEqual(specs.map((spec) => [spec.title, spec.x, spec.y]))
 }
 
 export async function selectNodes(page: Page, titles: string[]) {
