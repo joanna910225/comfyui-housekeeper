@@ -31,6 +31,10 @@ function extractFunction(name) {
 // than quietly testing nothing.
 const REQUIRED = [
   'isPinned', 'movable', 'nodeGap', 'nodeWidth', 'outerHeight', 'bodyHeight',
+  // The renderer's width floor (#68). There is no DOM here, so rendererMinNodeWidth() answers
+  // null and no clamping happens - which is also what the legacy canvas gets, and why the
+  // sizes asserted below are the ones the commands computed.
+  'rendererMinNodeWidth', 'clampWidthToRenderer',
   'alignNodes', 'findSourceNode', 'findTargetNode', 'analyzeNodeConnections',
   'buildNodeGraph', 'measureFlowNodes', 'alignHorizontalFlow',
 ];
