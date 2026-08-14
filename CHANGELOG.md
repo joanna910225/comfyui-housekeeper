@@ -4,7 +4,32 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **The spacing control previews itself.** Drag the **Spacing** slider and the selection
+  re-spaces under your hand, so you can see the gap you are choosing instead of picking a
+  number and clicking an alignment to find out. Requested in #65.
+
+  It repeats the alignment you last applied, and only that — with nothing selected, or before
+  you have aligned anything, the slider still just changes the setting and leaves the canvas
+  alone. Rearranging a graph because someone touched a number is not a preview.
+
+  **A drag is one undo step.** Nothing is recorded while the slider moves, however many values
+  it crosses; releasing it records a single entry, and one `Ctrl+Z` returns to the layout the
+  drag started from. This is the part that would have been easy to get wrong: an entry per
+  frame is what falls out of the obvious implementation, and it would make `Ctrl+Z`
+  untrustworthy for everything else in the session.
+
 ### Internal
+
+- **Browser fixtures place their nodes through the `pos` accessor.** Under the Nodes 2.0
+  renderer an indexed write (`node.pos[0] = x`) is discarded within a frame of `graph.add()`,
+  so every fixture collapsed onto a single point and five tests failed on their precondition
+  rather than on anything they were testing. `installGraph()` now asserts its nodes landed
+  where they were asked to, so this fails as itself instead of as five unrelated puzzles.
+  Closes #67.
+
+  Worth noting that the harness had the same defect as the extension does — see #52.
 
 - **The ComfyUI frontend types are 25 minor versions less stale**, from `1.22.1` to `1.47.12`,
   and the source now type-checks against them. Closes #56.
