@@ -1,9 +1,10 @@
 // Pinned nodes must not be moved or resized by any layout command.
 //
-// litegraph enforces this in its own movement path (`!pinned && (this._pos[0] += ...)`),
-// but every write in src/main.ts goes straight into node.pos / node.size by index, which
-// never reaches that guard. So the check lives at the layout boundary instead, and these
-// tests run the REAL alignNodes() and alignHorizontalFlow() to prove it holds.
+// litegraph enforces this only in its own relative movement path
+// (`!pinned && (this._pos[0] += ...)`); the `pos` setter and the indexed node.size writes
+// src/main.ts uses place a node absolutely and never reach that guard. So the check lives at
+// the layout boundary instead, and these tests run the REAL alignNodes() and
+// alignHorizontalFlow() to prove it holds.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

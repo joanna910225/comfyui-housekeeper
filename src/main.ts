@@ -57,9 +57,9 @@ function setNodeSpacing(value: unknown) {
 }
 
 /**
- * Pinning a node means "leave this where it is". litegraph enforces that in its own
- * movement path (`!pinned && (this._pos[0] += ...)`), but every write here is an indexed
- * write straight into node.pos, which never reaches that guard - so the check has to be
+ * Pinning a node means "leave this where it is". litegraph enforces that only in its own
+ * relative movement path (`!pinned && (this._pos[0] += ...)`). The `pos` setter used by every
+ * write here places a node absolutely and never consults the flag - so the check has to be
  * explicit at the layout boundary.
  *
  * `node.pinned` is the accessor on current builds; `flags.pinned` is where the state
@@ -73,6 +73,21 @@ function isPinned(node: any): boolean {
 function movable(nodes: any[]): any[] {
     return nodes.filter(node => !isPinned(node));
 }
+
+/*
+ * Positions are written as `node.pos = [x, y]`, never `node.pos[0] = x`.
+ *
+ * `pos` is a getter/setter pair over a Float64Array. The indexed form mutates that array in
+ * place, so litegraph reads the new value straight back and the classic canvas redraws from
+ * it - but under Nodes 2.0 each node is a Vue component positioned from a layout store that
+ * only `set pos` writes to. An indexed write therefore moves the model and leaves the node
+ * on screen exactly where it was. `set pos` is litegraph's own and assigns the same two
+ * numbers, so the classic canvas is unaffected. See #52.
+ *
+ * `node.size` is left indexed on purpose: its getter returns a Proxy that commits element
+ * writes to the same store, so `node.size[0] = w` does reach the screen. #68 covers the
+ * remaining size questions.
+ */
 
 /**
  * The alignments whose result depends on nodeGap(): every one that re-stacks the selection
@@ -2980,8 +2995,7 @@ function initializeAlignmentPanel() {
     function applySpacingPreview(session: SpacingPreviewSession) {
         for (const entry of session.restore) {
             if (!entry.node?.pos) continue;
-            entry.node.pos[0] = entry.x;
-            entry.node.pos[1] = entry.y;
+            entry.node.pos = [entry.x, entry.y];
             if (typeof entry.node.x === 'number') entry.node.x = entry.x;
             if (typeof entry.node.y === 'number') entry.node.y = entry.y;
         }
@@ -3992,9 +4006,8 @@ function initializeAlignmentPanel() {
                         }
                         
                         
-                        // Set position
-                        node.pos[0] = referenceValue; // Align to left edge
-                        node.pos[1] = currentY;
+                        // Set position - left edge on the reference, stacked down the column
+                        node.pos = [referenceValue, currentY];
 
                         // Position updated successfully
                         
@@ -4036,9 +4049,8 @@ function initializeAlignmentPanel() {
                         }
                         
                         
-                        // Set position
-                        node.pos[0] = referenceValue - nodeWidth; // Align to right edge
-                        node.pos[1] = currentYRight;
+                        // Set position - right edge on the reference, stacked down the column
+                        node.pos = [referenceValue - nodeWidth, currentYRight];
                         
                         // Update x,y properties if they exist
                         if (typeof node.x === 'number') node.x = node.pos[0];
@@ -4072,9 +4084,8 @@ function initializeAlignmentPanel() {
                         }
                         
                         
-                        // Set position
-                        node.pos[1] = referenceValue; // Align to top edge
-                        node.pos[0] = currentX;
+                        // Set position - top edge on the reference, spread along the row
+                        node.pos = [currentX, referenceValue];
                         
                         // Update x,y properties if they exist
                         if (typeof node.x === 'number') node.x = node.pos[0];
@@ -4123,8 +4134,7 @@ function initializeAlignmentPanel() {
                         
                         
                         // Set position
-                        node.pos[1] = newY;
-                        node.pos[0] = newX;
+                        node.pos = [newX, newY];
                         
                         // Update x,y properties if they exist
                         if (typeof node.x === 'number') node.x = node.pos[0];
@@ -4175,8 +4185,7 @@ function initializeAlignmentPanel() {
                         }
 
                         // Center the node horizontally on the center line
-                        node.pos[0] = horizontalCenterAlign - (nodeWidth / 2);
-                        node.pos[1] = currentYWidthCenterAlign;
+                        node.pos = [horizontalCenterAlign - (nodeWidth / 2), currentYWidthCenterAlign];
                         
                         // Update x,y properties if they exist
                         if (typeof node.x === 'number') node.x = node.pos[0];
@@ -4225,8 +4234,7 @@ function initializeAlignmentPanel() {
                         }
 
                         // Center the node vertically on the center line
-                        node.pos[1] = verticalCenterAlign - (nodeHeight / 2);
-                        node.pos[0] = currentXHeightCenterAlign;
+                        node.pos = [currentXHeightCenterAlign, verticalCenterAlign - (nodeHeight / 2)];
                         
                         // Update x,y properties if they exist
                         if (typeof node.x === 'number') node.x = node.pos[0];
@@ -4485,11 +4493,9 @@ function initializeAlignmentPanel() {
                         if (node && node.pos) {
                             const oldPos = [node.pos[0], node.pos[1]];
                             
-                            // Set horizontal position (column based on level) 
-                            node.pos[0] = currentX;
-                            
-                            // Set vertical position with proper spacing
-                            node.pos[1] = currentY;
+                            // Horizontal position is the column for this level; vertical is
+                            // the running offset down that column.
+                            node.pos = [currentX, currentY];
                             
                             
                             // CRITICAL: NEVER modify node.size, node.width, node.height properties!
@@ -4671,11 +4677,9 @@ function initializeAlignmentPanel() {
                         if (node && node.pos) {
                             const oldPos = [node.pos[0], node.pos[1]];
                             
-                            // Set horizontal position with proper spacing
-                            node.pos[0] = currentX;
-                            
-                            // Set vertical position (row based on level)
-                            node.pos[1] = currentY;
+                            // Vertical position is the row for this level; horizontal is the
+                            // running offset along that row.
+                            node.pos = [currentX, currentY];
                             
                             
                             // CRITICAL: NEVER modify node.size, node.width, node.height properties!

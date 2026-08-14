@@ -1558,7 +1558,7 @@ function m1() {
   function R0(i) {
     var e;
     for (const r of i.restore)
-      (e = r.node) != null && e.pos && (r.node.pos[0] = r.x, r.node.pos[1] = r.y, typeof r.node.x == "number" && (r.node.x = r.x), typeof r.node.y == "number" && (r.node.y = r.y));
+      (e = r.node) != null && e.pos && (r.node.pos = [r.x, r.y], typeof r.node.x == "number" && (r.node.x = r.x), typeof r.node.y == "number" && (r.node.y = r.y));
     f0(i.alignmentType, { captureUndo: !1, announce: !1 });
   }
   function Se() {
@@ -1970,7 +1970,7 @@ function m1() {
           v.forEach((o, k) => {
             const V = _();
             let A = 100;
-            o.size && Array.isArray(o.size) && o.size[1] ? A = o.size[1] : typeof o.height == "number" ? A = o.height : o.properties && typeof o.properties.height == "number" && (A = o.properties.height), o.pos[0] = y, o.pos[1] = $, typeof o.x == "number" && (o.x = o.pos[0]), typeof o.y == "number" && (o.y = o.pos[1]), $ += A + V;
+            o.size && Array.isArray(o.size) && o.size[1] ? A = o.size[1] : typeof o.height == "number" ? A = o.height : o.properties && typeof o.properties.height == "number" && (A = o.properties.height), o.pos = [y, $], typeof o.x == "number" && (o.x = o.pos[0]), typeof o.y == "number" && (o.y = o.pos[1]), $ += A + V;
           });
           break;
         case "right":
@@ -1980,7 +1980,7 @@ function m1() {
           o2.forEach((o, k) => {
             const V = _();
             let A = 100, t2 = 150;
-            o.size && Array.isArray(o.size) ? (o.size[1] && (A = o.size[1]), o.size[0] && (t2 = o.size[0])) : (typeof o.height == "number" && (A = o.height), typeof o.width == "number" && (t2 = o.width), o.properties && (typeof o.properties.height == "number" && (A = o.properties.height), typeof o.properties.width == "number" && (t2 = o.properties.width))), o.pos[0] = y - t2, o.pos[1] = Z, typeof o.x == "number" && (o.x = o.pos[0]), typeof o.y == "number" && (o.y = o.pos[1]), Z += A + V;
+            o.size && Array.isArray(o.size) ? (o.size[1] && (A = o.size[1]), o.size[0] && (t2 = o.size[0])) : (typeof o.height == "number" && (A = o.height), typeof o.width == "number" && (t2 = o.width), o.properties && (typeof o.properties.height == "number" && (A = o.properties.height), typeof o.properties.width == "number" && (t2 = o.properties.width))), o.pos = [y - t2, Z], typeof o.x == "number" && (o.x = o.pos[0]), typeof o.y == "number" && (o.y = o.pos[1]), Z += A + V;
           });
           break;
         case "top":
@@ -1990,7 +1990,7 @@ function m1() {
           Y.forEach((o, k) => {
             const V = _();
             let A = 150;
-            o.size && Array.isArray(o.size) && o.size[0] ? A = o.size[0] : typeof o.width == "number" ? A = o.width : o.properties && typeof o.properties.width == "number" && (A = o.properties.width), o.pos[1] = y, o.pos[0] = g, typeof o.x == "number" && (o.x = o.pos[0]), typeof o.y == "number" && (o.y = o.pos[1]), g += A + V;
+            o.size && Array.isArray(o.size) && o.size[0] ? A = o.size[0] : typeof o.width == "number" ? A = o.width : o.properties && typeof o.properties.width == "number" && (A = o.properties.width), o.pos = [g, y], typeof o.x == "number" && (o.x = o.pos[0]), typeof o.y == "number" && (o.y = o.pos[1]), g += A + V;
           });
           break;
         case "bottom":
@@ -2002,7 +2002,7 @@ function m1() {
             let A = 150, t2 = 100;
             o.size && Array.isArray(o.size) ? (o.size[0] && (A = o.size[0]), o.size[1] && (t2 = o.size[1])) : (typeof o.width == "number" && (A = o.width), typeof o.height == "number" && (t2 = o.height), o.properties && (typeof o.properties.width == "number" && (A = o.properties.width), typeof o.properties.height == "number" && (t2 = o.properties.height)));
             const u2 = y - t2, X2 = T;
-            o.pos[1] = u2, o.pos[0] = X2, typeof o.x == "number" && (o.x = o.pos[0]), typeof o.y == "number" && (o.y = o.pos[1]), T += A + V;
+            o.pos = [X2, u2], typeof o.x == "number" && (o.x = o.pos[0]), typeof o.y == "number" && (o.y = o.pos[1]), T += A + V;
           });
           break;
         case "height-center":
@@ -2014,7 +2014,7 @@ function m1() {
           j.forEach((o) => {
             const k = _();
             let V = 150, A = 100;
-            o.size && Array.isArray(o.size) ? (o.size[0] && (V = o.size[0]), o.size[1] && (A = o.size[1])) : (typeof o.width == "number" && (V = o.width), typeof o.height == "number" && (A = o.height), o.properties && (typeof o.properties.width == "number" && (V = o.properties.width), typeof o.properties.height == "number" && (A = o.properties.height))), o.pos[0] = X - V / 2, o.pos[1] = r2, typeof o.x == "number" && (o.x = o.pos[0]), typeof o.y == "number" && (o.y = o.pos[1]), r2 += A + k;
+            o.size && Array.isArray(o.size) ? (o.size[0] && (V = o.size[0]), o.size[1] && (A = o.size[1])) : (typeof o.width == "number" && (V = o.width), typeof o.height == "number" && (A = o.height), o.properties && (typeof o.properties.width == "number" && (V = o.properties.width), typeof o.properties.height == "number" && (A = o.properties.height))), o.pos = [X - V / 2, r2], typeof o.x == "number" && (o.x = o.pos[0]), typeof o.y == "number" && (o.y = o.pos[1]), r2 += A + k;
           });
           break;
         case "width-center":
@@ -2026,7 +2026,7 @@ function m1() {
           x2.forEach((o) => {
             const k = _();
             let V = 150, A = 100;
-            o.size && Array.isArray(o.size) ? (o.size[0] && (V = o.size[0]), o.size[1] && (A = o.size[1])) : (typeof o.width == "number" && (V = o.width), typeof o.height == "number" && (A = o.height), o.properties && (typeof o.properties.width == "number" && (V = o.properties.width), typeof o.properties.height == "number" && (A = o.properties.height))), o.pos[1] = Y2 - A / 2, o.pos[0] = h2, typeof o.x == "number" && (o.x = o.pos[0]), typeof o.y == "number" && (o.y = o.pos[1]), h2 += V + k;
+            o.size && Array.isArray(o.size) ? (o.size[0] && (V = o.size[0]), o.size[1] && (A = o.size[1])) : (typeof o.width == "number" && (V = o.width), typeof o.height == "number" && (A = o.height), o.properties && (typeof o.properties.width == "number" && (V = o.properties.width), typeof o.properties.height == "number" && (A = o.properties.height))), o.pos = [h2, Y2 - A / 2], typeof o.x == "number" && (o.x = o.pos[0]), typeof o.y == "number" && (o.y = o.pos[1]), h2 += V + k;
           });
           break;
         case "width-max":
@@ -2140,7 +2140,7 @@ function m1() {
           y.forEach((g, H) => {
             if (g && g.pos) {
               const T = [g.pos[0], g.pos[1]];
-              g.pos[0] = Z, g.pos[1] = Y, Y += x(g)[1] + E, typeof g.x == "number" && (g.x = g.pos[0]), typeof g.y == "number" && (g.y = g.pos[1]);
+              g.pos = [Z, Y], Y += x(g)[1] + E, typeof g.x == "number" && (g.x = g.pos[0]), typeof g.y == "number" && (g.y = g.pos[1]);
             }
           });
         }
@@ -2201,7 +2201,7 @@ function m1() {
           y.forEach((g, H) => {
             if (g && g.pos) {
               const T = [g.pos[0], g.pos[1]];
-              g.pos[0] = Y, g.pos[1] = Z, Y += x(g)[0] + w, typeof g.x == "number" && (g.x = g.pos[0]), typeof g.y == "number" && (g.y = g.pos[1]);
+              g.pos = [Y, Z], Y += x(g)[0] + w, typeof g.x == "number" && (g.x = g.pos[0]), typeof g.y == "number" && (g.y = g.pos[1]);
             }
           });
         }
