@@ -530,6 +530,73 @@ function initializeAlignmentPanel() {
         return node?.size?.[1] !== undefined ? node.size[1] : Math.max(outerHeight(node) - 30, 0);
     }
 
+    // --- Renderer width floor (#68) -------------------------------------------------------
+    //
+    // Nodes 2.0 draws every node with `min-w-(--min-node-width)` and sets that variable inline
+    // on each `.lg-node`. A node asked for less is drawn at the floor, and the component then
+    // writes the box it drew back onto node.size - so a width Housekeeper writes below the
+    // floor does not merely preview wrong, it lands in the user's saved workflow as the
+    // renderer's number instead of theirs. (When the drawn box happens not to change, the
+    // write-back does not fire and the model keeps a width the user never sees, which is the
+    // same disagreement in the other direction.) Measured on 1.48.7: asking 140 leaves
+    // node.size[0] at 225 and graph.serialize() carries 225.
+    //
+    // The floor is read from the renderer rather than written down here, so a change to that
+    // 225 carries over on its own. It is only legible on a *rendered* node: `:root` has no such
+    // property, and there is no constant on LiteGraph to ask. Both preview and apply go through
+    // this pair, because a floor that reaches one and not the other is exactly the defect.
+    //
+    // Width only, and not because height is exempt: Nodes 2.0 has a height floor too (a node
+    // asked for a body height of 20 settles at 38 here), but it is not a declared number. The
+    // element carries `min-h-(--node-height)`, where --node-height is the height the node
+    // asked for, so what actually holds it open is the min-content height of its own contents.
+    // The renderer discovers that by setting --node-height to 0 on the live element and
+    // re-measuring it (measureMinContentHeight, in the frontend's node-resize handler); there
+    // is nothing to read. Reproducing that here would mean mutating ComfyUI's node styles and
+    // forcing a synchronous reflow per node on a hover path, and measurement says it would
+    // change nothing: the heights these operations write come from computeSize(), which was at
+    // or above the min-content height on both a widget-less node (70 vs 38) and a KSampler
+    // (262 vs 262), and every other height they write is copied from a node the renderer is
+    // already drawing. So the height is left alone rather than clamped against a guess.
+    //
+    // COMPATIBILITY ADAPTER (#54): this reaches into ComfyUI's own DOM and its private CSS
+    // custom property, and belongs behind the adapter once that lands. It is accepted here
+    // deliberately, ahead of the adapter, because the current behaviour rewrites sizes in
+    // saved workflows.
+    /**
+     * The narrowest width the active renderer will draw, in graph units, or null when no floor
+     * can be discovered - which is the legacy canvas (it draws whatever it is given, and has no
+     * `.lg-node` at all), a page with nothing rendered yet, or a future renderer that states
+     * the floor in some other way. null means "do not clamp": guessing a floor for a renderer
+     * that has none would corrupt sizes rather than protect them.
+     *
+     * Everything it touches may be absent - there is no DOM at all under the unit tests - so
+     * every failure answers null and leaves sizes exactly as the caller computed them.
+     */
+    function rendererMinNodeWidth(): number | null {
+        try {
+            const rendered = document.querySelector<HTMLElement>('.lg-node');
+            if (!rendered) return null;
+            const declared = getComputedStyle(rendered).getPropertyValue('--min-node-width').trim();
+            // Custom properties are unregistered here, so this is the token as written rather
+            // than a resolved length: only px can be read as graph units without guessing.
+            if (!/^[\d.]+px$/.test(declared)) return null;
+            const floor = parseFloat(declared);
+            return Number.isFinite(floor) && floor > 0 ? floor : null;
+        } catch {
+            return null;
+        }
+    }
+
+    /**
+     * A width Housekeeper is about to write or draw, raised to what the renderer will actually
+     * produce. Call rendererMinNodeWidth() once per operation and pass the result in, so a
+     * preview and the apply that follows it cannot end up clamping against different values.
+     */
+    function clampWidthToRenderer(width: number, floor: number | null): number {
+        return floor !== null && width < floor ? floor : width;
+    }
+
     // Measure nodes for a single flow-layout run and return a lookup over the result.
     //
     // Sizes are deliberately NOT cached on the node. They used to be stamped as
@@ -3470,6 +3537,11 @@ function initializeAlignmentPanel() {
             case 'height-min':
             case 'size-max':
             case 'size-min':
+                // Read the renderer's width floor once for the whole preview, and clamp every
+                // rect against it below - the apply path does the same, from the same helper,
+                // so the dashed outline promises a width the user will actually be given (#68).
+                const previewMinWidth = rendererMinNodeWidth();
+
                 // Calculate preview dimensions for size adjustment
                 nodes.forEach((node: any) => {
                     let currentWidth = 150, currentHeight = 100;
@@ -3563,7 +3635,7 @@ function initializeAlignmentPanel() {
                     positions.push({
                         x: node.pos[0],
                         y: node.pos[1],
-                        width: previewWidth,
+                        width: clampWidthToRenderer(previewWidth, previewMinWidth),
                         height: previewHeight
                     });
                 });
@@ -3899,6 +3971,15 @@ function initializeAlignmentPanel() {
             const originalMaxHeight = Math.max(...movableNodes.map((node: any) => bodyHeight(node)));
             const originalMinHeight = Math.min(...movableNodes.map((node: any) => bodyHeight(node)));
 
+            // Every width written below goes through this, against the same floor the hover
+            // preview was drawn from. Read once per run: it is a constant of the renderer, and
+            // re-reading it per node would let the preview and the apply disagree again (#68).
+            // The reference bounds above are deliberately measured before it - they describe
+            // the selection as it stands, and the clamp belongs at the write, where it also
+            // catches a bound taken from a node the renderer already refused to draw that
+            // narrow.
+            const rendererMinWidth = rendererMinNodeWidth();
+
             let referenceValue: number;
 
             switch (alignmentType) {
@@ -4166,7 +4247,7 @@ function initializeAlignmentPanel() {
                 case 'width-max':
                     movableNodes.forEach((node: any) => {
                         if (node.size) {
-                            node.size[0] = originalMaxWidth;
+                            node.size[0] = clampWidthToRenderer(originalMaxWidth, rendererMinWidth);
                         }
                     });
                     break;
@@ -4174,7 +4255,7 @@ function initializeAlignmentPanel() {
                 case 'width-min':
                     movableNodes.forEach((node: any) => {
                         if (node.size) {
-                            node.size[0] = originalMinWidth;
+                            node.size[0] = clampWidthToRenderer(originalMinWidth, rendererMinWidth);
                         }
                     });
                     break;
@@ -4202,7 +4283,7 @@ function initializeAlignmentPanel() {
                 case 'size-max':
                     movableNodes.forEach((node: any) => {
                         if (node.size) {
-                            node.size[0] = originalMaxWidth;
+                            node.size[0] = clampWidthToRenderer(originalMaxWidth, rendererMinWidth);
                             node.size[1] = originalMaxHeight;
                         }
                     });
@@ -4216,7 +4297,10 @@ function initializeAlignmentPanel() {
                             const computeSizeMethod = originalComputeSizeMethods.get(node) || node.computeSize;
                             if (computeSizeMethod) {
                                 const minSize = computeSizeMethod.call(node);
-                                node.size[0] = minSize[0]; // Minimum width
+                                // computeSize() answers for litegraph's own layout, which knows
+                                // nothing about the renderer's floor - so the smallest a node
+                                // can be is the larger of the two (#68).
+                                node.size[0] = clampWidthToRenderer(minSize[0], rendererMinWidth); // Minimum width
                                 node.size[1] = minSize[1]; // Minimum height
                             }
                         }

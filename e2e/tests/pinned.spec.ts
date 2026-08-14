@@ -44,10 +44,18 @@ test.describe('pinned nodes', () => {
     ])
     await setPinned(page, 'anchored', true)
 
+    // Snapshot the width the fixture actually got rather than asserting the 150 it asked for.
+    // Nodes 2.0 will not draw a node narrower than its own floor and writes the box it drew
+    // back onto the node, so `anchored` is already 225 wide before this test clicks anything -
+    // and asserting 150 failed on a resize Housekeeper never performed (#68). The claim here is
+    // "the pinned node was not resized", which is expressible without naming a width and
+    // survives that floor changing.
+    const before = byTitle(await snapshots(page), 'anchored')
+
     await alignmentButton(page, 'Match widest width').click()
     const after = await snapshots(page)
 
-    expect(byTitle(after, 'anchored').width).toBe(150)
+    expect(byTitle(after, 'anchored').width).toBe(before.width)
     expect(byTitle(after, 'narrow').width).toBe(400)
   })
 
