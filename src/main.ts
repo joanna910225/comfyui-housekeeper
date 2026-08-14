@@ -74,6 +74,37 @@ function movable(nodes: any[]): any[] {
     return nodes.filter(node => !isPinned(node));
 }
 
+/**
+ * The alignments whose result depends on nodeGap(): every one that re-stacks the selection
+ * along an axis, plus the two flow arrangements. The size operations (width-max, size-min and
+ * friends) resize in place and read no gap at all, so changing the spacing cannot change what
+ * they produce - which is why only these are worth re-running while the Spacing slider moves.
+ */
+const SPACING_ALIGNMENTS = new Set([
+    'left',
+    'right',
+    'top',
+    'bottom',
+    'width-center',
+    'height-center',
+    'horizontal-flow',
+    'vertical-flow'
+]);
+
+/**
+ * How a layout run should behave beyond the geometry, which is the same either way.
+ *
+ * `captureUndo: false` says "somebody else owns the undo transaction": it is what the frames
+ * of a live spacing drag pass, so that dragging the slider across forty values leaves one
+ * undo entry instead of forty. `announce: false` silences the toasts for the same reason -
+ * per-frame "3 pinned nodes left in place" would be a strobe light.
+ *
+ * Named after ComfyUI's own arrangeNodes(mode, { gap, captureUndo }), which does this for its
+ * Arrange popover. The gap is not a parameter here because every layout site already reads it
+ * from nodeGap(), the single source of truth the setting and the panel control both write.
+ */
+type LayoutOptions = { captureUndo?: boolean; announce?: boolean };
+
 // --- Keyboard shortcuts ------------------------------------------------------------------
 //
 // Each shortcut is declared to ComfyUI twice over: as a command (stable id, label) and as a
@@ -396,6 +427,11 @@ function initializeAlignmentPanel() {
     let selectedGroups: any[] = [];
     let previewElements: HTMLElement[] = [];
     let currentPaletteIndex = 0;
+
+    // The last spacing-sensitive alignment the user applied, from the panel or a shortcut.
+    // The Spacing control repeats it live while it is being changed (#65); until there is one,
+    // there is nothing to repeat and the control only changes the setting.
+    let lastSpacingAlignment: string | null = null;
 
     const RECENT_COLOR_STORAGE_KEY = 'housekeeper-recent-colors';
     const PANEL_POSITION_STORAGE_KEY = 'housekeeper-panel-position';
@@ -1706,24 +1742,86 @@ function initializeAlignmentPanel() {
             readout.value = current;
         };
 
-        const commit = (raw: string) => {
+        /** Take a value for this session. Every layout site reads it back through nodeGap(). */
+        const adopt = (raw: string) => {
             const parsed = Number(raw);
             if (!Number.isFinite(parsed)) { render(); return; }
-
             setNodeSpacing(parsed);
-            // Persist through ComfyUI so the settings dialog reflects it and it survives a
-            // reload. setNodeSpacing has already clamped, so store the clamped value rather
-            // than what was typed.
+            render();
+        };
+
+        /**
+         * Write the value through to ComfyUI, which is what persists it per user and what the
+         * settings dialog reads back.
+         *
+         * Only at the end of a change, never per input event: a slider drag emits a dozen or
+         * more of those and each write is an HTTP round trip. The value worth storing is the
+         * one the user stopped on. setNodeSpacing has already clamped it, so this stores the
+         * clamped value rather than what was typed.
+         */
+        const persist = () => {
             try {
                 (window as any).app?.extensionManager?.setting?.set(NODE_SPACING_SETTING_ID, nodeGap());
             } catch (error) {
                 console.error('[housekeeper] could not persist node spacing:', error);
             }
-            render();
         };
 
-        slider.addEventListener('input', () => commit(slider.value));
-        readout.addEventListener('change', () => commit(readout.value));
+        const commit = (raw: string) => {
+            adopt(raw);
+            persist();
+        };
+
+        // Live preview (#65). The gesture opens on the first value change rather than on
+        // pointerdown, which is also the path a keyboard user takes: arrow keys on a focused
+        // slider change the value with no pointer involved at all. Opening it here means the
+        // positions captured for restore are still the ones the gesture started from.
+        slider.addEventListener('input', () => {
+            beginSpacingPreview();
+            adopt(slider.value);
+            scheduleSpacingPreview();
+            if (spacingPreview) armSpacingPreviewIdleTimer();
+        });
+
+        // Ends of a gesture. `change` is the ordinary one for both pointer and keyboard, and
+        // where the value settles, so it is also where the value is written through to
+        // ComfyUI. keyup covers an arrow-key change and blur covers focus leaving
+        // mid-gesture; both are harmless duplicates, because endSpacingPreview() returns
+        // immediately when no gesture is open.
+        slider.addEventListener('change', () => {
+            commit(slider.value);
+            endSpacingPreview();
+        });
+        slider.addEventListener('keyup', endSpacingPreview);
+        slider.addEventListener('blur', endSpacingPreview);
+
+        // Whether a pointer is driving the slider, which decides where the keyboard goes when
+        // the gesture ends - see endPointerGesture.
+        let sliderPointerGesture = false;
+        slider.addEventListener('pointerdown', () => { sliderPointerGesture = true; });
+
+        // On the window rather than the slider, so a release outside it still lands.
+        const endPointerGesture = () => {
+            endSpacingPreview();
+            if (!sliderPointerGesture) return;
+            sliderPointerGesture = false;
+
+            // Hand the keyboard back to the canvas after a drag. ComfyUI's ChangeTracker
+            // returns from its keydown handler before it looks at the key whenever the focus
+            // is inside an <input>, so a slider left focused swallows Ctrl+Z - the key a user
+            // is most likely to press right after watching their nodes move. An arrow-key
+            // change keeps the focus, because there the slider IS what is being operated.
+            slider.blur();
+        };
+        window.addEventListener('pointerup', endPointerGesture);
+        window.addEventListener('pointercancel', endPointerGesture);
+
+        // Typing an exact value is the same intent as dragging to it, so it lands the same
+        // way - one begin/end pair, one re-layout, one undo entry.
+        readout.addEventListener('change', () => {
+            commit(readout.value);
+            if (beginSpacingPreview()) endSpacingPreview();
+        });
 
         // Keep the control honest if the value is changed from ComfyUI's settings dialog
         // while the panel is open.
@@ -2648,6 +2746,11 @@ function initializeAlignmentPanel() {
 
     // Preview functionality
     function showPreview(alignmentType: string) {
+        // Never while a live spacing gesture is running: that one moves the real nodes, and a
+        // dashed rectangle drawn from positions that change on the next frame would be
+        // pointing at nothing. See beginSpacingPreview().
+        if (spacingPreview) return;
+
         // Preview must be drawn from the same node list the alignment will act on, or it
         // promises to move a pinned node that then stays put.
         const previewNodes = movable(selectedNodes);
@@ -2720,6 +2823,152 @@ function initializeAlignmentPanel() {
             }
         });
         previewElements = [];
+    }
+
+    // --- Live spacing preview (#65) -------------------------------------------------------
+    //
+    // Changing the gap used to be a promise about the NEXT alignment: you moved the slider,
+    // then went back and clicked the alignment again to find out what you had chosen. This
+    // re-runs the alignment the user last applied, on the current selection, while the value
+    // is being changed - so the number is chosen by looking at the graph rather than at the
+    // number.
+    //
+    // Modelled on ComfyUI's own Arrange (useArrangeSession/useArrangeNodes): re-layout on an
+    // animation frame while the control moves, record undo only when the gesture ends. The
+    // undo half is the point. A slider drag emits input events at pointer rate, and one undo
+    // entry per event would leave a user pressing Ctrl+Z forty times to get back to where
+    // they started - which is not undo, it is a punishment.
+    //
+    // Where this deliberately differs from Arrange: Arrange asks ChangeTracker to snapshot
+    // itself (`changeTracker.captureCanvasState()`), which an extension can only reach by
+    // digging through ComfyUI's internal stores. The equivalent from out here is the undo
+    // transaction the alignments already use - emitBeforeChange()/emitAfterChange() - opened
+    // once for the whole gesture. That is also strictly better here: captureCanvasState()
+    // returns early while a transaction is open, so the open bracket additionally suppresses
+    // ComfyUI's own window-level mouseup capture, which would otherwise land an extra entry
+    // holding a half-dragged layout. One gesture is one entry, deterministically.
+    type SpacingPreviewSession = {
+        alignmentType: string;
+        /** The canvas the transaction was opened on; it must be the one that closes it. */
+        canvas: any;
+        /** Pre-gesture positions, so every frame lays out from where the user started. */
+        restore: Array<{ node: any; x: number; y: number }>;
+    };
+
+    let spacingPreview: SpacingPreviewSession | null = null;
+    let spacingPreviewFrame: number | null = null;
+    let spacingPreviewIdleTimer: number | null = null;
+
+    // A safety net, not a mechanism: every ordinary end of a gesture is covered by the
+    // listeners on the control itself. It exists because an unbalanced emitBeforeChange()
+    // leaves ChangeTracker's changeCount above zero, at which point it stops recording undo
+    // for the whole workflow until the tab is reloaded. Losing a preview frame is cheap;
+    // losing undo is not, so the transaction is closed after this long without a change even
+    // if no release was ever seen. Longer than any pause a pointer drag produces between
+    // input events; a drag that outlasts it simply opens a second transaction.
+    const SPACING_PREVIEW_IDLE_MS = 1200;
+
+    /**
+     * Open a live spacing gesture, or decline to.
+     *
+     * Declines - leaving the control to do only what it always did, change the setting -
+     * when there is no selection to lay out or nothing has been aligned yet. The first is the
+     * behaviour promised on #65; the second follows from the same reasoning. Housekeeper has
+     * fourteen layouts and no way to guess which one a user who has not chosen yet wants, and
+     * rearranging someone's graph because they touched a number is not a preview.
+     */
+    function beginSpacingPreview(): SpacingPreviewSession | null {
+        if (spacingPreview) return spacingPreview;
+        if (!lastSpacingAlignment) return null;
+
+        // Pinned nodes are excluded here for the same reason alignNodes excludes them: they
+        // must not move, so they must not be captured for restore either.
+        const nodes = movable(selectedNodes);
+        if (nodes.length < 2) return null;
+
+        // The hover preview draws dashed rectangles where nodes are ABOUT to go, computed
+        // from where they are now. Live spacing moves the nodes themselves, which would leave
+        // those rectangles describing a layout that no longer exists. Only one of the two may
+        // be on screen at a time; showPreview() refuses to draw while a gesture is open.
+        hidePreview();
+
+        const canvas = getActiveCanvas();
+        const restore = nodes.map(node => ({ node, x: node.pos[0], y: node.pos[1] }));
+        canvas?.emitBeforeChange?.();
+
+        spacingPreview = { alignmentType: lastSpacingAlignment, canvas, restore };
+        return spacingPreview;
+    }
+
+    /**
+     * One frame of the gesture: put the nodes back where they were before it started, then
+     * lay them out at the current gap.
+     *
+     * Restoring first is what makes the gesture a single transform of the graph rather than a
+     * pile of alignments applied to each other's output: the result of releasing at 90px is
+     * the same layout as clicking the alignment once with the setting already at 90px, no
+     * matter what the value passed through on the way. Only positions are restored - every
+     * alignment that reads the gap moves nodes and none of them resizes.
+     */
+    function applySpacingPreview(session: SpacingPreviewSession) {
+        for (const entry of session.restore) {
+            if (!entry.node?.pos) continue;
+            entry.node.pos[0] = entry.x;
+            entry.node.pos[1] = entry.y;
+            if (typeof entry.node.x === 'number') entry.node.x = entry.x;
+            if (typeof entry.node.y === 'number') entry.node.y = entry.y;
+        }
+
+        // No undo entry and no toasts: this runs up to sixty times a second.
+        alignNodes(session.alignmentType, { captureUndo: false, announce: false });
+    }
+
+    /**
+     * Coalesce to one re-layout per painted frame - requestAnimationFrame rather than a
+     * timer, so the work is tied to what the user can actually see and stops entirely while
+     * the tab is in the background. The pending frame is replaced rather than queued, so the
+     * newest value always wins.
+     */
+    function scheduleSpacingPreview() {
+        if (!spacingPreview) return;
+        if (spacingPreviewFrame !== null) cancelAnimationFrame(spacingPreviewFrame);
+        spacingPreviewFrame = requestAnimationFrame(() => {
+            spacingPreviewFrame = null;
+            if (spacingPreview) applySpacingPreview(spacingPreview);
+        });
+    }
+
+    function armSpacingPreviewIdleTimer() {
+        if (spacingPreviewIdleTimer !== null) clearTimeout(spacingPreviewIdleTimer);
+        spacingPreviewIdleTimer = window.setTimeout(endSpacingPreview, SPACING_PREVIEW_IDLE_MS);
+    }
+
+    /**
+     * End the gesture: lay out once more at the value it ended on - a scheduled frame may
+     * never have run - and close the undo transaction, which is what records the single entry
+     * covering everything the gesture did.
+     */
+    function endSpacingPreview() {
+        const session = spacingPreview;
+        if (!session) return;
+
+        if (spacingPreviewFrame !== null) {
+            cancelAnimationFrame(spacingPreviewFrame);
+            spacingPreviewFrame = null;
+        }
+        if (spacingPreviewIdleTimer !== null) {
+            clearTimeout(spacingPreviewIdleTimer);
+            spacingPreviewIdleTimer = null;
+        }
+
+        // Cleared before the layout runs, and the close is in a finally: a throw in the middle
+        // of the last frame must not leave the transaction open behind it.
+        spacingPreview = null;
+        try {
+            applySpacingPreview(session);
+        } finally {
+            session.canvas?.emitAfterChange?.();
+        }
     }
 
     function calculatePreviewPositions(alignmentType: string, nodes: any[]) {
@@ -3579,7 +3828,10 @@ function initializeAlignmentPanel() {
     }
 
     // Align nodes function with advanced options
-    function alignNodes(alignmentType: string) {
+    function alignNodes(alignmentType: string, options?: LayoutOptions) {
+        const captureUndo = options?.captureUndo !== false;
+        const announce = options?.announce !== false;
+
         // Pinned nodes take no part in the layout: they are neither moved nor measured, so a
         // pinned node cannot supply a reference edge either. Treating them instead as fixed
         // anchors that the rest arranges around is a larger feature - see #58.
@@ -3588,20 +3840,32 @@ function initializeAlignmentPanel() {
 
         // Allow size-min with 1 node, others need at least 2
         if (movableNodes.length < 1 || (movableNodes.length < 2 && alignmentType !== 'size-min')) {
-            showMessage(
-                pinnedCount > 0
-                    ? `Select at least 2 unpinned nodes — ${pinnedCount} pinned node${pinnedCount === 1 ? ' is' : 's are'} skipped`
-                    : 'Please select at least 2 nodes to align',
-                'warning'
-            );
+            if (announce) {
+                showMessage(
+                    pinnedCount > 0
+                        ? `Select at least 2 unpinned nodes — ${pinnedCount} pinned node${pinnedCount === 1 ? ' is' : 's are'} skipped`
+                        : 'Please select at least 2 nodes to align',
+                    'warning'
+                );
+            }
             return;
+        }
+
+        // What a live spacing drag repeats (#65). Recorded from the alignments the user
+        // actually asked for, never from the preview's own re-runs, and only for the ones a
+        // different gap would change.
+        if (captureUndo && SPACING_ALIGNMENTS.has(alignmentType)) {
+            lastSpacingAlignment = alignmentType;
         }
 
         // Bracket every mutation in one undo transaction. ComfyUI's ChangeTracker listens
         // for the DOM event emitted by these two methods; graph.beforeChange()/afterChange()
         // only invoke canvas.onBeforeChange, which the frontend never assigns.
         // finally is required: the horizontal/vertical-flow cases return from inside the try.
-        const undoCanvas = getActiveCanvas();
+        //
+        // Skipped entirely under captureUndo: false, where the caller has already opened one
+        // transaction around the whole gesture - see beginSpacingPreview().
+        const undoCanvas = captureUndo ? getActiveCanvas() : null;
         undoCanvas?.emitBeforeChange?.();
 
         try {
@@ -3952,11 +4216,11 @@ function initializeAlignmentPanel() {
                     break;
 
                 case 'horizontal-flow':
-                    alignHorizontalFlow();
+                    alignHorizontalFlow(options);
                     return; // Don't continue to the success message at the bottom
 
                 case 'vertical-flow':
-                    alignVerticalFlow();
+                    alignVerticalFlow(options);
                     return; // Don't continue to the success message at the bottom
             }
 
@@ -3965,7 +4229,7 @@ function initializeAlignmentPanel() {
 
             // Say so rather than leaving the user to wonder why part of the selection did not
             // move. The flow cases return above and report this themselves.
-            if (pinnedCount > 0) {
+            if (announce && pinnedCount > 0) {
                 showMessage(
                     `${pinnedCount} pinned node${pinnedCount === 1 ? '' : 's'} left in place`,
                     'info'
@@ -3974,7 +4238,7 @@ function initializeAlignmentPanel() {
 
         } catch (error) {
             console.error('[housekeeper] alignment failed:', alignmentType, error);
-            showMessage('Error during alignment', 'error');
+            if (announce) showMessage('Error during alignment', 'error');
         } finally {
             undoCanvas?.emitAfterChange?.();
         }
@@ -3985,7 +4249,8 @@ function initializeAlignmentPanel() {
     }
 
     // Advanced alignment functions
-    function alignHorizontalFlow() {
+    function alignHorizontalFlow(options?: LayoutOptions) {
+        const announce = options?.announce !== false;
         try {
             debugNodeStructure(selectedNodes);
 
@@ -4015,12 +4280,14 @@ function initializeAlignmentPanel() {
             
             
             if (validNodes.length < 2) {
-                showMessage(
-                    pinnedCount > 0
-                        ? `Select at least 2 unpinned nodes — ${pinnedCount} pinned node${pinnedCount === 1 ? ' is' : 's are'} skipped`
-                        : `Not enough valid nodes: ${validNodes.length}/${selectedNodes.length} nodes are valid`,
-                    'warning'
-                );
+                if (announce) {
+                    showMessage(
+                        pinnedCount > 0
+                            ? `Select at least 2 unpinned nodes — ${pinnedCount} pinned node${pinnedCount === 1 ? ' is' : 's are'} skipped`
+                            : `Not enough valid nodes: ${validNodes.length}/${selectedNodes.length} nodes are valid`,
+                        'warning'
+                    );
+                }
                 return;
             }
             
@@ -4161,7 +4428,7 @@ function initializeAlignmentPanel() {
             markCanvasDirty();
             
             // Success message removed - clean prompt window
-            if (pinnedCount > 0) {
+            if (announce && pinnedCount > 0) {
                 showMessage(
                     `${pinnedCount} pinned node${pinnedCount === 1 ? '' : 's'} left in place`,
                     'info'
@@ -4169,11 +4436,12 @@ function initializeAlignmentPanel() {
             }
         } catch (error) {
             console.error('[housekeeper] horizontal flow alignment failed:', error);
-            showMessage('Error in horizontal flow alignment', 'error');
+            if (announce) showMessage('Error in horizontal flow alignment', 'error');
         }
     }
     
-    function alignVerticalFlow() {
+    function alignVerticalFlow(options?: LayoutOptions) {
+        const announce = options?.announce !== false;
         try {
             // See alignHorizontalFlow: pinned nodes leave the selection before the dependency
             // graph is built, so no column is reserved for a node that cannot move into it.
@@ -4196,12 +4464,14 @@ function initializeAlignmentPanel() {
             
             
             if (validNodes.length < 2) {
-                showMessage(
-                    pinnedCount > 0
-                        ? `Select at least 2 unpinned nodes — ${pinnedCount} pinned node${pinnedCount === 1 ? ' is' : 's are'} skipped`
-                        : `Not enough valid nodes: ${validNodes.length}/${selectedNodes.length} nodes are valid`,
-                    'warning'
-                );
+                if (announce) {
+                    showMessage(
+                        pinnedCount > 0
+                            ? `Select at least 2 unpinned nodes — ${pinnedCount} pinned node${pinnedCount === 1 ? ' is' : 's are'} skipped`
+                            : `Not enough valid nodes: ${validNodes.length}/${selectedNodes.length} nodes are valid`,
+                        'warning'
+                    );
+                }
                 return;
             }
             
@@ -4344,7 +4614,7 @@ function initializeAlignmentPanel() {
             markCanvasDirty();
             
             // Success message removed - clean prompt window
-            if (pinnedCount > 0) {
+            if (announce && pinnedCount > 0) {
                 showMessage(
                     `${pinnedCount} pinned node${pinnedCount === 1 ? '' : 's'} left in place`,
                     'info'
@@ -4352,7 +4622,7 @@ function initializeAlignmentPanel() {
             }
         } catch (error) {
             console.error('[housekeeper] vertical flow alignment failed:', error);
-            showMessage('Error in vertical flow alignment', 'error');
+            if (announce) showMessage('Error in vertical flow alignment', 'error');
         }
     }
 

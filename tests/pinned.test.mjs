@@ -40,9 +40,17 @@ function load(selectedNodes) {
   const defaultSpacing = source.match(/const DEFAULT_NODE_SPACING = (\d+)/)?.[1];
   assert.ok(defaultSpacing, 'could not read DEFAULT_NODE_SPACING from src/main.ts');
 
+  // alignNodes() records which alignment the live spacing preview should repeat, so the two
+  // names it touches have to come along. Lifted from source rather than restated here, so
+  // the harness cannot quietly disagree with the real list.
+  const spacingAlignments = source.match(/const SPACING_ALIGNMENTS = new Set\(\[[^\]]*\]\);/)?.[0];
+  assert.ok(spacingAlignments, 'could not read SPACING_ALIGNMENTS from src/main.ts');
+
   const shim = `
     const NODE_TITLE_HEIGHT = 30;
     let nodeSpacingValue = ${defaultSpacing};
+    ${spacingAlignments}
+    let lastSpacingAlignment = null;
     function debugNodeStructure() {}
     function showMessage(text, type) { __messages.push({ text, type: type ?? 'info' }); }
     function markCanvasDirty() {}
