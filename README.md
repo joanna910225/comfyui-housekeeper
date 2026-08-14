@@ -145,6 +145,10 @@ Arranges the selection by following the links between nodes, so each node sits p
 
 The **Spacing** slider sets the gap left between nodes by every alignment and arrangement above. The same setting is available in ComfyUI's settings under **Housekeeper → Layout**, and the two stay in sync.
 
+Once you have applied an alignment, dragging the slider repeats it as you drag: the selection spreads out or closes up under the pointer, so the value is chosen by looking at the graph rather than at the number. Typing an exact value in the box beside it does the same. However far the slider travels, the whole drag is one `Ctrl+Z`. Pinned nodes stay where they are throughout.
+
+With nothing selected, or before any alignment has been applied, the slider only changes the setting and leaves the canvas alone.
+
 ### Colours
 
 Browse the preset palettes with the arrows and click a chip to apply it to the selection; hovering previews the colour first. **Custom** takes any colour from the picker or a hex code. Recently used colours are kept for quick reuse.
