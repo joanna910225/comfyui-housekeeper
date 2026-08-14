@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased]
+
+### Internal
+
+- **The ComfyUI frontend types are 25 minor versions less stale**, from `1.22.1` to `1.47.12`,
+  and the source now type-checks against them. Closes #56.
+
+  Not to the newest, deliberately. Every release from `1.48.4` onward — including the current
+  `1.51.3` — ships **no type declarations at all**: the tarball contains `package.json` and
+  `LICENSE` and nothing else, while still advertising `"types": "./index.d.ts"`. Good releases
+  unpack to ~1.76 MB, broken ones to 35,721 bytes exactly, which is how the line was drawn.
+  `1.47.12` is the last release of any line that carries declarations, and it is pinned with
+  `~` so a fresh resolve cannot float past it into a version that does not compile.
+
 ## [0.7.0] - 2026-08-13
 
 Shortcuts you can change, and a panel that works inside subgraphs.
