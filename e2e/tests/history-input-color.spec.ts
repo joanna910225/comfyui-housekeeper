@@ -94,4 +94,48 @@ test.describe('history, text input and colour', () => {
     }))
     expect(after).toEqual(before)
   })
+
+  test('title-only colour preserves the node body through preview, apply and undo', async ({ page }) => {
+    await installGraph(page, [
+      { title: 'a', x: 80, y: 80 },
+      { title: 'b', x: 380, y: 260 }
+    ])
+    await page.evaluate(() => {
+      const app = (window as any).app
+      const graph = app.canvas?.graph ?? app.graph
+      for (const node of graph.nodes) {
+        node.setColorOption({ color: '#224466', bgcolor: '#111820', groupcolor: '#224466' })
+      }
+      app.canvas?.setDirty?.(true, true)
+    })
+    const before = (await snapshots(page)).map(({ title, color, bgcolor }) => ({
+      title,
+      color,
+      bgcolor
+    }))
+
+    const titleOnly = page.getByRole('checkbox', { name: 'Title only' })
+    await expect(titleOnly).not.toBeChecked()
+    await titleOnly.check()
+
+    const chip = page.getByRole('button', { name: 'Apply color #553333' }).first()
+    await chip.hover()
+    await page.waitForTimeout(150)
+    const preview = (await snapshots(page)).map(({ color, bgcolor }) => ({ color, bgcolor }))
+    expect(preview.every(({ color }) => color === '#553333')).toBe(true)
+    expect(preview.every(({ bgcolor }) => bgcolor === '#111820')).toBe(true)
+
+    await chip.click()
+    const applied = (await snapshots(page)).map(({ color, bgcolor }) => ({ color, bgcolor }))
+    expect(applied).toEqual(preview)
+
+    await page.keyboard.press(`${MOD}+z`)
+    await page.waitForTimeout(500)
+    const undone = (await snapshots(page)).map(({ title, color, bgcolor }) => ({
+      title,
+      color,
+      bgcolor
+    }))
+    expect(undone).toEqual(before)
+  })
 })

@@ -151,7 +151,7 @@ With nothing selected, or before any alignment has been applied, the slider only
 
 ### Colours
 
-Browse the preset palettes with the arrows and click a chip to apply it to the selection; hovering previews the colour first. **Custom** takes any colour from the picker or a hex code. Recently used colours are kept for quick reuse.
+Browse the preset palettes with the arrows and click a chip to apply it to the selection; hovering previews the colour first. Enable **Title only** to recolour node title bars without changing their bodies. **Custom** takes any colour from the picker or a hex code. Recently used colours are kept for quick reuse.
 
 ## Keyboard Shortcuts
 
