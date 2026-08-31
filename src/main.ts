@@ -396,6 +396,7 @@ function initializeAlignmentPanel() {
     let selectedGroups: any[] = [];
     let previewElements: HTMLElement[] = [];
     let currentPaletteIndex = 0;
+    let titleOnlyColor = false;
 
     const RECENT_COLOR_STORAGE_KEY = 'housekeeper-recent-colors';
     const PANEL_POSITION_STORAGE_KEY = 'housekeeper-panel-position';
@@ -1472,11 +1473,24 @@ function initializeAlignmentPanel() {
 .housekeeper-palette-header {
     display: flex;
     align-items: center;
-    justify-content: left;
+    justify-content: space-between;
     gap: 6px;
     width: 100%;
     margin: 4px 0;
     color: var(--hk-text-muted);
+}
+
+.hk-title-only {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.hk-title-only input {
+    margin: 0;
+    accent-color: var(--hk-accent);
 }
 
 .housekeeper-palette-row {
@@ -2127,9 +2141,8 @@ function initializeAlignmentPanel() {
         undoCanvas?.emitBeforeChange?.();
 
         try {
-            targets.forEach((item: any) => {
-                applyColorToTarget(item, colorOption);
-            });
+            selectedNodes.forEach(node => applyColorToTarget(node, colorOption, titleOnlyColor));
+            selectedGroups.forEach(group => applyColorToTarget(group, colorOption));
         } finally {
             undoCanvas?.emitAfterChange?.();
         }
@@ -2138,7 +2151,20 @@ function initializeAlignmentPanel() {
         markCanvasDirty();
     }
 
-    function applyColorToTarget(target: any, option: { color: string; bgcolor: string; groupcolor: string }) {
+    function applyColorToTarget(target: any, option: { color: string; bgcolor: string; groupcolor: string }, titleOnly = false) {
+        if (titleOnly) {
+            if (typeof target.setColorOption === 'function') {
+                target.setColorOption({
+                    color: option.bgcolor,
+                    bgcolor: target.bgcolor,
+                    groupcolor: target.groupcolor
+                });
+            } else {
+                target.color = option.bgcolor;
+            }
+            return;
+        }
+
         if (typeof target.setColorOption === 'function') {
             target.setColorOption(option);
         } else {
@@ -2174,7 +2200,7 @@ function initializeAlignmentPanel() {
     }
 
     function applyPreviewColor(option: { color: string; bgcolor: string; groupcolor: string }) {
-        selectedNodes.forEach(node => applyColorToTarget(node, option));
+        selectedNodes.forEach(node => applyColorToTarget(node, option, titleOnlyColor));
         selectedGroups.forEach(group => applyColorToTarget(group, option));
 
         const canvas = (window as any).LGraphCanvas?.active_canvas ?? (window as any).app?.canvas;
@@ -2495,6 +2521,19 @@ function initializeAlignmentPanel() {
         const paletteTitle = document.createElement('span');
         paletteTitle.textContent = 'Preset palettes';
         paletteHeader.appendChild(paletteTitle);
+
+        const titleOnlyLabel = document.createElement('label');
+        titleOnlyLabel.className = 'hk-title-only';
+        const titleOnlyInput = document.createElement('input');
+        titleOnlyInput.type = 'checkbox';
+        titleOnlyInput.checked = titleOnlyColor;
+        titleOnlyInput.addEventListener('change', () => {
+            restorePreviewColors();
+            titleOnlyColor = titleOnlyInput.checked;
+        });
+        titleOnlyLabel.appendChild(titleOnlyInput);
+        titleOnlyLabel.append('Title only');
+        paletteHeader.appendChild(titleOnlyLabel);
         colorSection.appendChild(paletteHeader);
 
         const paletteRowWrapper = document.createElement('div');
