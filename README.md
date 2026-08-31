@@ -9,6 +9,8 @@ A ComfyUI extension for aligning, arranging and colouring the nodes in a workflo
 
 ## What's new
 
+**v0.8.0** — preview **Spacing** changes directly on the graph, align reliably under **Nodes 2.0**, and use **Title only** when you want colour without replacing node bodies.
+
 **v0.7.0** — the **shortcuts are yours to change**, from ComfyUI's own *Settings → Keybinding*. The panel also works **inside subgraphs**, where its buttons used to sit disabled with no explanation.
 
 **v0.6.2** — **pinned nodes stay pinned.** Alignment and arrangement now leave them exactly where they are, however they are selected.
@@ -74,8 +76,8 @@ are the ones a change has to survive:
 | ComfyUI | Frontend | Renderer | Runs |
 | --- | --- | --- | --- |
 | v0.32.0 | 1.48.7 | Legacy canvas | Every push |
-| `master` | Newest published (1.49.6 today) | Legacy canvas | Nightly |
-| v0.32.0 | 1.48.7 | Nodes 2.0 (Vue) | Nightly, not passing yet |
+| `master` | Newest published | Legacy canvas | Nightly and full manual runs |
+| v0.32.0 | 1.48.7 | Nodes 2.0 (Vue) | Nightly and full manual runs |
 
 ComfyUI does not ship its frontend in the repository — it pins the `comfyui-frontend-package`
 Python dependency and serves whichever version of that is installed, so your frontend version
@@ -86,13 +88,10 @@ is not the same thing as your ComfyUI version. ComfyUI v0.31.0 and v0.32.0 both 
 comfyui-frontend-package version: 1.48.7
 ```
 
-**Nodes 2.0 is not supported yet.** ComfyUI's Vue renderer — **Settings → Comfy → Nodes 2.0 →
-Modern Node Design**, still marked experimental, and on by default on recent Desktop and Cloud
-installs — draws each node as a DOM element positioned from its own layout store. Housekeeper
-writes node positions straight into litegraph's arrays, which that store does not see, so the
-buttons appear to do nothing. Tracked in
-[#52](https://github.com/joanna910225/comfyui-housekeeper/issues/52); the nightly run covers
-that renderer so the fix has something to prove itself against.
+**Nodes 2.0 is covered by the browser suite.** ComfyUI's Vue renderer — **Settings → Comfy →
+Nodes 2.0 → Modern Node Design** — draws each node as a DOM element positioned from its own
+layout store. Housekeeper writes position changes through litegraph's accessors so that store
+and the graph model stay in sync; the nightly and full manual runs exercise that renderer.
 
 Anything not in the table is untested rather than known broken. The extension is
 frontend-only, so a version it has not seen usually works; if something looks wrong, the
@@ -145,9 +144,13 @@ Arranges the selection by following the links between nodes, so each node sits p
 
 The **Spacing** slider sets the gap left between nodes by every alignment and arrangement above. The same setting is available in ComfyUI's settings under **Housekeeper → Layout**, and the two stay in sync.
 
+Once you have applied an alignment, dragging the slider repeats it as you drag: the selection spreads out or closes up under the pointer, so the value is chosen by looking at the graph rather than at the number. Typing an exact value in the box beside it does the same. However far the slider travels, the whole drag is one `Ctrl+Z`. Pinned nodes stay where they are throughout.
+
+With nothing selected, or before any alignment has been applied, the slider only changes the setting and leaves the canvas alone.
+
 ### Colours
 
-Browse the preset palettes with the arrows and click a chip to apply it to the selection; hovering previews the colour first. **Custom** takes any colour from the picker or a hex code. Recently used colours are kept for quick reuse.
+Browse the preset palettes with the arrows and click a chip to apply it to the selection; hovering previews the colour first. Enable **Title only** to recolour node title bars without changing their bodies. **Custom** takes any colour from the picker or a hex code. Recently used colours are kept for quick reuse.
 
 ## Keyboard Shortcuts
 

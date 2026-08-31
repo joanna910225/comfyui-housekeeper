@@ -2,6 +2,70 @@
 
 All notable changes to this project are documented here.
 
+## [0.8.0] - 2026-08-31
+
+Live spacing previews, reliable Nodes 2.0 layouts, and title-only node colours.
+
+### Added
+
+- **Colours can be limited to node title bars.** Enable **Title only** beside the preset
+  palettes to recolour selected node titles without replacing their body colours. Hover
+  previews, preset and custom colours, and undo all preserve the body; selected groups keep
+  the existing full-colour behaviour. Restores the option requested in the follow-up on #43.
+
+- **The spacing control previews itself.** Drag the **Spacing** slider and the selection
+  re-spaces under your hand, so you can see the gap you are choosing instead of picking a
+  number and clicking an alignment to find out. Requested in #65.
+
+  It repeats the alignment you last applied, and only that — with nothing selected, or before
+  you have aligned anything, the slider still just changes the setting and leaves the canvas
+  alone. Rearranging a graph because someone touched a number is not a preview.
+
+  **A drag is one undo step.** Nothing is recorded while the slider moves, however many values
+  it crosses; releasing it records a single entry, and one `Ctrl+Z` returns to the layout the
+  drag started from. This is the part that would have been easy to get wrong: an entry per
+  frame is what falls out of the obvious implementation, and it would make `Ctrl+Z`
+  untrustworthy for everything else in the session.
+
+### Fixed
+
+- **Alignment did nothing visible under Nodes 2.0.** On ComfyUI's Vue renderer every command
+  moved the nodes in the graph and left the screen exactly as it was — no error, no hint, the
+  workflow simply refused to rearrange. Positions were written straight into the underlying
+  array, which the renderer's layout store neither sees nor is updated by; they now go through
+  litegraph's accessor. Closes #52.
+
+- **"Match smallest size" quietly rewrote sizes in saved workflows.** Nodes 2.0 will not draw a
+  node narrower than 225px, and it writes the width it drew back onto the node — so asking for
+  a narrower one gave the user the renderer's number instead of theirs, in the file as well as
+  on screen, while the hover preview outlined a width they were never going to get. Sizes are
+  now raised to the renderer's own floor, read from the renderer rather than written down here,
+  so preview and result agree and nothing is saved that was not chosen. Closes #68.
+
+  The legacy canvas has no such floor and is unaffected: no floor discoverable means no
+  clamping, which is also what the unit tests exercise.
+
+### Internal
+
+- **Browser fixtures place their nodes through the `pos` accessor.** Under the Nodes 2.0
+  renderer an indexed write (`node.pos[0] = x`) is discarded within a frame of `graph.add()`,
+  so every fixture collapsed onto a single point and five tests failed on their precondition
+  rather than on anything they were testing. `installGraph()` now asserts its nodes landed
+  where they were asked to, so this fails as itself instead of as five unrelated puzzles.
+  Closes #67.
+
+  Worth noting that the harness had the same defect as the extension does — see #52.
+
+- **The ComfyUI frontend types are 25 minor versions less stale**, from `1.22.1` to `1.47.12`,
+  and the source now type-checks against them. Closes #56.
+
+  Not to the newest, deliberately. Every release from `1.48.4` onward — including the current
+  `1.51.3` — ships **no type declarations at all**: the tarball contains `package.json` and
+  `LICENSE` and nothing else, while still advertising `"types": "./index.d.ts"`. Good releases
+  unpack to ~1.76 MB, broken ones to 35,721 bytes exactly, which is how the line was drawn.
+  `1.47.12` is the last release of any line that carries declarations, and it is pinned with
+  `~` so a fresh resolve cannot float past it into a version that does not compile.
+
 ## [0.7.0] - 2026-08-13
 
 Shortcuts you can change, and a panel that works inside subgraphs.

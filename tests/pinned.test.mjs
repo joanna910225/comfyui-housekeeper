@@ -1,9 +1,10 @@
 // Pinned nodes must not be moved or resized by any layout command.
 //
-// litegraph enforces this in its own movement path (`!pinned && (this._pos[0] += ...)`),
-// but every write in src/main.ts goes straight into node.pos / node.size by index, which
-// never reaches that guard. So the check lives at the layout boundary instead, and these
-// tests run the REAL alignNodes() and alignHorizontalFlow() to prove it holds.
+// litegraph enforces this only in its own relative movement path
+// (`!pinned && (this._pos[0] += ...)`); the `pos` setter and the indexed node.size writes
+// src/main.ts uses place a node absolutely and never reach that guard. So the check lives at
+// the layout boundary instead, and these tests run the REAL alignNodes() and
+// alignHorizontalFlow() to prove it holds.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -31,6 +32,10 @@ function extractFunction(name) {
 // than quietly testing nothing.
 const REQUIRED = [
   'isPinned', 'movable', 'nodeGap', 'nodeWidth', 'outerHeight', 'bodyHeight',
+  // The renderer's width floor (#68). There is no DOM here, so rendererMinNodeWidth() answers
+  // null and no clamping happens - which is also what the legacy canvas gets, and why the
+  // sizes asserted below are the ones the commands computed.
+  'rendererMinNodeWidth', 'clampWidthToRenderer',
   'alignNodes', 'findSourceNode', 'findTargetNode', 'analyzeNodeConnections',
   'buildNodeGraph', 'measureFlowNodes', 'alignHorizontalFlow',
 ];
@@ -40,9 +45,17 @@ function load(selectedNodes) {
   const defaultSpacing = source.match(/const DEFAULT_NODE_SPACING = (\d+)/)?.[1];
   assert.ok(defaultSpacing, 'could not read DEFAULT_NODE_SPACING from src/main.ts');
 
+  // alignNodes() records which alignment the live spacing preview should repeat, so the two
+  // names it touches have to come along. Lifted from source rather than restated here, so
+  // the harness cannot quietly disagree with the real list.
+  const spacingAlignments = source.match(/const SPACING_ALIGNMENTS = new Set\(\[[^\]]*\]\);/)?.[0];
+  assert.ok(spacingAlignments, 'could not read SPACING_ALIGNMENTS from src/main.ts');
+
   const shim = `
     const NODE_TITLE_HEIGHT = 30;
     let nodeSpacingValue = ${defaultSpacing};
+    ${spacingAlignments}
+    let lastSpacingAlignment = null;
     function debugNodeStructure() {}
     function showMessage(text, type) { __messages.push({ text, type: type ?? 'info' }); }
     function markCanvasDirty() {}

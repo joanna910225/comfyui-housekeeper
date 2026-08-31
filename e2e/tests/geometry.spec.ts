@@ -8,6 +8,7 @@ import {
   openHousekeeper,
   previewRects,
   projectedNodeRects,
+  RENDERER,
   snapshots
 } from './helpers/comfyui'
 
@@ -90,5 +91,62 @@ test.describe('geometry and previews', () => {
     await page.waitForTimeout(100)
 
     expectRectsClose(preview, await projectedNodeRects(page))
+  })
+
+  /**
+   * The test above compares the preview with projectedNodeRects(), which reads node.width - so
+   * both of its sides come from the model. That is the whole coverage on the legacy canvas,
+   * where the model IS what gets painted, but it cannot see the failure this test is about:
+   * Nodes 2.0 refuses to draw a node narrower than its own floor, and a width written below
+   * that floor leaves the model and the screen saying different things. Worse, whether it does
+   * is not even stable - the component writes the box it drew back onto node.size when the box
+   * changes, so the model ends up at the floor sometimes and keeps the too-small number other
+   * times. Either way the size the user saves is not the size they see (#68).
+   *
+   * So this one reads the drawn `.lg-node` boxes and the serialized workflow, and never
+   * node.width.
+   */
+  test('Size-Min writes the width Nodes 2.0 will draw, and saves it', async ({ page }) => {
+    test.skip(RENDERER !== 'vue', 'the legacy canvas has no width floor and no per-node element')
+
+    await installGraph(page, [
+      { title: 'a', x: 60, y: 80, width: 310, height: 190, minSize: [140, 70] },
+      { title: 'b', x: 480, y: 300, width: 260, height: 160, minSize: [180, 90] }
+    ])
+
+    await alignmentButton(page, 'Match smallest size').click()
+    await page.waitForTimeout(400)
+
+    const measured = await page.evaluate(() => {
+      const app = (window as any).app
+      const scale = app.canvas.ds.scale
+      const saved = new Map<string, number>(
+        (app.graph.serialize().nodes as any[]).map((node) => [String(node.id), Number(node.size[0])])
+      )
+      return (app.graph._nodes as any[]).map((node) => {
+        const element = document.querySelector(`.lg-node[data-node-id="${node.id}"]`)
+        return {
+          title: String(node.title),
+          drawn: element ? Math.round(element.getBoundingClientRect().width / scale) : null,
+          model: Math.round(Number(node.size[0])),
+          saved: saved.has(String(node.id)) ? Math.round(saved.get(String(node.id))!) : null
+        }
+      })
+    })
+
+    // Guard: an empty or unmatched set would let the assertions below pass vacuously.
+    expect(measured.map((node) => node.title).sort()).toEqual(['a', 'b'])
+
+    for (const node of measured) {
+      expect(node.drawn, `${node.title} was not drawn as its own element`).not.toBeNull()
+      expect(
+        node.model,
+        `${node.title}: node.size[0] is ${node.model} but the renderer drew ${node.drawn}`
+      ).toBe(node.drawn)
+      expect(
+        node.saved,
+        `${node.title}: the saved workflow carries ${node.saved} for a node drawn at ${node.drawn}`
+      ).toBe(node.drawn)
+    }
   })
 })
