@@ -60,9 +60,23 @@ function load(selectedNodes) {
     function showMessage(text, type) { __messages.push({ text, type: type ?? 'info' }); }
     function markCanvasDirty() {}
     function getActiveCanvas() { return null; }
-    function alignVerticalFlow() { __messages.push({ text: 'vertical-flow', type: 'stub' }); }
+    const positionUnitTargets = new WeakMap();
+    function collectPositionUnits() {
+      const units = movable(selectedNodes);
+      return { units, pinnedCount: selectedNodes.length - units.length, blockedCount: 0 };
+    }
+    function warnPinnedGroup() {}
+    function alignVerticalFlow(units, pinnedCount = 0, options) {
+      __messages.push({ text: 'vertical-flow', type: 'stub' });
+    }
     ${REQUIRED.map(extractFunction).join('\n\n')}
-    return { alignNodes, alignHorizontalFlow };
+    return {
+      alignNodes,
+      alignHorizontalFlow: () => {
+        const units = movable(selectedNodes);
+        return alignHorizontalFlow(units, selectedNodes.length - units.length);
+      },
+    };
   `;
   const { code } = transformSync(shim, { loader: 'ts' });
   globalThis.window = { app: { canvas: null, graph: null } };
