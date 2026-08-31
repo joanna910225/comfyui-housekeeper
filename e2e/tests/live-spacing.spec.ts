@@ -179,6 +179,11 @@ test.describe('live spacing preview', () => {
     const aligned = await positions(page)
     expect(aligned).not.toEqual(scattered)
 
+    // ComfyUI squashes a completed history state after 50ms. Playwright can jump from the
+    // button to the slider in under 40ms, unlike a pointer, so let that previous transaction
+    // settle before this test opens the next one.
+    await page.evaluate(() => new Promise(resolve => window.setTimeout(resolve, 75)))
+
     await dragSpacingSlider(page, LONG_DRAG)
     await releaseSpacingSlider(page)
     expect(await positions(page)).not.toEqual(aligned)
