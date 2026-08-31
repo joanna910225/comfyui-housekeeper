@@ -6,6 +6,11 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- **Colours can be limited to node title bars.** Enable **Title only** beside the preset
+  palettes to recolour selected node titles without replacing their body colours. Hover
+  previews, preset and custom colours, and undo all preserve the body; selected groups keep
+  the existing full-colour behaviour. Restores the option requested in the follow-up on #43.
+
 - **The spacing control previews itself.** Drag the **Spacing** slider and the selection
   re-spaces under your hand, so you can see the gap you are choosing instead of picking a
   number and clicking an alignment to find out. Requested in #65.
