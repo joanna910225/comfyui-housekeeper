@@ -2,7 +2,9 @@
 
 All notable changes to this project are documented here.
 
-## [Unreleased]
+## [0.8.0] - 2026-08-31
+
+Live spacing previews, reliable Nodes 2.0 layouts, and title-only node colours.
 
 ### Added
 

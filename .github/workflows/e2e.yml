@@ -75,8 +75,8 @@ jobs:
       #   comfyui   a ref of comfyanonymous/ComfyUI.
       #   frontend  a comfyui-frontend-package version, or `latest` to resolve at install time.
       #   renderer  `canvas` for the legacy litegraph canvas, `vue` for Nodes 2.0.
-      #   required  false lets the leg report a result without failing the run. Reserved for
-      #             legs that are known not to pass yet - see the Vue leg.
+      #   required  false lets an experimental leg report a result without failing the run.
+      #             Every current leg is a release gate.
       - name: Choose the legs
         id: legs
         env:
@@ -84,14 +84,9 @@ jobs:
         run: |
           stable='{"comfyui":"v0.32.0","frontend":"1.48.7","renderer":"canvas","required":true}'
           latest='{"comfyui":"master","frontend":"latest","renderer":"canvas","required":true}'
-          # Nodes 2.0 is not a gate yet, because it does not work yet: the extension's position
-          # writes land in litegraph's arrays but not in the layout store the DOM nodes are
-          # drawn from, so aligning changes node.pos and moves nothing on screen (#52).
-          # e2e/tests/vue-renderer.spec.ts is the spec that asserts that - the rest of the
-          # suite measures litegraph, which still updates, and so mostly passes here. A leg
-          # that is red every night is a leg people stop reading, so it runs without gating
-          # until the fix lands; then flip `required` to true.
-          vue='{"comfyui":"v0.32.0","frontend":"1.48.7","renderer":"vue","required":false}'
+          # Nodes 2.0 gates the full matrix now that position writes update its layout store
+          # and the Vue-specific suite passes alongside the legacy canvas tests (#52).
+          vue='{"comfyui":"v0.32.0","frontend":"1.48.7","renderer":"vue","required":true}'
 
           if [ "$FULL" = "true" ]; then
             legs="[$stable,$latest,$vue]"
