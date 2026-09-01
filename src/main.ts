@@ -2299,11 +2299,15 @@ function initializeAlignmentPanel() {
         });
         slider.addEventListener('keyup', endSpacingPreview);
         slider.addEventListener('blur', endSpacingPreview);
+        slider.addEventListener('focus', () => { spacingNeedsAlignmentHintShown = false; });
 
         // Whether a pointer is driving the slider, which decides where the keyboard goes when
         // the gesture ends - see endPointerGesture.
         let sliderPointerGesture = false;
-        slider.addEventListener('pointerdown', () => { sliderPointerGesture = true; });
+        slider.addEventListener('pointerdown', () => {
+            sliderPointerGesture = true;
+            spacingNeedsAlignmentHintShown = false;
+        });
 
         // On the window rather than the slider, so a release outside it still lands.
         const endPointerGesture = () => {
@@ -2327,6 +2331,7 @@ function initializeAlignmentPanel() {
             commit(readout.value);
             if (beginSpacingPreview()) endSpacingPreview();
         });
+        readout.addEventListener('focus', () => { spacingNeedsAlignmentHintShown = false; });
 
         // Keep the control honest if the value is changed from ComfyUI's settings dialog
         // while the panel is open.
@@ -3398,6 +3403,8 @@ function initializeAlignmentPanel() {
     let spacingPreview: SpacingPreviewSession | null = null;
     let spacingPreviewFrame: number | null = null;
     let spacingPreviewIdleTimer: number | null = null;
+    let spacingNeedsAlignmentHintShown = false;
+    let spacingNeedsAlignmentHint: HTMLElement | null = null;
 
     // A safety net, not a mechanism: every ordinary end of a gesture is covered by the
     // listeners on the control itself. It exists because an unbalanced emitBeforeChange()
@@ -3419,7 +3426,17 @@ function initializeAlignmentPanel() {
      */
     function beginSpacingPreview(): SpacingPreviewSession | null {
         if (spacingPreview) return spacingPreview;
-        if (!lastSpacingAlignment) return null;
+        if (!lastSpacingAlignment) {
+            if (!spacingNeedsAlignmentHintShown) {
+                spacingNeedsAlignmentHintShown = true;
+                if (!spacingNeedsAlignmentHint?.isConnected) {
+                    spacingNeedsAlignmentHint = showMessage(
+                        'Choose an alignment first, then adjust spacing.'
+                    );
+                }
+            }
+            return null;
+        }
 
         const position = collectPositionUnits();
         if (position.blockedCount) {
@@ -5283,7 +5300,7 @@ function initializeAlignmentPanel() {
     }
 
     // Show message toast
-    function showMessage(text: string, type: string = 'info') {
+    function showMessage(text: string, type: string = 'info'): HTMLElement {
         const toast = document.createElement('div');
         toast.textContent = text;
         toast.style.cssText = `
@@ -5321,6 +5338,8 @@ function initializeAlignmentPanel() {
                 }
             }, 300);
         }, 3000);
+
+        return toast;
     }
 
     // Setup monitoring
