@@ -52,7 +52,7 @@ Full detail in [CHANGELOG.md](CHANGELOG.md), or on the
 - Six alignment options — four edges and two centre lines
 - Size normalisation, to make a selection match in width, height or both
 - Dependency-aware arrangement that follows the links in your workflow
-- Position snapping that moves a selection onto ComfyUI's grid without resizing it
+- Position and node-size snapping that uses ComfyUI's own grid setting
 - Adjustable spacing between nodes
 - Preset colour palettes, a custom colour picker, and recently used colours
 - Hover preview showing where nodes will land before you commit
@@ -102,7 +102,7 @@ version you are on is the first thing worth checking.
 
 <img src="doc/handler.png" alt="Housekeeper Handler" height="200">
 
-Click the handle to open the panel. Select two or more nodes to use the alignment and arrangement tools — **Snap positions to grid** and **Match smallest size** also work on a single node.
+Click the handle to open the panel. Select two or more nodes to use the alignment and arrangement tools — **Snap positions and sizes to grid** and **Match smallest size** also work on a single node.
 
 **Pinned nodes are left alone.** Pin anything you want to stay exactly where it is and Housekeeper will not move or resize it, however it is selected. The rest of the selection arranges among itself, and the panel says how many nodes were skipped.
 
@@ -120,14 +120,16 @@ Drag the handle, or the panel's title bar while it is open, to put it anywhere o
 | **Align bottom edges** | Line it up on its bottommost edge |
 | **Center horizontally** | Line the selection up on a shared vertical centre line |
 | **Center vertically** | Line it up on a shared horizontal centre line |
-| **Snap positions to grid** | Move the selection to the nearest grid intersections without changing node sizes |
+| **Snap positions and sizes to grid** | Move selected objects and resize independently positioned selected nodes to the nearest grid multiples |
 
 Aligning on one axis also re-spaces the selection evenly along the other, using the gap set under **Spacing**.
 
-Position snapping uses ComfyUI's own **Snap to grid size** setting. A selected group moves as
-one unit, preserving the positions of its nodes relative to the group frame. If the group itself
-is not selected, selected members arrange normally and the frame refits around its original
-members. Housekeeper cancels the layout if that fitted frame would change group membership.
+Grid snapping uses ComfyUI's own **Snap to grid size** setting. Node widths and body heights
+round to the nearest multiple, but are raised to the next multiple when needed to stay above
+the node or renderer minimum. A selected group moves as one unit; its frame is not resized.
+If the group itself is not selected, selected members snap normally and the frame refits around
+its original members. Housekeeper cancels the layout if that fitted frame would change group
+membership.
 
 ### Size Adjustment
 

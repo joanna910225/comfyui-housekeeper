@@ -93,8 +93,9 @@ function movable(nodes: any[]): any[] {
 /**
  * The alignments whose result depends on nodeGap(): every one that re-stacks the selection
  * along an axis, plus the two flow arrangements. The size operations (width-max, size-min and
- * friends) resize in place and read no gap at all, so changing the spacing cannot change what
- * they produce - which is why only these are worth re-running while the Spacing slider moves.
+ * friends), including the size half of snap-to-grid, read no gap at all, so changing the
+ * spacing cannot change what they produce - which is why only these are worth re-running
+ * while the Spacing slider moves.
  */
 const SPACING_ALIGNMENTS = new Set([
     'left',
@@ -928,6 +929,66 @@ function initializeAlignmentPanel() {
         });
     }
 
+    function snapSizeTargetForUnit(unit: any): any | null {
+        const targets = positionUnitTargets.get(unit) ?? [{ target: unit, isNode: true }];
+        return targets.length === 1 && targets[0].isNode ? targets[0].target : null;
+    }
+
+    function snappedSizeForNode(
+        node: any,
+        gridSize: number,
+        rendererMinWidth: number | null
+    ): [number, number] {
+        const currentWidth = nodeWidth(node);
+        const currentHeight = bodyHeight(node);
+        let minWidth = rendererMinWidth ?? 0;
+        let minHeight = 0;
+        let measuredWidth = false;
+        let measuredHeight = false;
+        const computeSizeMethod = originalComputeSizeMethods.get(node) || node?.computeSize;
+        try {
+            const minimum = computeSizeMethod?.call(node);
+            if (minimum?.length >= 2) {
+                if (Number.isFinite(Number(minimum[0]))) {
+                    minWidth = Math.max(minWidth, Number(minimum[0]));
+                    measuredWidth = true;
+                }
+                if (Number.isFinite(Number(minimum[1]))) {
+                    minHeight = Math.max(minHeight, Number(minimum[1]));
+                    measuredHeight = true;
+                }
+            }
+        } catch {
+            // Keep the current size as the only reliable input when a custom node cannot measure itself.
+        }
+        if (!measuredWidth) minWidth = Math.max(minWidth, currentWidth);
+        if (!measuredHeight) minHeight = currentHeight;
+
+        const snap = (current: number, minimum: number) => gridSize * Math.max(
+            Math.round(current / gridSize),
+            Math.ceil(minimum / gridSize)
+        );
+        return [
+            snap(currentWidth, minWidth),
+            snap(currentHeight, minHeight)
+        ];
+    }
+
+    function writeNodeSize(node: any, width: number, height: number) {
+        if (typeof node?.setSize === 'function') node.setSize([width, height]);
+        else if (node?.size) node.size = [width, height];
+    }
+
+    function writeSnappedSizeForNode(
+        node: any,
+        gridSize: number,
+        rendererMinWidth: number | null
+    ) {
+        if (!node?.size) return;
+        const [width, height] = snappedSizeForNode(node, gridSize, rendererMinWidth);
+        writeNodeSize(node, width, height);
+    }
+
     function warnPinnedGroup(blockedCount: number) {
         showMessage(
             `Cannot move grouped selection — ${blockedCount} pinned group or member${blockedCount === 1 ? '' : 's'}`,
@@ -1412,7 +1473,7 @@ function initializeAlignmentPanel() {
         { type: 'top', icon: alignTopIconUrl, label: 'Align top edges', group: 'basic' },
         { type: 'width-center', icon: widthCenterIconUrl, label: 'Center vertically', group: 'basic' },
         { type: 'bottom', icon: alignBottomIconUrl, label: 'Align bottom edges', group: 'basic' },
-        { type: 'snap-to-grid', icon: snapToGridIconUrl, label: 'Snap positions to grid', group: 'basic' }
+        { type: 'snap-to-grid', icon: snapToGridIconUrl, label: 'Snap positions and sizes to grid', group: 'basic' }
     ];
 
     const sizeAlignments: AlignmentButtonConfig[] = [
@@ -3286,8 +3347,8 @@ function initializeAlignmentPanel() {
         // pointing at nothing. See beginSpacingPreview().
         if (spacingPreview) return;
 
-        // Position actions use the same atomic units as apply; size actions deliberately keep
-        // their original raw-node selection semantics.
+        // Position actions use the same atomic units as apply. Snap-to-grid additionally resizes
+        // standalone node units; the other size actions keep their raw-node selection semantics.
         const position = POSITION_ACTIONS.has(alignmentType) ? collectPositionUnits() : null;
         if (position?.blockedCount) return;
         const previewNodes = position?.units ?? movable(selectedNodes);
@@ -3584,9 +3645,14 @@ function initializeAlignmentPanel() {
             case 'snap-to-grid': {
                 const gridSize = snapGridSize();
                 if (gridSize === null) break;
+                const rendererMinWidth = rendererMinNodeWidth();
                 nodes.forEach((unit: any) => {
                     const [x, y] = snappedPositionForUnit(unit, gridSize);
-                    positions.push({ x, y, width: nodeWidth(unit), height: outerHeight(unit) });
+                    const sizeTarget = snapSizeTargetForUnit(unit);
+                    const [width, body] = sizeTarget
+                        ? snappedSizeForNode(sizeTarget, gridSize, rendererMinWidth)
+                        : [nodeWidth(unit), Math.max(outerHeight(unit) - NODE_TITLE_HEIGHT, 0)];
+                    positions.push({ x, y, width, height: body + NODE_TITLE_HEIGHT });
                 });
                 break;
             }
@@ -4499,6 +4565,12 @@ function initializeAlignmentPanel() {
         const groupRestore = membershipGuards.length
             ? snapshotGroupFrames(membershipGuards)
             : [];
+        const sizeRestore = alignmentType === 'snap-to-grid' && membershipGuards.length
+            ? movableNodes.flatMap(unit => {
+                const node = snapSizeTargetForUnit(unit);
+                return node?.size ? [{ node, width: nodeWidth(node), height: bodyHeight(node) }] : [];
+            })
+            : [];
 
         // What a live spacing drag repeats (#65). Recorded from the alignments the user
         // actually asked for, never from the preview's own re-runs, and only for the ones a
@@ -4551,6 +4623,10 @@ function initializeAlignmentPanel() {
                 case 'snap-to-grid':
                     movableNodes.forEach((unit: any) => {
                         writeSnappedPositionForUnit(unit, gridSize!);
+                    });
+                    movableNodes.forEach((unit: any) => {
+                        const node = snapSizeTargetForUnit(unit);
+                        if (node) writeSnappedSizeForNode(node, gridSize!, rendererMinWidth);
                     });
                     break;
 
@@ -4912,6 +4988,9 @@ function initializeAlignmentPanel() {
                     const membershipSafe = layoutCompleted && fitMemberGroups(membershipGuards);
                     if (!membershipSafe) {
                         restorePositionTargets(positionRestore);
+                        sizeRestore.forEach(({ node, width, height }) => {
+                            writeNodeSize(node, width, height);
+                        });
                         restoreGroupFrames(groupRestore);
                         refreshGroupMembership(membershipGuards);
                         if (layoutCompleted) {
