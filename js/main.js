@@ -1884,7 +1884,7 @@ function Bt() {
         se(t);
       } finally {
         (r = (e = t.canvas) == null ? void 0 : e.emitAfterChange) == null || r.call(e), t.membershipFailed && i2(
-          "Cannot arrange selection without changing group membership",
+          "Cannot arrange without changing group membership. Move the nodes away from nearby groups and try again.",
           "warning"
         );
       }
@@ -2440,7 +2440,7 @@ function Bt() {
     } finally {
       try {
         c.length && (b && ve(c) || (V0(k), B0(g), O0(c), b && (B2 = w, (A = e == null ? void 0 : e.onMembershipFailure) == null || A.call(e), n && i2(
-          "Cannot arrange selection without changing group membership",
+          "Cannot arrange without changing group membership. Move the nodes away from nearby groups and try again.",
           "warning"
         ))), I2());
       } finally {

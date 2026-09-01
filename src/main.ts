@@ -3525,7 +3525,7 @@ function initializeAlignmentPanel() {
             session.canvas?.emitAfterChange?.();
             if (session.membershipFailed) {
                 showMessage(
-                    'Cannot arrange selection without changing group membership',
+                    'Cannot arrange without changing group membership. Move the nodes away from nearby groups and try again.',
                     'warning'
                 );
             }
@@ -4902,7 +4902,7 @@ function initializeAlignmentPanel() {
                             options?.onMembershipFailure?.();
                             if (announce) {
                                 showMessage(
-                                    'Cannot arrange selection without changing group membership',
+                                    'Cannot arrange without changing group membership. Move the nodes away from nearby groups and try again.',
                                     'warning'
                                 );
                             }

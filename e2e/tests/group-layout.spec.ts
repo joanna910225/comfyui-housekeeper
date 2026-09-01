@@ -149,7 +149,10 @@ test.describe('mixed node and group layout', () => {
     expect(await snapshots(page)).toEqual(beforeNodes)
     expect((await groupSnapshots(page))[0]).toEqual(beforeGroup)
     await expect(
-      page.getByText('Cannot arrange selection without changing group membership', { exact: true })
+      page.getByText(
+        'Cannot arrange without changing group membership. Move the nodes away from nearby groups and try again.',
+        { exact: true }
+      )
     ).toBeVisible()
   })
 

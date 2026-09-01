@@ -250,7 +250,10 @@ test.describe('live spacing preview', () => {
     expect(await positions(page)).toEqual(alignedNodes)
     expect((await groupSnapshots(page))[0]).toEqual(alignedGroup)
     await expect(
-      page.getByText('Cannot arrange selection without changing group membership', { exact: true })
+      page.getByText(
+        'Cannot arrange without changing group membership. Move the nodes away from nearby groups and try again.',
+        { exact: true }
+      )
     ).toBeVisible()
   })
 
