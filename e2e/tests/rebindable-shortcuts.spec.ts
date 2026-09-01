@@ -20,12 +20,12 @@ const EXPECTED_COMMANDS = [
   { id: 'Housekeeper.AlignTop', label: 'Align top edges', combo: 'Ctrl + Shift + ArrowUp' },
   {
     id: 'Housekeeper.DistributeHorizontally',
-    label: 'Distribute horizontally',
+    label: 'Arrange dependency stages left to right',
     combo: 'Ctrl + Alt + ArrowRight'
   },
   {
     id: 'Housekeeper.DistributeVertically',
-    label: 'Distribute vertically',
+    label: 'Arrange dependency stages top to bottom',
     combo: 'Ctrl + Alt + ArrowDown'
   },
   { id: 'Housekeeper.TogglePanel', label: 'Show/hide Housekeeper panel', combo: 'Ctrl + Shift + h' }

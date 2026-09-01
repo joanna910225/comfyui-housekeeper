@@ -68,7 +68,7 @@ test.describe('mixed node and group layout', () => {
     const beforeGroup = (await groupSnapshots(page))[0]
     expect(beforeGroup.members).toEqual(['mid', 'sink'])
 
-    await alignmentButton(page, 'Distribute horizontally').click()
+    await alignmentButton(page, 'Arrange dependency stages left to right').click()
     await page.waitForTimeout(75)
 
     const afterNodes = await snapshots(page)

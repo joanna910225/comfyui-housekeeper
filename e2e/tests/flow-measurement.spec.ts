@@ -36,7 +36,7 @@ test.describe('per-run flow measurement', () => {
 
   test('a resized node is measured again and cannot contain its neighbour', async ({ page }) => {
     await installGraph(page, nodes, links)
-    const button = alignmentButton(page, 'Distribute horizontally')
+    const button = alignmentButton(page, 'Arrange dependency stages left to right')
     await button.click()
     const first = await snapshots(page)
 
@@ -57,7 +57,7 @@ test.describe('per-run flow measurement', () => {
 
   test('collapsing a node tightens the next run and preview still matches apply', async ({ page }) => {
     await installGraph(page, nodes, links)
-    const button = alignmentButton(page, 'Distribute horizontally')
+    const button = alignmentButton(page, 'Arrange dependency stages left to right')
     await button.click()
     const expanded = await snapshots(page)
 

@@ -50,7 +50,7 @@ test.describe('longest-path flow leveling', () => {
       .map((node) => node.title)
 
     await installGraph(page, flowNodes, flowLinks)
-    await alignmentButton(page, 'Distribute horizontally').click()
+    await alignmentButton(page, 'Arrange dependency stages left to right').click()
     const nodes = await snapshots(page)
 
     expect(uniqueCoordinates(nodes, 'x')).toHaveLength(5)
@@ -74,7 +74,7 @@ test.describe('longest-path flow leveling', () => {
 
   test('V-Flow creates five dependency rows', async ({ page }) => {
     await installGraph(page, flowNodes, flowLinks)
-    await alignmentButton(page, 'Distribute vertically').click()
+    await alignmentButton(page, 'Arrange dependency stages top to bottom').click()
     const nodes = await snapshots(page)
 
     expect(uniqueCoordinates(nodes, 'y')).toHaveLength(5)

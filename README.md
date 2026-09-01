@@ -142,8 +142,8 @@ one unit, preserving the positions of its nodes relative to the group frame.
 
 Arranges the selection by following the links between nodes, so each node sits past everything that feeds it:
 
-- **Distribute horizontally** — dependencies run left to right, one column per stage
-- **Distribute vertically** — the same, top to bottom
+- **Arrange dependency stages left to right** — one column per stage; nodes in the same stage stack vertically
+- **Arrange dependency stages top to bottom** — one row per stage; nodes in the same stage sit side by side
 
 ### Spacing
 
@@ -168,8 +168,8 @@ Use `Cmd` in place of `Ctrl` on macOS. Shortcuts are ignored while the focus is 
 | `Ctrl+Shift+→` | Align right edges |
 | `Ctrl+Shift+↑` | Align top edges |
 | `Ctrl+Shift+↓` | Align bottom edges |
-| `Ctrl+Alt+→` | Distribute horizontally |
-| `Ctrl+Alt+↓` | Distribute vertically |
+| `Ctrl+Alt+→` | Arrange dependency stages left to right |
+| `Ctrl+Alt+↓` | Arrange dependency stages top to bottom |
 | `←` `→` `↑` `↓` | Move the panel, while the handle has focus |
 | `Shift` + arrow | Move the panel further |
 
