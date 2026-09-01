@@ -22,6 +22,7 @@ import sizeMaxIconUrl from "../icons/size-max.svg?url";
 import sizeMinIconUrl from "../icons/size-min.svg?url";
 import horizontalFlowIconUrl from "../icons/horizontal-flow.svg?url";
 import verticalFlowIconUrl from "../icons/vertical-flow.svg?url";
+import snapToGridIconUrl from "../icons/snap-to-grid.svg?url";
 
 const comfyApp: ComfyApp = app;
 
@@ -105,6 +106,8 @@ const SPACING_ALIGNMENTS = new Set([
     'horizontal-flow',
     'vertical-flow'
 ]);
+
+const POSITION_ACTIONS = new Set([...SPACING_ALIGNMENTS, 'snap-to-grid']);
 
 /**
  * How a layout run should behave beyond the geometry, which is the same either way.
@@ -762,6 +765,39 @@ function initializeAlignmentPanel() {
         return { units, pinnedCount, blockedCount: blockedTargets.size };
     }
 
+    function snapGridSize(): number | null {
+        const graph: any = getActiveCanvas()?.graph ?? (window as any).app?.graph;
+        const size = graph?.getSnapToGridSize?.();
+        return typeof size === 'number' && Number.isFinite(size) && size > 0 ? size : null;
+    }
+
+    function snappedPositionForUnit(unit: any, gridSize: number): [number, number] {
+        const current = unit.pos;
+        const groupFrames = (positionUnitTargets.get(unit) ?? []).filter(entry => !entry.isNode);
+        const anchorX = groupFrames.length
+            ? Math.min(...groupFrames.map(entry => entry.target?.pos?.[0] ?? entry.target?.x ?? 0))
+            : Number(current[0]);
+        const anchorY = groupFrames.length
+            ? Math.min(...groupFrames.map(entry => entry.target?.pos?.[1] ?? entry.target?.y ?? 0))
+            : Number(current[1]);
+        const snappedX = gridSize * Math.round(anchorX / gridSize);
+        const snappedY = gridSize * Math.round(anchorY / gridSize);
+        return [Number(current[0]) + snappedX - anchorX, Number(current[1]) + snappedY - anchorY];
+    }
+
+    function writeSnappedPositionForUnit(unit: any, gridSize: number) {
+        const current = unit.pos;
+        const next = snappedPositionForUnit(unit, gridSize);
+        const dx = next[0] - Number(current[0]);
+        const dy = next[1] - Number(current[1]);
+        const targets = positionUnitTargets.get(unit) ?? [{ target: unit, isNode: true }];
+        targets.forEach(entry => {
+            const currentX = entry.target?.pos?.[0] ?? entry.target?.x ?? 0;
+            const currentY = entry.target?.pos?.[1] ?? entry.target?.y ?? 0;
+            entry.target.pos = [currentX + dx, currentY + dy];
+        });
+    }
+
     function warnPinnedGroup(blockedCount: number) {
         showMessage(
             `Cannot move grouped selection — ${blockedCount} pinned group or member${blockedCount === 1 ? '' : 's'}`,
@@ -1245,7 +1281,8 @@ function initializeAlignmentPanel() {
         { type: 'right', icon: alignRightIconUrl, label: 'Align right edges', group: 'basic' },
         { type: 'top', icon: alignTopIconUrl, label: 'Align top edges', group: 'basic' },
         { type: 'width-center', icon: widthCenterIconUrl, label: 'Center vertically', group: 'basic' },
-        { type: 'bottom', icon: alignBottomIconUrl, label: 'Align bottom edges', group: 'basic' }
+        { type: 'bottom', icon: alignBottomIconUrl, label: 'Align bottom edges', group: 'basic' },
+        { type: 'snap-to-grid', icon: snapToGridIconUrl, label: 'Snap positions to grid', group: 'basic' }
     ];
 
     const sizeAlignments: AlignmentButtonConfig[] = [
@@ -1631,6 +1668,10 @@ function initializeAlignmentPanel() {
     align-items: center;
     width: 100%;
     --hk-button-unit: calc(100% / 6);
+}
+
+.housekeeper-button-grid-basic {
+    --hk-button-unit: calc(100% / 7);
 }
 
 .hk-button {
@@ -3112,12 +3153,16 @@ function initializeAlignmentPanel() {
 
         // Position actions use the same atomic units as apply; size actions deliberately keep
         // their original raw-node selection semantics.
-        const position = SPACING_ALIGNMENTS.has(alignmentType) ? collectPositionUnits() : null;
+        const position = POSITION_ACTIONS.has(alignmentType) ? collectPositionUnits() : null;
         if (position?.blockedCount) return;
         const previewNodes = position?.units ?? movable(selectedNodes);
 
         // Allow size-min with 1 node, others need at least 2
-        if (previewNodes.length < 1 || (previewNodes.length < 2 && alignmentType !== 'size-min')) return;
+        if (previewNodes.length < 1 || (
+            previewNodes.length < 2
+            && alignmentType !== 'size-min'
+            && alignmentType !== 'snap-to-grid'
+        )) return;
         hidePreview(); // Clear any existing previews
 
         const canvas = (window as any).app?.canvas;
@@ -3358,7 +3403,7 @@ function initializeAlignmentPanel() {
     }
 
     function calculatePreviewPositions(alignmentType: string, nodes: any[]) {
-        if (nodes.length < 2) return [];
+        if (nodes.length < 1 || (nodes.length < 2 && alignmentType !== 'snap-to-grid')) return [];
 
         const positions: any[] = [];
 
@@ -3389,6 +3434,16 @@ function initializeAlignmentPanel() {
         }));
 
         switch (alignmentType) {
+            case 'snap-to-grid': {
+                const gridSize = snapGridSize();
+                if (gridSize === null) break;
+                nodes.forEach((unit: any) => {
+                    const [x, y] = snappedPositionForUnit(unit, gridSize);
+                    positions.push({ x, y, width: nodeWidth(unit), height: outerHeight(unit) });
+                });
+                break;
+            }
+
             case 'left':
                 const leftSortedNodes = [...nodes].sort((a: any, b: any) => a.pos[1] - b.pos[1]);
                 let currentY = leftSortedNodes[0].pos[1];
@@ -3972,15 +4027,16 @@ function initializeAlignmentPanel() {
         
         const position = collectPositionUnits();
         const hasPositionUnits = !position.blockedCount && position.units.length > 1;
+        const hasSnapPositionUnits = !position.blockedCount && position.units.length > 0;
         const hasSelectedNodes = selectedNodes.length > 1;
         const totalSelections = selectedNodes.length + selectedGroups.length;
 
-        if (!hasPositionUnits && !hasSelectedNodes) {
+        if (!hasSnapPositionUnits && !hasSelectedNodes) {
             hidePreview();
         }
 
         if (wrapper) {
-            wrapper.classList.toggle('hk-has-selection', hasPositionUnits || hasSelectedNodes);
+            wrapper.classList.toggle('hk-has-selection', hasSnapPositionUnits || hasSelectedNodes);
         }
 
         if (infoPanel) {
@@ -3996,7 +4052,7 @@ function initializeAlignmentPanel() {
                 `;
             } else if (selectedNodes.length === 1 && selectedGroups.length === 0) {
                 infoPanel.innerHTML = `
-                    1 node selected · Size-Min available
+                    1 node selected · Snap and Size-Min available
                     <small>Select more nodes for alignment options</small>
                 `;
             } else {
@@ -4009,8 +4065,9 @@ function initializeAlignmentPanel() {
 
         const buttons = panel?.querySelectorAll<HTMLButtonElement>('.hk-button');
         buttons?.forEach(button => {
-            if (SPACING_ALIGNMENTS.has(button.dataset.alignmentType ?? '')) {
-                button.disabled = !hasPositionUnits;
+            const alignmentType = button.dataset.alignmentType ?? '';
+            if (POSITION_ACTIONS.has(alignmentType)) {
+                button.disabled = alignmentType === 'snap-to-grid' ? !hasSnapPositionUnits : !hasPositionUnits;
                 return;
             }
             // Size-min can work with 1 node, others need 2+
@@ -4236,23 +4293,28 @@ function initializeAlignmentPanel() {
 
         let movableNodes: any[];
         let pinnedCount: number;
-        if (SPACING_ALIGNMENTS.has(alignmentType)) {
+        if (POSITION_ACTIONS.has(alignmentType)) {
             const position = positionUnits
                 ? { units: positionUnits, pinnedCount: positionPinnedCount, blockedCount: 0 }
                 : collectPositionUnits();
             const newlyPinned = new Set<any>();
+            const newlyPinnedStandaloneUnits = new Set<any>();
             position.units.forEach(unit => {
-                positionUnitTargets.get(unit)?.forEach(entry => {
-                    if (isPinned(entry.target)) newlyPinned.add(entry.target);
-                });
+                const targets = positionUnitTargets.get(unit) ?? [];
+                const pinnedTargets = targets.filter(entry => isPinned(entry.target));
+                if (alignmentType === 'snap-to-grid' && !targets.some(entry => !entry.isNode)) {
+                    if (pinnedTargets.length) newlyPinnedStandaloneUnits.add(unit);
+                } else {
+                    pinnedTargets.forEach(entry => newlyPinned.add(entry.target));
+                }
             });
             const blockedCount = position.blockedCount + newlyPinned.size;
             if (blockedCount) {
                 if (announce) warnPinnedGroup(blockedCount);
                 return;
             }
-            movableNodes = position.units;
-            pinnedCount = position.pinnedCount;
+            movableNodes = position.units.filter(unit => !newlyPinnedStandaloneUnits.has(unit));
+            pinnedCount = position.pinnedCount + newlyPinnedStandaloneUnits.size;
         } else {
             // Size actions retain their raw selected-node semantics. Pinned standalone nodes
             // are skipped exactly as before; selected groups never become resize targets.
@@ -4261,7 +4323,11 @@ function initializeAlignmentPanel() {
         }
 
         // Allow size-min with 1 node, others need at least 2
-        if (movableNodes.length < 1 || (movableNodes.length < 2 && alignmentType !== 'size-min')) {
+        if (movableNodes.length < 1 || (
+            movableNodes.length < 2
+            && alignmentType !== 'size-min'
+            && alignmentType !== 'snap-to-grid'
+        )) {
             if (announce) {
                 showMessage(
                     pinnedCount > 0
@@ -4270,6 +4336,12 @@ function initializeAlignmentPanel() {
                     'warning'
                 );
             }
+            return;
+        }
+
+        const gridSize = alignmentType === 'snap-to-grid' ? snapGridSize() : null;
+        if (alignmentType === 'snap-to-grid' && gridSize === null) {
+            if (announce) showMessage('Cannot snap positions — active graph grid size is invalid', 'warning');
             return;
         }
 
@@ -4319,6 +4391,12 @@ function initializeAlignmentPanel() {
             let referenceValue: number;
 
             switch (alignmentType) {
+                case 'snap-to-grid':
+                    movableNodes.forEach((unit: any) => {
+                        writeSnappedPositionForUnit(unit, gridSize!);
+                    });
+                    break;
+
                 case 'left':
                     // Align all nodes to the leftmost edge, but maintain vertical spacing
                     referenceValue = originalLeftPos;
