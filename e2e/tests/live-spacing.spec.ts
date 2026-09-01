@@ -1,7 +1,9 @@
 import { expect, test } from '@playwright/test'
 import {
+  addGroup,
   alignmentButton,
   byTitle,
+  groupSnapshots,
   installGraph,
   openComfyUI,
   openHousekeeper,
@@ -200,6 +202,56 @@ test.describe('live spacing preview', () => {
     await page.keyboard.press(`${MOD}+z`)
     await page.waitForTimeout(500)
     expect(await positions(page)).toEqual(scattered)
+  })
+
+  test('group-member spacing refits live and undoes nodes and frame together', async ({ page }) => {
+    await threeNodes(page)
+    await addGroup(page, { title: 'members', x: 40, y: 10, width: 950, height: 800 })
+    await alignmentButton(page, 'Align left edges').click()
+    await page.waitForTimeout(75)
+
+    const alignedNodes = await positions(page)
+    const alignedGroup = (await groupSnapshots(page))[0]
+    const before = await undoDepth(page)
+
+    await dragSpacingSlider(page, LONG_DRAG)
+    const duringGroup = (await groupSnapshots(page))[0]
+    expect(duringGroup.members).toEqual(alignedGroup.members)
+    expect(duringGroup).not.toEqual(alignedGroup)
+    expect(await undoDepth(page)).toBe(before)
+
+    await releaseSpacingSlider(page)
+    expect(await undoDepth(page)).toBe(before + 1)
+
+    await page.keyboard.press(`${MOD}+z`)
+    await page.waitForTimeout(500)
+    expect(await positions(page)).toEqual(alignedNodes)
+    expect((await groupSnapshots(page))[0]).toEqual(alignedGroup)
+  })
+
+  test('unsafe group-member spacing rolls back and warns once the gesture ends', async ({
+    page
+  }) => {
+    await installGraph(page, [
+      { title: 'member-a', x: 100, y: 100, width: 180, height: 100 },
+      { title: 'member-b', x: 330, y: 150, width: 180, height: 100 },
+      { title: 'outsider', x: 100, y: 500, width: 180, height: 100 }
+    ])
+    await addGroup(page, { title: 'members', x: 80, y: 70, width: 450, height: 210 })
+    await selectNodes(page, ['member-a', 'member-b'])
+    await alignmentButton(page, 'Align left edges').click()
+    await page.waitForTimeout(75)
+
+    const alignedNodes = await positions(page)
+    const alignedGroup = (await groupSnapshots(page))[0]
+    await dragSpacingSlider(page, [0.2, 0.6, 1])
+    await releaseSpacingSlider(page)
+
+    expect(await positions(page)).toEqual(alignedNodes)
+    expect((await groupSnapshots(page))[0]).toEqual(alignedGroup)
+    await expect(
+      page.getByText('Cannot arrange selection without changing group membership', { exact: true })
+    ).toBeVisible()
   })
 
   test('the drag repeats the alignment that was last applied, not a fixed one', async ({ page }) => {

@@ -125,7 +125,9 @@ Drag the handle, or the panel's title bar while it is open, to put it anywhere o
 Aligning on one axis also re-spaces the selection evenly along the other, using the gap set under **Spacing**.
 
 Position snapping uses ComfyUI's own **Snap to grid size** setting. A selected group moves as
-one unit, preserving the positions of its nodes relative to the group frame.
+one unit, preserving the positions of its nodes relative to the group frame. If the group itself
+is not selected, selected members arrange normally and the frame refits around its original
+members. Housekeeper cancels the layout if that fitted frame would change group membership.
 
 ### Size Adjustment
 
