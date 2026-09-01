@@ -88,7 +88,7 @@ test.describe('pinned nodes', () => {
     await setPinned(page, 'anchored', true)
 
     const before = byTitle(await snapshots(page), 'anchored')
-    await alignmentButton(page, 'Distribute horizontally').click()
+    await alignmentButton(page, 'Arrange dependency stages left to right').click()
     const after = await snapshots(page)
 
     expect(byTitle(after, 'anchored').x).toBe(before.x)

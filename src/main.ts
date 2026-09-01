@@ -189,13 +189,13 @@ const SHORTCUTS: ShortcutSpec[] = [
     {
         id: 'Housekeeper.DistributeHorizontally',
         action: 'horizontal-flow',
-        label: 'Distribute horizontally',
+        label: 'Arrange dependency stages left to right',
         combo: { key: 'ArrowRight', ctrl: true, alt: true }
     },
     {
         id: 'Housekeeper.DistributeVertically',
         action: 'vertical-flow',
-        label: 'Distribute vertically',
+        label: 'Arrange dependency stages top to bottom',
         combo: { key: 'ArrowDown', ctrl: true, alt: true }
     }
 ];
@@ -1295,8 +1295,8 @@ function initializeAlignmentPanel() {
     ];
 
     const flowAlignments: AlignmentButtonConfig[] = [
-        { type: 'horizontal-flow', icon: horizontalFlowIconUrl, label: 'Distribute horizontally', group: 'flow' },
-        { type: 'vertical-flow', icon: verticalFlowIconUrl, label: 'Distribute vertically', group: 'flow' }
+        { type: 'horizontal-flow', icon: horizontalFlowIconUrl, label: 'Arrange dependency stages left to right', group: 'flow' },
+        { type: 'vertical-flow', icon: verticalFlowIconUrl, label: 'Arrange dependency stages top to bottom', group: 'flow' }
     ];
 
     const harmonyColorSets: string[][] = [

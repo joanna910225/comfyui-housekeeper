@@ -109,8 +109,8 @@ test.describe('configurable node spacing', () => {
     )
 
     await setSpacing(page, 80)
-    // The H-Flow control is labelled 'Distribute horizontally' in the panel.
-    await alignmentButton(page, 'Distribute horizontally').click()
+    // The H-Flow control names the direction in which dependency stages advance.
+    await alignmentButton(page, 'Arrange dependency stages left to right').click()
 
     // branch-a and branch-b share a column, so the configured gap separates them.
     const nodes = (await snapshots(page)).filter(n => n.title.startsWith('branch')).sort((a, b) => a.y - b.y)

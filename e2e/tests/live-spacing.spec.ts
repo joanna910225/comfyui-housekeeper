@@ -231,7 +231,7 @@ test.describe('live spacing preview', () => {
       ]
     )
 
-    await alignmentButton(page, 'Distribute horizontally').click()
+    await alignmentButton(page, 'Arrange dependency stages left to right').click()
     const held = await dragSpacingSlider(page, [0.2, 0.4, 0.6])
 
     // branch-a and branch-b share a column, so the gap being dragged separates them.
