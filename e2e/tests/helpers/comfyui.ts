@@ -88,6 +88,9 @@ const UI_STATE_BASELINE: Record<string, unknown> = {
   // Housekeeper's own node spacing is persisted the same way, so a test that changes it
   // would otherwise silently alter every layout assertion that runs after it.
   'Housekeeper.NodeSpacing': 30,
+  // Snap-to-grid reads ComfyUI's own persisted grid size. Keep later tests from inheriting
+  // the odd size used by the setting-specific coverage.
+  'Comfy.SnapToGrid.GridSize': 20,
   // Housekeeper's shortcuts are ComfyUI commands, so a user rebinding is persisted here too.
   // A test that rebinds one would otherwise leave every later test running someone else's
   // keymap.
