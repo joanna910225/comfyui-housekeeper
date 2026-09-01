@@ -121,7 +121,11 @@ const POSITION_ACTIONS = new Set([...SPACING_ALIGNMENTS, 'snap-to-grid']);
  * Arrange popover. The gap is not a parameter here because every layout site already reads it
  * from nodeGap(), the single source of truth the setting and the panel control both write.
  */
-type LayoutOptions = { captureUndo?: boolean; announce?: boolean };
+type LayoutOptions = {
+    captureUndo?: boolean;
+    announce?: boolean;
+    onMembershipFailure?: () => void;
+};
 
 // --- Keyboard shortcuts ------------------------------------------------------------------
 //
@@ -538,7 +542,14 @@ function initializeAlignmentPanel() {
     // preview code can therefore stay unchanged: assigning a proxy position translates its
     // real group frames and member nodes by the same delta.
     type PositionTarget = { target: any; isNode: boolean };
-    type PositionUnitCollection = { units: any[]; pinnedCount: number; blockedCount: number };
+    type GroupContents = { targets: Set<any>; nodes: Set<any> };
+    type GroupMembershipGuard = { group: any; nodes: Set<any> };
+    type PositionUnitCollection = {
+        units: any[];
+        pinnedCount: number;
+        blockedCount: number;
+        membershipGuards: GroupMembershipGuard[];
+    };
     const positionUnitTargets = new WeakMap<any, PositionTarget[]>();
 
     function values(value: any): any[] {
@@ -548,6 +559,56 @@ function initializeAlignmentPanel() {
         return typeof value === 'object' ? Object.values(value) : [];
     }
 
+    function readGroupContents(
+        group: any,
+        groupSet: Set<any>,
+        contents: Map<any, GroupContents>,
+        visiting = new Set<any>(),
+        strict = false
+    ): GroupContents {
+        const cached = contents.get(group);
+        if (cached) return cached;
+        if (visiting.has(group)) return { targets: new Set(), nodes: new Set() };
+        visiting.add(group);
+
+        let recomputed: any;
+        try {
+            if (strict && typeof group?.recomputeInsideNodes !== 'function') {
+                throw new Error('group membership cannot be recomputed');
+            }
+            recomputed = group?.recomputeInsideNodes?.();
+        } catch (error) {
+            if (strict) throw error;
+            // A stale/legacy group can still expose its last known members below.
+        }
+
+        const targets = new Set<any>();
+        const nodes = new Set<any>();
+        const members = [
+            ...values(recomputed),
+            ...values(group?.nodes ?? group?._nodes),
+            ...values(group?.children ?? group?._children)
+        ];
+
+        for (const member of members) {
+            if (!member || member === group) continue;
+            targets.add(member);
+            const isGroup = groupSet.has(member) || typeof member.recomputeInsideNodes === 'function';
+            if (isGroup) {
+                const nested = readGroupContents(member, groupSet, contents, visiting, strict);
+                nested.targets.forEach(target => targets.add(target));
+                nested.nodes.forEach(node => nodes.add(node));
+            } else {
+                nodes.add(member);
+            }
+        }
+
+        visiting.delete(group);
+        const result = { targets, nodes };
+        contents.set(group, result);
+        return result;
+    }
+
     function collectPositionUnits(): PositionUnitCollection {
         const graph: any = getActiveCanvas()?.graph ?? (window as any).app?.graph;
         const graphGroups = values(graph?.groups ?? graph?._groups);
@@ -555,49 +616,7 @@ function initializeAlignmentPanel() {
         const groupSet = new Set(groups);
         const selectedNodeSet = new Set(selectedNodes);
         const selectedGroupSet = new Set(selectedGroups);
-        const contents = new Map<any, { targets: Set<any>; nodes: Set<any> }>();
-
-        // recomputeInsideNodes() is the current LiteGraph API. The field fallbacks cover
-        // older builds and nested-group implementations that expose children separately.
-        function groupContents(group: any, visiting = new Set<any>()): { targets: Set<any>; nodes: Set<any> } {
-            const cached = contents.get(group);
-            if (cached) return cached;
-            if (visiting.has(group)) return { targets: new Set(), nodes: new Set() };
-            visiting.add(group);
-
-            let recomputed: any;
-            try {
-                recomputed = group?.recomputeInsideNodes?.();
-            } catch {
-                // A stale/legacy group can still expose its last known members below.
-            }
-
-            const targets = new Set<any>();
-            const nodes = new Set<any>();
-            const members = [
-                ...values(recomputed),
-                ...values(group?.nodes ?? group?._nodes),
-                ...values(group?.children ?? group?._children)
-            ];
-
-            for (const member of members) {
-                if (!member || member === group) continue;
-                targets.add(member);
-                const isGroup = groupSet.has(member) || typeof member.recomputeInsideNodes === 'function';
-                if (isGroup) {
-                    const nested = groupContents(member, visiting);
-                    nested.targets.forEach(target => targets.add(target));
-                    nested.nodes.forEach(node => nodes.add(node));
-                } else {
-                    nodes.add(member);
-                }
-            }
-
-            visiting.delete(group);
-            const result = { targets, nodes };
-            contents.set(group, result);
-            return result;
-        }
+        const contents = new Map<any, GroupContents>();
 
         type Component = { targets: Set<any>; nodes: Set<any>; groups: Set<any> };
         const components: Component[] = [];
@@ -607,8 +626,9 @@ function initializeAlignmentPanel() {
         };
 
         for (const group of groups) {
-            const members = groupContents(group);
-            if (!selectedGroupSet.has(group) && ![...members.nodes].some(node => selectedNodeSet.has(node))) continue;
+            const members = readGroupContents(group, groupSet, contents);
+            const containsSelectedNode = [...members.nodes].some(node => selectedNodeSet.has(node));
+            if (!selectedGroupSet.has(group) && !(isPinned(group) && containsSelectedNode)) continue;
 
             const component: Component = {
                 targets: new Set([group, ...members.targets]),
@@ -629,13 +649,14 @@ function initializeAlignmentPanel() {
             components.push(component);
         }
 
-        // An affected group pulls in every graph group connected through a real target.
+        // An explicitly selected or pinned affected group pulls in every graph group connected
+        // through a real target.
         // Repeat because an unselected bridge group can join two otherwise disjoint seeds.
         let expanded: boolean;
         do {
             expanded = false;
             for (const group of groups) {
-                const members = groupContents(group);
+                const members = readGroupContents(group, groupSet, contents);
                 const groupTargets = new Set([group, ...members.targets]);
                 const matches = components.filter(component =>
                     overlaps(component.targets, groupTargets) || overlaps(component.nodes, members.nodes)
@@ -659,6 +680,16 @@ function initializeAlignmentPanel() {
                 }
             }
         } while (expanded);
+
+        const atomicGroups = new Set<any>();
+        components.forEach(component => component.groups.forEach(group => atomicGroups.add(group)));
+        const membershipGuards = groups
+            .filter(group => !atomicGroups.has(group))
+            .map(group => ({
+                group,
+                nodes: new Set(readGroupContents(group, groupSet, contents).nodes)
+            }))
+            .filter(guard => [...guard.nodes].some(node => selectedNodeSet.has(node)));
 
         const units: any[] = [];
         const groupedNodes = new Set<any>();
@@ -762,7 +793,106 @@ function initializeAlignmentPanel() {
             makeUnit(new Set([node]), new Set([node]));
         }
 
-        return { units, pinnedCount, blockedCount: blockedTargets.size };
+        return { units, pinnedCount, blockedCount: blockedTargets.size, membershipGuards };
+    }
+
+    type PositionRestore = PositionTarget & { x: number; y: number };
+    type GroupRestore = { group: any; x: number; y: number; width: number; height: number };
+
+    function snapshotPositionTargets(units: any[]): PositionRestore[] {
+        const targets = new Map<any, PositionTarget>();
+        units.forEach(unit => {
+            (positionUnitTargets.get(unit) ?? [{ target: unit, isNode: true }])
+                .forEach(entry => targets.set(entry.target, entry));
+        });
+        return [...targets.values()].map(entry => ({
+            ...entry,
+            x: Number(entry.target?.pos?.[0] ?? entry.target?.x ?? 0),
+            y: Number(entry.target?.pos?.[1] ?? entry.target?.y ?? 0)
+        }));
+    }
+
+    function snapshotGroupFrames(guards: GroupMembershipGuard[]): GroupRestore[] {
+        return guards.map(({ group }) => ({
+            group,
+            x: Number(group?.pos?.[0] ?? group?.x ?? 0),
+            y: Number(group?.pos?.[1] ?? group?.y ?? 0),
+            width: Number(group?.size?.[0] ?? group?.width ?? 0),
+            height: Number(group?.size?.[1] ?? group?.height ?? 0)
+        }));
+    }
+
+    function restorePositionTargets(restore: PositionRestore[]) {
+        restore.forEach(entry => {
+            entry.target.pos = [entry.x, entry.y];
+            if (entry.isNode) {
+                if (typeof entry.target.x === 'number') entry.target.x = entry.x;
+                if (typeof entry.target.y === 'number') entry.target.y = entry.y;
+            }
+        });
+    }
+
+    function restoreGroupFrames(restore: GroupRestore[]) {
+        restore.forEach(({ group, x, y, width, height }) => {
+            group.pos = [x, y];
+            group.size = [width, height];
+        });
+    }
+
+    function sameMembers(left: Set<any>, right: Set<any>) {
+        return left.size === right.size && [...left].every(node => right.has(node));
+    }
+
+    function refreshNodeBounds() {
+        const canvas = getActiveCanvas();
+        const graph: any = canvas?.graph ?? (window as any).app?.graph;
+        values(graph?.nodes ?? graph?._nodes).forEach(node => {
+            try {
+                node?.updateArea?.(canvas?.ctx);
+            } catch {
+                // Legacy nodes without a usable updateArea() keep their existing bounds.
+            }
+        });
+    }
+
+    function fitMemberGroups(guards: GroupMembershipGuard[]): boolean {
+        try {
+            // LiteGraph refreshes node bounds while drawing. Layout runs synchronously before that
+            // frame, so refresh them now before resizeTo() and geometric membership checks.
+            refreshNodeBounds();
+            for (const { group, nodes } of guards) {
+                if (typeof group?.resizeTo !== 'function') return false;
+                group.resizeTo([...nodes]);
+            }
+
+            const graph: any = getActiveCanvas()?.graph ?? (window as any).app?.graph;
+            const groups = [...new Set([
+                ...values(graph?.groups ?? graph?._groups),
+                ...guards.map(guard => guard.group)
+            ])];
+            const groupSet = new Set(groups);
+            const contents = new Map<any, GroupContents>();
+            return guards.every(guard =>
+                sameMembers(
+                    guard.nodes,
+                    readGroupContents(guard.group, groupSet, contents, new Set(), true).nodes
+                )
+            );
+        } catch (error) {
+            console.error('[housekeeper] group frame fit failed:', error);
+            return false;
+        }
+    }
+
+    function refreshGroupMembership(guards: GroupMembershipGuard[]) {
+        refreshNodeBounds();
+        guards.forEach(({ group }) => {
+            try {
+                group?.recomputeInsideNodes?.();
+            } catch {
+                // Restoring the geometry is enough for older groups without a working cache refresh.
+            }
+        });
     }
 
     function snapGridSize(): number | null {
@@ -3257,11 +3387,12 @@ function initializeAlignmentPanel() {
         alignmentType: string;
         /** The canvas the transaction was opened on; it must be the one that closes it. */
         canvas: any;
-        /** The same group-aware units are reused for every frame of the gesture. */
-        units: any[];
-        pinnedCount: number;
+        /** The same selection and membership guards are reused for every frame of the gesture. */
+        position: PositionUnitCollection;
         /** Pre-gesture positions, so every frame lays out from where the user started. */
-        restore: Array<{ target: any; isNode: boolean; x: number; y: number }>;
+        restore: PositionRestore[];
+        groupRestore: GroupRestore[];
+        membershipFailed: boolean;
     };
 
     let spacingPreview: SpacingPreviewSession | null = null;
@@ -3304,23 +3435,17 @@ function initializeAlignmentPanel() {
         hidePreview();
 
         const canvas = getActiveCanvas();
-        const restoreTargets = new Map<any, PositionTarget>();
-        position.units.forEach(unit => {
-            positionUnitTargets.get(unit)?.forEach(entry => restoreTargets.set(entry.target, entry));
-        });
-        const restore = [...restoreTargets.values()].map(entry => ({
-            ...entry,
-            x: entry.target.pos[0],
-            y: entry.target.pos[1]
-        }));
+        const restore = snapshotPositionTargets(position.units);
+        const groupRestore = snapshotGroupFrames(position.membershipGuards);
         canvas?.emitBeforeChange?.();
 
         spacingPreview = {
             alignmentType: lastSpacingAlignment,
             canvas,
-            units: position.units,
-            pinnedCount: position.pinnedCount,
-            restore
+            position,
+            restore,
+            groupRestore,
+            membershipFailed: false
         };
         return spacingPreview;
     }
@@ -3332,25 +3457,24 @@ function initializeAlignmentPanel() {
      * Restoring first is what makes the gesture a single transform of the graph rather than a
      * pile of alignments applied to each other's output: the result of releasing at 90px is
      * the same layout as clicking the alignment once with the setting already at 90px, no
-     * matter what the value passed through on the way. Only positions are restored - every
-     * alignment that reads the gap moves nodes and none of them resizes.
+     * matter what the value passed through on the way. Node positions and any fitted group
+     * frames are restored because member layouts resize those frames after every run.
      */
     function applySpacingPreview(session: SpacingPreviewSession) {
-        for (const entry of session.restore) {
-            if (!entry.target?.pos) continue;
-            entry.target.pos = [entry.x, entry.y];
-            if (entry.isNode) {
-                if (typeof entry.target.x === 'number') entry.target.x = entry.x;
-                if (typeof entry.target.y === 'number') entry.target.y = entry.y;
-            }
-        }
+        session.membershipFailed = false;
+        restorePositionTargets(session.restore);
+        restoreGroupFrames(session.groupRestore);
+        refreshGroupMembership(session.position.membershipGuards);
 
         // No undo entry and no toasts: this runs up to sixty times a second.
         alignNodes(
             session.alignmentType,
-            { captureUndo: false, announce: false },
-            session.units,
-            session.pinnedCount
+            {
+                captureUndo: false,
+                announce: false,
+                onMembershipFailure: () => { session.membershipFailed = true; }
+            },
+            session.position
         );
     }
 
@@ -3399,6 +3523,12 @@ function initializeAlignmentPanel() {
             applySpacingPreview(session);
         } finally {
             session.canvas?.emitAfterChange?.();
+            if (session.membershipFailed) {
+                showMessage(
+                    'Cannot arrange selection without changing group membership',
+                    'warning'
+                );
+            }
         }
     }
 
@@ -4285,18 +4415,19 @@ function initializeAlignmentPanel() {
     function alignNodes(
         alignmentType: string,
         options?: LayoutOptions,
-        positionUnits?: any[],
-        positionPinnedCount = 0
+        positionSelection?: PositionUnitCollection | any[]
     ) {
         const captureUndo = options?.captureUndo !== false;
         const announce = options?.announce !== false;
 
         let movableNodes: any[];
         let pinnedCount: number;
+        let membershipGuards: GroupMembershipGuard[] = [];
         if (POSITION_ACTIONS.has(alignmentType)) {
-            const position = positionUnits
-                ? { units: positionUnits, pinnedCount: positionPinnedCount, blockedCount: 0 }
-                : collectPositionUnits();
+            const position = Array.isArray(positionSelection)
+                ? { units: positionSelection, pinnedCount: 0, blockedCount: 0, membershipGuards: [] }
+                : positionSelection ?? collectPositionUnits();
+            membershipGuards = position.membershipGuards ?? [];
             const newlyPinned = new Set<any>();
             const newlyPinnedStandaloneUnits = new Set<any>();
             position.units.forEach(unit => {
@@ -4345,9 +4476,17 @@ function initializeAlignmentPanel() {
             return;
         }
 
+        const positionRestore = membershipGuards.length
+            ? snapshotPositionTargets(movableNodes)
+            : [];
+        const groupRestore = membershipGuards.length
+            ? snapshotGroupFrames(membershipGuards)
+            : [];
+
         // What a live spacing drag repeats (#65). Recorded from the alignments the user
         // actually asked for, never from the preview's own re-runs, and only for the ones a
         // different gap would change.
+        const previousSpacingAlignment = lastSpacingAlignment;
         if (captureUndo && SPACING_ALIGNMENTS.has(alignmentType)) {
             lastSpacingAlignment = alignmentType;
         }
@@ -4361,6 +4500,7 @@ function initializeAlignmentPanel() {
         // transaction around the whole gesture - see beginSpacingPreview().
         const undoCanvas = captureUndo ? getActiveCanvas() : null;
         undoCanvas?.emitBeforeChange?.();
+        let layoutCompleted = false;
 
         try {
             // Calculate all reference positions and sizes at the start to avoid drift on consecutive clicks
@@ -4723,12 +4863,16 @@ function initializeAlignmentPanel() {
 
                 case 'horizontal-flow':
                     alignHorizontalFlow(movableNodes, pinnedCount, options);
+                    layoutCompleted = true;
                     return; // Don't continue to the success message at the bottom
 
                 case 'vertical-flow':
                     alignVerticalFlow(movableNodes, pinnedCount, options);
+                    layoutCompleted = true;
                     return; // Don't continue to the success message at the bottom
             }
+
+            layoutCompleted = true;
 
             // Mark canvas as dirty to trigger redraw (only for basic alignment)
             markCanvasDirty();
@@ -4746,7 +4890,29 @@ function initializeAlignmentPanel() {
             console.error('[housekeeper] alignment failed:', alignmentType, error);
             if (announce) showMessage('Error during alignment', 'error');
         } finally {
-            undoCanvas?.emitAfterChange?.();
+            try {
+                if (membershipGuards.length) {
+                    const membershipSafe = layoutCompleted && fitMemberGroups(membershipGuards);
+                    if (!membershipSafe) {
+                        restorePositionTargets(positionRestore);
+                        restoreGroupFrames(groupRestore);
+                        refreshGroupMembership(membershipGuards);
+                        if (layoutCompleted) {
+                            lastSpacingAlignment = previousSpacingAlignment;
+                            options?.onMembershipFailure?.();
+                            if (announce) {
+                                showMessage(
+                                    'Cannot arrange selection without changing group membership',
+                                    'warning'
+                                );
+                            }
+                        }
+                    }
+                    markCanvasDirty();
+                }
+            } finally {
+                undoCanvas?.emitAfterChange?.();
+            }
         }
     }
     

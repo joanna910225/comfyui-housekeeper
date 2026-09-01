@@ -90,7 +90,7 @@ test.describe('snap positions to ComfyUI grid', () => {
     expect([node.x, node.y]).toEqual([21, -21])
   })
 
-  test('snaps selected groups and grouped members as atomic frame-anchored components', async ({
+  test('snaps explicitly selected groups as atomic frame-anchored components', async ({
     page
   }) => {
     await installGraph(page, [
@@ -104,9 +104,18 @@ test.describe('snap positions to ComfyUI grid', () => {
     await addGroup(page, { title: 'left-frame', x: 63, y: 51, width: 550, height: 210 })
     await addGroup(page, { title: 'top-frame', x: 363, y: -52, width: 550, height: 240 })
     await selectNodesAndGroup(page, ['left'], 'selected-group')
+    await page.evaluate(() => {
+      const app = (window as any).app
+      const graph = app.canvas?.graph ?? app.graph
+      const group = graph.groups.find((candidate: any) => candidate.title === 'left-frame')
+      app.canvas.select(group)
+      app.canvas.setDirty?.(true, true)
+    })
+    await page.waitForTimeout(650)
 
     const beforeNodes = await snapshots(page)
     const beforeGroups = new Map((await groupSnapshots(page)).map(group => [group.title, group]))
+    expect(beforeGroups.get('left-frame')?.selected).toBe(true)
     expect(beforeGroups.get('selected-group')?.members).toEqual(['solo-a', 'solo-b'])
     expect(beforeGroups.get('left-frame')?.members).toEqual(['left', 'shared'])
     expect(beforeGroups.get('top-frame')?.members).toEqual(['right', 'shared'])
@@ -130,7 +139,7 @@ test.describe('snap positions to ComfyUI grid', () => {
     ])
     assertTranslation(['solo-a', 'solo-b'], -3, 9)
 
-    // The member-selected connected component anchors to the minimum frame x/y, even though
+    // The explicitly selected connected component anchors to the minimum frame x/y, even though
     // those minima come from different frames: (63, -52) -> (60, -60).
     for (const title of ['left-frame', 'top-frame']) {
       expect(afterGroups.get(title)!.x - beforeGroups.get(title)!.x).toBe(-3)
@@ -167,7 +176,7 @@ test.describe('snap positions to ComfyUI grid', () => {
     ])
     await addGroup(page, { title: 'blocked', x: 83, y: 51, width: 410, height: 180 })
     await setPinned(page, 'grouped-b', true)
-    await selectNodes(page, ['grouped-a'])
+    await selectNodesAndGroup(page, ['grouped-a'], 'blocked')
     await expect(alignmentButton(page, SNAP)).toBeDisabled()
 
     await setPinned(page, 'grouped-b', false)
