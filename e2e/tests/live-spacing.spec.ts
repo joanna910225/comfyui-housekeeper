@@ -387,11 +387,54 @@ test.describe('live spacing preview', () => {
 
     const before = await positions(page)
     const undoBefore = await undoDepth(page)
+    const inputCount = await countSliderInput(page)
     const held = await dragSpacingSlider(page, LONG_DRAG)
+
+    expect(await inputCount()).toBeGreaterThanOrEqual(8)
+    await expect(
+      page.getByText('Choose an alignment first, then adjust spacing.', { exact: true })
+    ).toHaveCount(1)
+
     await releaseSpacingSlider(page)
 
     expect(await positions(page)).toEqual(before)
     expect(await undoDepth(page)).toBe(undoBefore)
     expect(await getSpacing(page)).toBe(held)
+  })
+
+  test('keyboard spacing also explains why no layout moves yet', async ({ page }) => {
+    await threeNodes(page)
+
+    const before = await positions(page)
+    const undoBefore = await undoDepth(page)
+    const initialSpacing = await spacingValue(page)
+
+    await spacingSlider(page).focus()
+    await page.keyboard.press('ArrowRight')
+    await page.keyboard.press('ArrowRight')
+
+    expect(await spacingValue(page)).toBeGreaterThan(initialSpacing)
+    expect(await positions(page)).toEqual(before)
+    expect(await undoDepth(page)).toBe(undoBefore)
+    await expect(
+      page.getByText('Choose an alignment first, then adjust spacing.', { exact: true })
+    ).toHaveCount(1)
+  })
+
+  test('an exact spacing value also explains why no layout moves yet', async ({ page }) => {
+    await threeNodes(page)
+
+    const before = await positions(page)
+    const undoBefore = await undoDepth(page)
+
+    await spacingReadout(page).fill('90')
+    await spacingReadout(page).press('Enter')
+
+    expect(await getSpacing(page)).toBe(90)
+    expect(await positions(page)).toEqual(before)
+    expect(await undoDepth(page)).toBe(undoBefore)
+    await expect(
+      page.getByText('Choose an alignment first, then adjust spacing.', { exact: true })
+    ).toHaveCount(1)
   })
 })
