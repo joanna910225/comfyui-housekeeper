@@ -1,5 +1,5 @@
 /**
- * Position-only grid snapping runs through the real action branch in src/main.ts.
+ * Position-and-size grid snapping runs through the real action branch in src/main.ts.
  * The extension has no exports, so this harness extracts its snap helpers and
  * alignNodes() rather than keeping a second copy of the rounding behaviour.
  */
@@ -28,11 +28,11 @@ const spacingActions = source.match(/const SPACING_ALIGNMENTS = new Set\(\[[\s\S
 const positionActions = source.match(/const POSITION_ACTIONS = new Set\(\[\.\.\.SPACING_ALIGNMENTS, 'snap-to-grid'\]\);/)?.[0];
 assert.ok(spacingActions, 'could not read SPACING_ALIGNMENTS from src/main.ts');
 assert.ok(positionActions, 'snap-to-grid must be a POSITION_ACTIONS member');
-assert.match(source, /type: 'snap-to-grid', icon: snapToGridIconUrl, label: 'Snap positions to grid'/,
+assert.match(source, /type: 'snap-to-grid', icon: snapToGridIconUrl, label: 'Snap positions and sizes to grid'/,
   'the action must keep its user-facing label');
 
 /** Load the real snap helpers and alignNodes(). */
-function load({ gridSize, units }) {
+function load({ gridSize, units, rendererMinWidth = null }) {
   const messages = [];
   const undo = { before: 0, after: 0 };
   const canvas = {
@@ -54,7 +54,7 @@ function load({ gridSize, units }) {
     function nodeWidth(node) { return node?.size?.[0] ?? 150; }
     function outerHeight(node) { return node?.size?.[1] ?? 100; }
     function bodyHeight(node) { return node?.size?.[1] ?? 100; }
-    function rendererMinNodeWidth() { return null; }
+    function rendererMinNodeWidth() { return __rendererMinWidth; }
     function clampWidthToRenderer(width) { return width; }
     function markCanvasDirty() {}
     function showMessage(text, type = 'info') { __messages.push({ text, type }); }
@@ -64,17 +64,36 @@ function load({ gridSize, units }) {
     ${extractFunction('snapGridSize')}
     ${extractFunction('snappedPositionForUnit')}
     ${extractFunction('writeSnappedPositionForUnit')}
+    ${extractFunction('snapSizeTargetForUnit')}
+    ${extractFunction('snappedSizeForNode')}
+    ${extractFunction('writeNodeSize')}
+    ${extractFunction('writeSnappedSizeForNode')}
     ${extractFunction('alignNodes')}
     __units.forEach(unit => positionUnitTargets.set(unit, [{ target: unit, isNode: true }]));
     return { alignNodes, snapGridSize, snappedPositionForUnit };
   `;
   const { code } = transformSync(shim, { loader: 'ts' });
   globalThis.window = { app: { canvas, graph: canvas.graph } };
-  return { ...new Function('__canvas', '__messages', '__units', code)(canvas, messages, units), messages, undo };
+  return {
+    ...new Function('__canvas', '__messages', '__units', '__rendererMinWidth', code)(
+      canvas,
+      messages,
+      units,
+      rendererMinWidth
+    ),
+    messages,
+    undo
+  };
 }
 
-function node(x, y, width = 173, height = 91, pinned = false) {
-  return { pos: [x, y], size: [width, height], flags: { pinned } };
+function node(x, y, width = 173, height = 91, pinned = false, minSize = [140, 70]) {
+  return {
+    pos: [x, y],
+    size: [width, height],
+    flags: { pinned },
+    computeSize: () => minSize,
+    setSize(next) { this.size = [...next]; }
+  };
 }
 
 const positionOf = unit => [...unit.pos];
@@ -92,9 +111,8 @@ test('snap-to-grid uses the active graph grid and Math.round at 20px, including 
   assert.deepEqual(undo, { before: 1, after: 1 });
 });
 
-test('snap-to-grid honors non-default 21px grids and never resizes nodes', () => {
+test('snap-to-grid rounds node size to a non-default 21px grid without writing x/y aliases', () => {
   const a = node(10.5, 31.5, 201, 117);
-  const beforeSize = sizeOf(a);
   a.x = 900;
   a.y = 901;
   const { alignNodes } = load({ gridSize: 21, units: [a] });
@@ -102,8 +120,42 @@ test('snap-to-grid honors non-default 21px grids and never resizes nodes', () =>
   alignNodes('snap-to-grid', undefined, [a]);
 
   assert.deepEqual(positionOf(a), [21, 42]);
-  assert.deepEqual(sizeOf(a), beforeSize);
+  assert.deepEqual(sizeOf(a), [210, 126]);
   assert.deepEqual([a.x, a.y], [900, 901], 'snap must only write the Vue-safe pos tuple');
+});
+
+test('snap-to-grid writes every position before resizing any node', () => {
+  const first = node(9, 9, 173, 91);
+  const second = node(31, 31, 173, 91);
+  first.setSize = function (next) {
+    assert.deepEqual(positionOf(second), [40, 40]);
+    this.size = [...next];
+  };
+  const { alignNodes } = load({ gridSize: 20, units: [first, second] });
+
+  alignNodes('snap-to-grid', undefined, [first, second]);
+
+  assert.deepEqual(sizeOf(first), [180, 100]);
+  assert.deepEqual(sizeOf(second), [180, 100]);
+});
+
+test('snap-to-grid ceils renderer and node minimums to the next grid multiple', () => {
+  const a = node(9, 29, 190, 110, false, [201, 117]);
+  const { alignNodes } = load({ gridSize: 21, units: [a], rendererMinWidth: 225 });
+
+  alignNodes('snap-to-grid', undefined, [a]);
+
+  assert.deepEqual(sizeOf(a), [231, 126]);
+});
+
+test('snap-to-grid never shrinks a node whose minimum size cannot be measured', () => {
+  const a = node(9, 29, 169, 89);
+  a.computeSize = () => { throw new Error('cannot measure'); };
+  const { alignNodes } = load({ gridSize: 20, units: [a] });
+
+  alignNodes('snap-to-grid', undefined, [a]);
+
+  assert.deepEqual(sizeOf(a), [180, 100]);
 });
 
 test('one unpinned node can snap, while a pinned standalone node is left in place and announced', () => {
@@ -114,7 +166,9 @@ test('one unpinned node can snap, while a pinned standalone node is left in plac
   alignNodes('snap-to-grid', undefined, [free, pinned]);
 
   assert.deepEqual(positionOf(free), [0, 20]);
+  assert.deepEqual(sizeOf(free), [180, 100]);
   assert.deepEqual(positionOf(pinned), [31, 31]);
+  assert.deepEqual(sizeOf(pinned), [173, 91]);
   assert.ok(messages.some(message => /1 pinned node left in place/.test(message.text)),
     `expected pinned-node notice, got ${JSON.stringify(messages)}`);
 });
@@ -122,12 +176,14 @@ test('one unpinned node can snap, while a pinned standalone node is left in plac
 test('an invalid active graph grid leaves position and undo untouched', () => {
   const a = node(29, -31);
   const before = positionOf(a);
+  const beforeSize = sizeOf(a);
   const { alignNodes, messages, undo, snapGridSize } = load({ gridSize: 0, units: [a] });
 
   assert.equal(snapGridSize(), null);
   alignNodes('snap-to-grid', undefined, [a]);
 
   assert.deepEqual(positionOf(a), before);
+  assert.deepEqual(sizeOf(a), beforeSize);
   assert.deepEqual(undo, { before: 0, after: 0 });
   assert.ok(messages.some(message => /grid size is invalid/.test(message.text)),
     `expected invalid-grid warning, got ${JSON.stringify(messages)}`);
