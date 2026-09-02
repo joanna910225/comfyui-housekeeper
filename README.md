@@ -9,6 +9,8 @@ A ComfyUI extension for aligning, arranging and colouring the nodes in a workflo
 
 ## What's new
 
+**v0.9.0** — keep groups intact during layout, arrange selected members inside a group, and snap node positions and sizes to ComfyUI's grid.
+
 **v0.8.0** — preview **Spacing** changes directly on the graph, align reliably under **Nodes 2.0**, and use **Title only** when you want colour without replacing node bodies.
 
 **v0.7.0** — the **shortcuts are yours to change**, from ComfyUI's own *Settings → Keybinding*. The panel also works **inside subgraphs**, where its buttons used to sit disabled with no explanation.
@@ -52,6 +54,7 @@ Full detail in [CHANGELOG.md](CHANGELOG.md), or on the
 - Six alignment options — four edges and two centre lines
 - Size normalisation, to make a selection match in width, height or both
 - Dependency-aware arrangement that follows the links in your workflow
+- Position and node-size snapping that uses ComfyUI's own grid setting
 - Adjustable spacing between nodes
 - Preset colour palettes, a custom colour picker, and recently used colours
 - Hover preview showing where nodes will land before you commit
@@ -101,7 +104,7 @@ version you are on is the first thing worth checking.
 
 <img src="doc/handler.png" alt="Housekeeper Handler" height="200">
 
-Click the handle to open the panel. Select two or more nodes to use the alignment and arrangement tools — **Match smallest size** is the exception and works on a single node.
+Click the handle to open the panel. Select two or more nodes to use the alignment and arrangement tools — **Snap positions and sizes to grid** and **Match smallest size** also work on a single node.
 
 **Pinned nodes are left alone.** Pin anything you want to stay exactly where it is and Housekeeper will not move or resize it, however it is selected. The rest of the selection arranges among itself, and the panel says how many nodes were skipped.
 
@@ -119,8 +122,16 @@ Drag the handle, or the panel's title bar while it is open, to put it anywhere o
 | **Align bottom edges** | Line it up on its bottommost edge |
 | **Center horizontally** | Line the selection up on a shared vertical centre line |
 | **Center vertically** | Line it up on a shared horizontal centre line |
+| **Snap positions and sizes to grid** | Move selected objects and resize independently positioned selected nodes to the nearest grid multiples |
 
 Aligning on one axis also re-spaces the selection evenly along the other, using the gap set under **Spacing**.
+
+Grid snapping uses ComfyUI's own **Snap to grid size** setting. Node widths and body heights
+round to the nearest multiple, but are raised to the next multiple when needed to stay above
+the node or renderer minimum. A selected group moves as one unit; its frame is not resized.
+If the group itself is not selected, selected members snap normally and the frame refits around
+its original members. Housekeeper cancels the layout if that fitted frame would change group
+membership.
 
 ### Size Adjustment
 
@@ -137,8 +148,8 @@ Aligning on one axis also re-spaces the selection evenly along the other, using 
 
 Arranges the selection by following the links between nodes, so each node sits past everything that feeds it:
 
-- **Distribute horizontally** — dependencies run left to right, one column per stage
-- **Distribute vertically** — the same, top to bottom
+- **Arrange dependency stages left to right** — one column per stage; nodes in the same stage stack vertically
+- **Arrange dependency stages top to bottom** — one row per stage; nodes in the same stage sit side by side
 
 ### Spacing
 
@@ -163,8 +174,8 @@ Use `Cmd` in place of `Ctrl` on macOS. Shortcuts are ignored while the focus is 
 | `Ctrl+Shift+→` | Align right edges |
 | `Ctrl+Shift+↑` | Align top edges |
 | `Ctrl+Shift+↓` | Align bottom edges |
-| `Ctrl+Alt+→` | Distribute horizontally |
-| `Ctrl+Alt+↓` | Distribute vertically |
+| `Ctrl+Alt+→` | Arrange dependency stages left to right |
+| `Ctrl+Alt+↓` | Arrange dependency stages top to bottom |
 | `←` `→` `↑` `↓` | Move the panel, while the handle has focus |
 | `Shift` + arrow | Move the panel further |
 

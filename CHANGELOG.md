@@ -2,6 +2,36 @@
 
 All notable changes to this project are documented here.
 
+## [0.9.0] - 2026-09-02
+
+Group-aware layouts, clearer dependency directions, and position-and-size grid snapping.
+
+### Added
+
+- **Snap selected positions and node sizes to ComfyUI's grid.** One action uses ComfyUI's own
+  grid setting to move the selection and round independently positioned node widths and body
+  heights without going below node or renderer minimums. Preview, save/reload and one-step undo
+  agree; pinned nodes remain untouched. Closes #74.
+
+- **Arrange selected members inside an unselected group.** Alignment, flow arrangement and live
+  spacing can now move selected members and refit the group frame around its original members.
+  If the new frame would capture or lose a node, Housekeeper restores the entire layout and
+  explains how to move the selection away from the colliding group. Closes #75.
+
+### Fixed
+
+- **Selected groups are layout units.** A selected group now moves together with its members,
+  rather than leaving its frame behind or silently changing membership. A pinned member protects
+  the whole selected group. Closes #53.
+
+- **Flow controls now say which way dependencies run.** Their icons, labels and tooltips describe
+  left-to-right stages and top-to-bottom stages directly, removing the reversed visual reading
+  reported in #73.
+
+- **Spacing explains when no live preview is available.** Changing it before applying an
+  alignment still saves the value, and now says to choose an alignment first instead of appearing
+  to do nothing.
+
 ## [0.8.0] - 2026-08-31
 
 Live spacing previews, reliable Nodes 2.0 layouts, and title-only node colours.

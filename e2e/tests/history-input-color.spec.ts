@@ -103,11 +103,19 @@ test.describe('history, text input and colour', () => {
     await page.evaluate(() => {
       const app = (window as any).app
       const graph = app.canvas?.graph ?? app.graph
-      for (const node of graph.nodes) {
-        node.setColorOption({ color: '#224466', bgcolor: '#111820', groupcolor: '#224466' })
+      app.canvas?.emitBeforeChange?.()
+      try {
+        for (const node of graph.nodes) {
+          node.setColorOption({ color: '#224466', bgcolor: '#111820', groupcolor: '#224466' })
+        }
+      } finally {
+        app.canvas?.emitAfterChange?.()
       }
       app.canvas?.setDirty?.(true, true)
     })
+    // Let ComfyUI's ChangeTracker capture the directly seeded colours before the
+    // hover/apply interaction creates the undo entry (it debounces for 50 ms).
+    await page.waitForTimeout(75)
     const before = (await snapshots(page)).map(({ title, color, bgcolor }) => ({
       title,
       color,

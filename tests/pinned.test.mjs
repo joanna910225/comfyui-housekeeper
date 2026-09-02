@@ -50,19 +50,36 @@ function load(selectedNodes) {
   // the harness cannot quietly disagree with the real list.
   const spacingAlignments = source.match(/const SPACING_ALIGNMENTS = new Set\(\[[^\]]*\]\);/)?.[0];
   assert.ok(spacingAlignments, 'could not read SPACING_ALIGNMENTS from src/main.ts');
+  const positionActions = source.match(/const POSITION_ACTIONS = new Set\(\[\.\.\.SPACING_ALIGNMENTS, 'snap-to-grid'\]\);/)?.[0];
+  assert.ok(positionActions, 'could not read POSITION_ACTIONS from src/main.ts');
 
   const shim = `
     const NODE_TITLE_HEIGHT = 30;
     let nodeSpacingValue = ${defaultSpacing};
     ${spacingAlignments}
+    ${positionActions}
     let lastSpacingAlignment = null;
     function debugNodeStructure() {}
     function showMessage(text, type) { __messages.push({ text, type: type ?? 'info' }); }
     function markCanvasDirty() {}
     function getActiveCanvas() { return null; }
-    function alignVerticalFlow() { __messages.push({ text: 'vertical-flow', type: 'stub' }); }
+    const positionUnitTargets = new WeakMap();
+    function collectPositionUnits() {
+      const units = movable(selectedNodes);
+      return { units, pinnedCount: selectedNodes.length - units.length, blockedCount: 0 };
+    }
+    function warnPinnedGroup() {}
+    function alignVerticalFlow(units, pinnedCount = 0, options) {
+      __messages.push({ text: 'vertical-flow', type: 'stub' });
+    }
     ${REQUIRED.map(extractFunction).join('\n\n')}
-    return { alignNodes, alignHorizontalFlow };
+    return {
+      alignNodes,
+      alignHorizontalFlow: () => {
+        const units = movable(selectedNodes);
+        return alignHorizontalFlow(units, selectedNodes.length - units.length);
+      },
+    };
   `;
   const { code } = transformSync(shim, { loader: 'ts' });
   globalThis.window = { app: { canvas: null, graph: null } };

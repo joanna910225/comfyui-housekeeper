@@ -1,7 +1,9 @@
 import { expect, test } from '@playwright/test'
 import {
+  addGroup,
   alignmentButton,
   byTitle,
+  groupSnapshots,
   installGraph,
   openComfyUI,
   openHousekeeper,
@@ -202,6 +204,59 @@ test.describe('live spacing preview', () => {
     expect(await positions(page)).toEqual(scattered)
   })
 
+  test('group-member spacing refits live and undoes nodes and frame together', async ({ page }) => {
+    await threeNodes(page)
+    await addGroup(page, { title: 'members', x: 40, y: 10, width: 950, height: 800 })
+    await alignmentButton(page, 'Align left edges').click()
+    await page.waitForTimeout(75)
+
+    const alignedNodes = await positions(page)
+    const alignedGroup = (await groupSnapshots(page))[0]
+    const before = await undoDepth(page)
+
+    await dragSpacingSlider(page, LONG_DRAG)
+    const duringGroup = (await groupSnapshots(page))[0]
+    expect(duringGroup.members).toEqual(alignedGroup.members)
+    expect(duringGroup).not.toEqual(alignedGroup)
+    expect(await undoDepth(page)).toBe(before)
+
+    await releaseSpacingSlider(page)
+    expect(await undoDepth(page)).toBe(before + 1)
+
+    await page.keyboard.press(`${MOD}+z`)
+    await page.waitForTimeout(500)
+    expect(await positions(page)).toEqual(alignedNodes)
+    expect((await groupSnapshots(page))[0]).toEqual(alignedGroup)
+  })
+
+  test('unsafe group-member spacing rolls back and warns once the gesture ends', async ({
+    page
+  }) => {
+    await installGraph(page, [
+      { title: 'member-a', x: 100, y: 100, width: 180, height: 100 },
+      { title: 'member-b', x: 330, y: 150, width: 180, height: 100 },
+      { title: 'outsider', x: 100, y: 500, width: 180, height: 100 }
+    ])
+    await addGroup(page, { title: 'members', x: 80, y: 70, width: 450, height: 210 })
+    await selectNodes(page, ['member-a', 'member-b'])
+    await alignmentButton(page, 'Align left edges').click()
+    await page.waitForTimeout(75)
+
+    const alignedNodes = await positions(page)
+    const alignedGroup = (await groupSnapshots(page))[0]
+    await dragSpacingSlider(page, [0.2, 0.6, 1])
+    await releaseSpacingSlider(page)
+
+    expect(await positions(page)).toEqual(alignedNodes)
+    expect((await groupSnapshots(page))[0]).toEqual(alignedGroup)
+    await expect(
+      page.getByText(
+        'Cannot arrange without changing group membership. Move the nodes away from nearby groups and try again.',
+        { exact: true }
+      )
+    ).toBeVisible()
+  })
+
   test('the drag repeats the alignment that was last applied, not a fixed one', async ({ page }) => {
     await threeNodes(page)
     // Align top stacks along the other axis, so a live drag has to widen the horizontal gaps.
@@ -231,7 +286,7 @@ test.describe('live spacing preview', () => {
       ]
     )
 
-    await alignmentButton(page, 'Distribute horizontally').click()
+    await alignmentButton(page, 'Arrange dependency stages left to right').click()
     const held = await dragSpacingSlider(page, [0.2, 0.4, 0.6])
 
     // branch-a and branch-b share a column, so the gap being dragged separates them.
@@ -332,11 +387,54 @@ test.describe('live spacing preview', () => {
 
     const before = await positions(page)
     const undoBefore = await undoDepth(page)
+    const inputCount = await countSliderInput(page)
     const held = await dragSpacingSlider(page, LONG_DRAG)
+
+    expect(await inputCount()).toBeGreaterThanOrEqual(8)
+    await expect(
+      page.getByText('Choose an alignment first, then adjust spacing.', { exact: true })
+    ).toHaveCount(1)
+
     await releaseSpacingSlider(page)
 
     expect(await positions(page)).toEqual(before)
     expect(await undoDepth(page)).toBe(undoBefore)
     expect(await getSpacing(page)).toBe(held)
+  })
+
+  test('keyboard spacing also explains why no layout moves yet', async ({ page }) => {
+    await threeNodes(page)
+
+    const before = await positions(page)
+    const undoBefore = await undoDepth(page)
+    const initialSpacing = await spacingValue(page)
+
+    await spacingSlider(page).focus()
+    await page.keyboard.press('ArrowRight')
+    await page.keyboard.press('ArrowRight')
+
+    expect(await spacingValue(page)).toBeGreaterThan(initialSpacing)
+    expect(await positions(page)).toEqual(before)
+    expect(await undoDepth(page)).toBe(undoBefore)
+    await expect(
+      page.getByText('Choose an alignment first, then adjust spacing.', { exact: true })
+    ).toHaveCount(1)
+  })
+
+  test('an exact spacing value also explains why no layout moves yet', async ({ page }) => {
+    await threeNodes(page)
+
+    const before = await positions(page)
+    const undoBefore = await undoDepth(page)
+
+    await spacingReadout(page).fill('90')
+    await spacingReadout(page).press('Enter')
+
+    expect(await getSpacing(page)).toBe(90)
+    expect(await positions(page)).toEqual(before)
+    expect(await undoDepth(page)).toBe(undoBefore)
+    await expect(
+      page.getByText('Choose an alignment first, then adjust spacing.', { exact: true })
+    ).toHaveCount(1)
   })
 })

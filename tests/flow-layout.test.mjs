@@ -62,7 +62,10 @@ function loadFlow(selectedNodes) {
     function markCanvasDirty() {}
     function getActiveCanvas() { return null; }
     ${present.map(extractFunction).join('\n\n')}
-    return alignHorizontalFlow;
+    return () => {
+      const units = typeof movable === 'function' ? movable(selectedNodes) : selectedNodes;
+      return alignHorizontalFlow(units, selectedNodes.length - units.length);
+    };
   `;
   const { code } = transformSync(shim, { loader: 'ts' });
   globalThis.window = { app: { canvas: null, graph: null } };

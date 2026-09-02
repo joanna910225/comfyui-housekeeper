@@ -22,6 +22,7 @@ import sizeMaxIconUrl from "../icons/size-max.svg?url";
 import sizeMinIconUrl from "../icons/size-min.svg?url";
 import horizontalFlowIconUrl from "../icons/horizontal-flow.svg?url";
 import verticalFlowIconUrl from "../icons/vertical-flow.svg?url";
+import snapToGridIconUrl from "../icons/snap-to-grid.svg?url";
 
 const comfyApp: ComfyApp = app;
 
@@ -92,8 +93,9 @@ function movable(nodes: any[]): any[] {
 /**
  * The alignments whose result depends on nodeGap(): every one that re-stacks the selection
  * along an axis, plus the two flow arrangements. The size operations (width-max, size-min and
- * friends) resize in place and read no gap at all, so changing the spacing cannot change what
- * they produce - which is why only these are worth re-running while the Spacing slider moves.
+ * friends), including the size half of snap-to-grid, read no gap at all, so changing the
+ * spacing cannot change what they produce - which is why only these are worth re-running
+ * while the Spacing slider moves.
  */
 const SPACING_ALIGNMENTS = new Set([
     'left',
@@ -105,6 +107,8 @@ const SPACING_ALIGNMENTS = new Set([
     'horizontal-flow',
     'vertical-flow'
 ]);
+
+const POSITION_ACTIONS = new Set([...SPACING_ALIGNMENTS, 'snap-to-grid']);
 
 /**
  * How a layout run should behave beyond the geometry, which is the same either way.
@@ -118,7 +122,11 @@ const SPACING_ALIGNMENTS = new Set([
  * Arrange popover. The gap is not a parameter here because every layout site already reads it
  * from nodeGap(), the single source of truth the setting and the panel control both write.
  */
-type LayoutOptions = { captureUndo?: boolean; announce?: boolean };
+type LayoutOptions = {
+    captureUndo?: boolean;
+    announce?: boolean;
+    onMembershipFailure?: () => void;
+};
 
 // --- Keyboard shortcuts ------------------------------------------------------------------
 //
@@ -186,13 +194,13 @@ const SHORTCUTS: ShortcutSpec[] = [
     {
         id: 'Housekeeper.DistributeHorizontally',
         action: 'horizontal-flow',
-        label: 'Distribute horizontally',
+        label: 'Arrange dependency stages left to right',
         combo: { key: 'ArrowRight', ctrl: true, alt: true }
     },
     {
         id: 'Housekeeper.DistributeVertically',
         action: 'vertical-flow',
-        label: 'Distribute vertically',
+        label: 'Arrange dependency stages top to bottom',
         combo: { key: 'ArrowDown', ctrl: true, alt: true }
     }
 ];
@@ -529,6 +537,463 @@ function initializeAlignmentPanel() {
 
     function bodyHeight(node: any): number {
         return node?.size?.[1] !== undefined ? node.size[1] : Math.max(outerHeight(node) - 30, 0);
+    }
+
+    // Position layouts see groups as node-shaped atomic units. The existing layout and
+    // preview code can therefore stay unchanged: assigning a proxy position translates its
+    // real group frames and member nodes by the same delta.
+    type PositionTarget = { target: any; isNode: boolean };
+    type GroupContents = { targets: Set<any>; nodes: Set<any> };
+    type GroupMembershipGuard = { group: any; nodes: Set<any> };
+    type PositionUnitCollection = {
+        units: any[];
+        pinnedCount: number;
+        blockedCount: number;
+        membershipGuards: GroupMembershipGuard[];
+    };
+    const positionUnitTargets = new WeakMap<any, PositionTarget[]>();
+
+    function values(value: any): any[] {
+        if (!value) return [];
+        if (Array.isArray(value)) return value;
+        if (value instanceof Set || value instanceof Map) return [...value.values()];
+        return typeof value === 'object' ? Object.values(value) : [];
+    }
+
+    function readGroupContents(
+        group: any,
+        groupSet: Set<any>,
+        contents: Map<any, GroupContents>,
+        visiting = new Set<any>(),
+        strict = false
+    ): GroupContents {
+        const cached = contents.get(group);
+        if (cached) return cached;
+        if (visiting.has(group)) return { targets: new Set(), nodes: new Set() };
+        visiting.add(group);
+
+        let recomputed: any;
+        try {
+            if (strict && typeof group?.recomputeInsideNodes !== 'function') {
+                throw new Error('group membership cannot be recomputed');
+            }
+            recomputed = group?.recomputeInsideNodes?.();
+        } catch (error) {
+            if (strict) throw error;
+            // A stale/legacy group can still expose its last known members below.
+        }
+
+        const targets = new Set<any>();
+        const nodes = new Set<any>();
+        const members = [
+            ...values(recomputed),
+            ...values(group?.nodes ?? group?._nodes),
+            ...values(group?.children ?? group?._children)
+        ];
+
+        for (const member of members) {
+            if (!member || member === group) continue;
+            targets.add(member);
+            const isGroup = groupSet.has(member) || typeof member.recomputeInsideNodes === 'function';
+            if (isGroup) {
+                const nested = readGroupContents(member, groupSet, contents, visiting, strict);
+                nested.targets.forEach(target => targets.add(target));
+                nested.nodes.forEach(node => nodes.add(node));
+            } else {
+                nodes.add(member);
+            }
+        }
+
+        visiting.delete(group);
+        const result = { targets, nodes };
+        contents.set(group, result);
+        return result;
+    }
+
+    function collectPositionUnits(): PositionUnitCollection {
+        const graph: any = getActiveCanvas()?.graph ?? (window as any).app?.graph;
+        const graphGroups = values(graph?.groups ?? graph?._groups);
+        const groups = [...new Set([...graphGroups, ...selectedGroups].filter(Boolean))];
+        const groupSet = new Set(groups);
+        const selectedNodeSet = new Set(selectedNodes);
+        const selectedGroupSet = new Set(selectedGroups);
+        const contents = new Map<any, GroupContents>();
+
+        type Component = { targets: Set<any>; nodes: Set<any>; groups: Set<any> };
+        const components: Component[] = [];
+        const overlaps = (left: Set<any>, right: Set<any>) => {
+            for (const value of left) if (right.has(value)) return true;
+            return false;
+        };
+
+        for (const group of groups) {
+            const members = readGroupContents(group, groupSet, contents);
+            const containsSelectedNode = [...members.nodes].some(node => selectedNodeSet.has(node));
+            if (!selectedGroupSet.has(group) && !(isPinned(group) && containsSelectedNode)) continue;
+
+            const component: Component = {
+                targets: new Set([group, ...members.targets]),
+                nodes: new Set(members.nodes),
+                groups: new Set([group])
+            };
+
+            // Components are kept disjoint. Intersecting the real-target sets also merges an
+            // empty nested group with its parent, not only groups that share a node.
+            for (let index = components.length - 1; index >= 0; index--) {
+                const existing = components[index];
+                if (!overlaps(component.targets, existing.targets)) continue;
+                existing.targets.forEach(target => component.targets.add(target));
+                existing.nodes.forEach(node => component.nodes.add(node));
+                existing.groups.forEach(candidate => component.groups.add(candidate));
+                components.splice(index, 1);
+            }
+            components.push(component);
+        }
+
+        // An explicitly selected or pinned affected group pulls in every graph group connected
+        // through a real target.
+        // Repeat because an unselected bridge group can join two otherwise disjoint seeds.
+        let expanded: boolean;
+        do {
+            expanded = false;
+            for (const group of groups) {
+                const members = readGroupContents(group, groupSet, contents);
+                const groupTargets = new Set([group, ...members.targets]);
+                const matches = components.filter(component =>
+                    overlaps(component.targets, groupTargets) || overlaps(component.nodes, members.nodes)
+                );
+                if (!matches.length) continue;
+
+                const [component, ...bridged] = matches;
+                if (!component.groups.has(group)) {
+                    groupTargets.forEach(target => component.targets.add(target));
+                    members.nodes.forEach(node => component.nodes.add(node));
+                    component.groups.add(group);
+                    expanded = true;
+                }
+
+                for (const existing of bridged) {
+                    existing.targets.forEach(target => component.targets.add(target));
+                    existing.nodes.forEach(node => component.nodes.add(node));
+                    existing.groups.forEach(candidate => component.groups.add(candidate));
+                    components.splice(components.indexOf(existing), 1);
+                    expanded = true;
+                }
+            }
+        } while (expanded);
+
+        const atomicGroups = new Set<any>();
+        components.forEach(component => component.groups.forEach(group => atomicGroups.add(group)));
+        const membershipGuards = groups
+            .filter(group => !atomicGroups.has(group))
+            .map(group => ({
+                group,
+                nodes: new Set(readGroupContents(group, groupSet, contents).nodes)
+            }))
+            .filter(guard => [...guard.nodes].some(node => selectedNodeSet.has(node)));
+
+        const units: any[] = [];
+        const groupedNodes = new Set<any>();
+        const blockedTargets = new Set<any>();
+
+        function targetRect(target: any, isNode: boolean) {
+            const x = target?.pos?.[0] ?? target?.x ?? 0;
+            if (isNode) {
+                const y = (target?.pos?.[1] ?? target?.y ?? 0) - NODE_TITLE_HEIGHT;
+                return { x, y, width: nodeWidth(target), height: outerHeight(target) };
+            }
+            const y = target?.pos?.[1] ?? target?.y ?? 0;
+            return {
+                x,
+                y,
+                width: target?.size?.[0] ?? target?.width ?? 150,
+                height: target?.size?.[1] ?? target?.height ?? 100
+            };
+        }
+
+        function makeUnit(componentTargets: Set<any>, memberNodes: Set<any>, geometryTargets = componentTargets) {
+            const targets: PositionTarget[] = [...componentTargets].map(target => ({
+                target,
+                isNode: !groupSet.has(target) && typeof target?.recomputeInsideNodes !== 'function'
+            }));
+            const bounds = () => {
+                const rects = [...geometryTargets].map(target => targetRect(
+                    target,
+                    !groupSet.has(target) && typeof target?.recomputeInsideNodes !== 'function'
+                ));
+                const left = Math.min(...rects.map(rect => rect.x));
+                const top = Math.min(...rects.map(rect => rect.y));
+                const right = Math.max(...rects.map(rect => rect.x + rect.width));
+                const bottom = Math.max(...rects.map(rect => rect.y + rect.height));
+                return { left, top, width: right - left, height: bottom - top };
+            };
+
+            const inputs = [...memberNodes].flatMap(node => Array.isArray(node?.inputs) ? node.inputs : []);
+            const outputs = [...memberNodes].flatMap(node => Array.isArray(node?.outputs) ? node.outputs : []);
+            const unit: any = {
+                id: `__housekeeper_unit_${units.length}`,
+                inputs,
+                outputs,
+                x: 0,
+                y: 0
+            };
+
+            Object.defineProperties(unit, {
+                pos: {
+                    enumerable: true,
+                    get() {
+                        const current = bounds();
+                        return [current.left, current.top + NODE_TITLE_HEIGHT];
+                    },
+                    set(next: ArrayLike<number>) {
+                        const current = bounds();
+                        const dx = Number(next[0]) - current.left;
+                        const dy = Number(next[1]) - (current.top + NODE_TITLE_HEIGHT);
+                        for (const entry of targets) {
+                            const currentX = entry.target?.pos?.[0] ?? entry.target?.x ?? 0;
+                            const currentY = entry.target?.pos?.[1] ?? entry.target?.y ?? 0;
+                            entry.target.pos = [currentX + dx, currentY + dy];
+                            if (entry.isNode) {
+                                if (typeof entry.target.x === 'number') entry.target.x = currentX + dx;
+                                if (typeof entry.target.y === 'number') entry.target.y = currentY + dy;
+                            }
+                        }
+                        unit.x = Number(next[0]);
+                        unit.y = Number(next[1]);
+                    }
+                },
+                width: { enumerable: true, get: () => bounds().width },
+                height: { enumerable: true, get: () => bounds().height }
+            });
+            const initial = unit.pos;
+            unit.x = initial[0];
+            unit.y = initial[1];
+            positionUnitTargets.set(unit, targets);
+            units.push(unit);
+        }
+
+        for (const component of components) {
+            component.nodes.forEach(node => groupedNodes.add(node));
+            const pinned = [...component.targets].filter(isPinned);
+            if (pinned.length) {
+                pinned.forEach(target => blockedTargets.add(target));
+                continue;
+            }
+            // A group unit's geometry is its affected frame (or the union of merged affected
+            // frames), while every nested frame/member remains a translation target.
+            makeUnit(component.targets, component.nodes, component.groups);
+        }
+
+        let pinnedCount = 0;
+        for (const node of selectedNodes) {
+            if (groupedNodes.has(node)) continue;
+            if (isPinned(node)) {
+                pinnedCount++;
+                continue;
+            }
+            makeUnit(new Set([node]), new Set([node]));
+        }
+
+        return { units, pinnedCount, blockedCount: blockedTargets.size, membershipGuards };
+    }
+
+    type PositionRestore = PositionTarget & { x: number; y: number };
+    type GroupRestore = { group: any; x: number; y: number; width: number; height: number };
+
+    function snapshotPositionTargets(units: any[]): PositionRestore[] {
+        const targets = new Map<any, PositionTarget>();
+        units.forEach(unit => {
+            (positionUnitTargets.get(unit) ?? [{ target: unit, isNode: true }])
+                .forEach(entry => targets.set(entry.target, entry));
+        });
+        return [...targets.values()].map(entry => ({
+            ...entry,
+            x: Number(entry.target?.pos?.[0] ?? entry.target?.x ?? 0),
+            y: Number(entry.target?.pos?.[1] ?? entry.target?.y ?? 0)
+        }));
+    }
+
+    function snapshotGroupFrames(guards: GroupMembershipGuard[]): GroupRestore[] {
+        return guards.map(({ group }) => ({
+            group,
+            x: Number(group?.pos?.[0] ?? group?.x ?? 0),
+            y: Number(group?.pos?.[1] ?? group?.y ?? 0),
+            width: Number(group?.size?.[0] ?? group?.width ?? 0),
+            height: Number(group?.size?.[1] ?? group?.height ?? 0)
+        }));
+    }
+
+    function restorePositionTargets(restore: PositionRestore[]) {
+        restore.forEach(entry => {
+            entry.target.pos = [entry.x, entry.y];
+            if (entry.isNode) {
+                if (typeof entry.target.x === 'number') entry.target.x = entry.x;
+                if (typeof entry.target.y === 'number') entry.target.y = entry.y;
+            }
+        });
+    }
+
+    function restoreGroupFrames(restore: GroupRestore[]) {
+        restore.forEach(({ group, x, y, width, height }) => {
+            group.pos = [x, y];
+            group.size = [width, height];
+        });
+    }
+
+    function sameMembers(left: Set<any>, right: Set<any>) {
+        return left.size === right.size && [...left].every(node => right.has(node));
+    }
+
+    function refreshNodeBounds() {
+        const canvas = getActiveCanvas();
+        const graph: any = canvas?.graph ?? (window as any).app?.graph;
+        values(graph?.nodes ?? graph?._nodes).forEach(node => {
+            try {
+                node?.updateArea?.(canvas?.ctx);
+            } catch {
+                // Legacy nodes without a usable updateArea() keep their existing bounds.
+            }
+        });
+    }
+
+    function fitMemberGroups(guards: GroupMembershipGuard[]): boolean {
+        try {
+            // LiteGraph refreshes node bounds while drawing. Layout runs synchronously before that
+            // frame, so refresh them now before resizeTo() and geometric membership checks.
+            refreshNodeBounds();
+            for (const { group, nodes } of guards) {
+                if (typeof group?.resizeTo !== 'function') return false;
+                group.resizeTo([...nodes]);
+            }
+
+            const graph: any = getActiveCanvas()?.graph ?? (window as any).app?.graph;
+            const groups = [...new Set([
+                ...values(graph?.groups ?? graph?._groups),
+                ...guards.map(guard => guard.group)
+            ])];
+            const groupSet = new Set(groups);
+            const contents = new Map<any, GroupContents>();
+            return guards.every(guard =>
+                sameMembers(
+                    guard.nodes,
+                    readGroupContents(guard.group, groupSet, contents, new Set(), true).nodes
+                )
+            );
+        } catch (error) {
+            console.error('[housekeeper] group frame fit failed:', error);
+            return false;
+        }
+    }
+
+    function refreshGroupMembership(guards: GroupMembershipGuard[]) {
+        refreshNodeBounds();
+        guards.forEach(({ group }) => {
+            try {
+                group?.recomputeInsideNodes?.();
+            } catch {
+                // Restoring the geometry is enough for older groups without a working cache refresh.
+            }
+        });
+    }
+
+    function snapGridSize(): number | null {
+        const graph: any = getActiveCanvas()?.graph ?? (window as any).app?.graph;
+        const size = graph?.getSnapToGridSize?.();
+        return typeof size === 'number' && Number.isFinite(size) && size > 0 ? size : null;
+    }
+
+    function snappedPositionForUnit(unit: any, gridSize: number): [number, number] {
+        const current = unit.pos;
+        const groupFrames = (positionUnitTargets.get(unit) ?? []).filter(entry => !entry.isNode);
+        const anchorX = groupFrames.length
+            ? Math.min(...groupFrames.map(entry => entry.target?.pos?.[0] ?? entry.target?.x ?? 0))
+            : Number(current[0]);
+        const anchorY = groupFrames.length
+            ? Math.min(...groupFrames.map(entry => entry.target?.pos?.[1] ?? entry.target?.y ?? 0))
+            : Number(current[1]);
+        const snappedX = gridSize * Math.round(anchorX / gridSize);
+        const snappedY = gridSize * Math.round(anchorY / gridSize);
+        return [Number(current[0]) + snappedX - anchorX, Number(current[1]) + snappedY - anchorY];
+    }
+
+    function writeSnappedPositionForUnit(unit: any, gridSize: number) {
+        const current = unit.pos;
+        const next = snappedPositionForUnit(unit, gridSize);
+        const dx = next[0] - Number(current[0]);
+        const dy = next[1] - Number(current[1]);
+        const targets = positionUnitTargets.get(unit) ?? [{ target: unit, isNode: true }];
+        targets.forEach(entry => {
+            const currentX = entry.target?.pos?.[0] ?? entry.target?.x ?? 0;
+            const currentY = entry.target?.pos?.[1] ?? entry.target?.y ?? 0;
+            entry.target.pos = [currentX + dx, currentY + dy];
+        });
+    }
+
+    function snapSizeTargetForUnit(unit: any): any | null {
+        const targets = positionUnitTargets.get(unit) ?? [{ target: unit, isNode: true }];
+        return targets.length === 1 && targets[0].isNode ? targets[0].target : null;
+    }
+
+    function snappedSizeForNode(
+        node: any,
+        gridSize: number,
+        rendererMinWidth: number | null
+    ): [number, number] {
+        const currentWidth = nodeWidth(node);
+        const currentHeight = bodyHeight(node);
+        let minWidth = rendererMinWidth ?? 0;
+        let minHeight = 0;
+        let measuredWidth = false;
+        let measuredHeight = false;
+        const computeSizeMethod = originalComputeSizeMethods.get(node) || node?.computeSize;
+        try {
+            const minimum = computeSizeMethod?.call(node);
+            if (minimum?.length >= 2) {
+                if (Number.isFinite(Number(minimum[0]))) {
+                    minWidth = Math.max(minWidth, Number(minimum[0]));
+                    measuredWidth = true;
+                }
+                if (Number.isFinite(Number(minimum[1]))) {
+                    minHeight = Math.max(minHeight, Number(minimum[1]));
+                    measuredHeight = true;
+                }
+            }
+        } catch {
+            // Keep the current size as the only reliable input when a custom node cannot measure itself.
+        }
+        if (!measuredWidth) minWidth = Math.max(minWidth, currentWidth);
+        if (!measuredHeight) minHeight = currentHeight;
+
+        const snap = (current: number, minimum: number) => gridSize * Math.max(
+            Math.round(current / gridSize),
+            Math.ceil(minimum / gridSize)
+        );
+        return [
+            snap(currentWidth, minWidth),
+            snap(currentHeight, minHeight)
+        ];
+    }
+
+    function writeNodeSize(node: any, width: number, height: number) {
+        if (typeof node?.setSize === 'function') node.setSize([width, height]);
+        else if (node?.size) node.size = [width, height];
+    }
+
+    function writeSnappedSizeForNode(
+        node: any,
+        gridSize: number,
+        rendererMinWidth: number | null
+    ) {
+        if (!node?.size) return;
+        const [width, height] = snappedSizeForNode(node, gridSize, rendererMinWidth);
+        writeNodeSize(node, width, height);
+    }
+
+    function warnPinnedGroup(blockedCount: number) {
+        showMessage(
+            `Cannot move grouped selection — ${blockedCount} pinned group or member${blockedCount === 1 ? '' : 's'}`,
+            'warning'
+        );
     }
 
     // --- Renderer width floor (#68) -------------------------------------------------------
@@ -1007,7 +1472,8 @@ function initializeAlignmentPanel() {
         { type: 'right', icon: alignRightIconUrl, label: 'Align right edges', group: 'basic' },
         { type: 'top', icon: alignTopIconUrl, label: 'Align top edges', group: 'basic' },
         { type: 'width-center', icon: widthCenterIconUrl, label: 'Center vertically', group: 'basic' },
-        { type: 'bottom', icon: alignBottomIconUrl, label: 'Align bottom edges', group: 'basic' }
+        { type: 'bottom', icon: alignBottomIconUrl, label: 'Align bottom edges', group: 'basic' },
+        { type: 'snap-to-grid', icon: snapToGridIconUrl, label: 'Snap positions and sizes to grid', group: 'basic' }
     ];
 
     const sizeAlignments: AlignmentButtonConfig[] = [
@@ -1020,8 +1486,8 @@ function initializeAlignmentPanel() {
     ];
 
     const flowAlignments: AlignmentButtonConfig[] = [
-        { type: 'horizontal-flow', icon: horizontalFlowIconUrl, label: 'Distribute horizontally', group: 'flow' },
-        { type: 'vertical-flow', icon: verticalFlowIconUrl, label: 'Distribute vertically', group: 'flow' }
+        { type: 'horizontal-flow', icon: horizontalFlowIconUrl, label: 'Arrange dependency stages left to right', group: 'flow' },
+        { type: 'vertical-flow', icon: verticalFlowIconUrl, label: 'Arrange dependency stages top to bottom', group: 'flow' }
     ];
 
     const harmonyColorSets: string[][] = [
@@ -1393,6 +1859,10 @@ function initializeAlignmentPanel() {
     align-items: center;
     width: 100%;
     --hk-button-unit: calc(100% / 6);
+}
+
+.housekeeper-button-grid-basic {
+    --hk-button-unit: calc(100% / 7);
 }
 
 .hk-button {
@@ -1890,11 +2360,15 @@ function initializeAlignmentPanel() {
         });
         slider.addEventListener('keyup', endSpacingPreview);
         slider.addEventListener('blur', endSpacingPreview);
+        slider.addEventListener('focus', () => { spacingNeedsAlignmentHintShown = false; });
 
         // Whether a pointer is driving the slider, which decides where the keyboard goes when
         // the gesture ends - see endPointerGesture.
         let sliderPointerGesture = false;
-        slider.addEventListener('pointerdown', () => { sliderPointerGesture = true; });
+        slider.addEventListener('pointerdown', () => {
+            sliderPointerGesture = true;
+            spacingNeedsAlignmentHintShown = false;
+        });
 
         // On the window rather than the slider, so a release outside it still lands.
         const endPointerGesture = () => {
@@ -1918,6 +2392,7 @@ function initializeAlignmentPanel() {
             commit(readout.value);
             if (beginSpacingPreview()) endSpacingPreview();
         });
+        readout.addEventListener('focus', () => { spacingNeedsAlignmentHintShown = false; });
 
         // Keep the control honest if the value is changed from ComfyUI's settings dialog
         // while the panel is open.
@@ -2872,12 +3347,18 @@ function initializeAlignmentPanel() {
         // pointing at nothing. See beginSpacingPreview().
         if (spacingPreview) return;
 
-        // Preview must be drawn from the same node list the alignment will act on, or it
-        // promises to move a pinned node that then stays put.
-        const previewNodes = movable(selectedNodes);
+        // Position actions use the same atomic units as apply. Snap-to-grid additionally resizes
+        // standalone node units; the other size actions keep their raw-node selection semantics.
+        const position = POSITION_ACTIONS.has(alignmentType) ? collectPositionUnits() : null;
+        if (position?.blockedCount) return;
+        const previewNodes = position?.units ?? movable(selectedNodes);
 
         // Allow size-min with 1 node, others need at least 2
-        if (previewNodes.length < 1 || (previewNodes.length < 2 && alignmentType !== 'size-min')) return;
+        if (previewNodes.length < 1 || (
+            previewNodes.length < 2
+            && alignmentType !== 'size-min'
+            && alignmentType !== 'snap-to-grid'
+        )) return;
         hidePreview(); // Clear any existing previews
 
         const canvas = (window as any).app?.canvas;
@@ -2972,13 +3453,19 @@ function initializeAlignmentPanel() {
         alignmentType: string;
         /** The canvas the transaction was opened on; it must be the one that closes it. */
         canvas: any;
+        /** The same selection and membership guards are reused for every frame of the gesture. */
+        position: PositionUnitCollection;
         /** Pre-gesture positions, so every frame lays out from where the user started. */
-        restore: Array<{ node: any; x: number; y: number }>;
+        restore: PositionRestore[];
+        groupRestore: GroupRestore[];
+        membershipFailed: boolean;
     };
 
     let spacingPreview: SpacingPreviewSession | null = null;
     let spacingPreviewFrame: number | null = null;
     let spacingPreviewIdleTimer: number | null = null;
+    let spacingNeedsAlignmentHintShown = false;
+    let spacingNeedsAlignmentHint: HTMLElement | null = null;
 
     // A safety net, not a mechanism: every ordinary end of a gesture is covered by the
     // listeners on the control itself. It exists because an unbalanced emitBeforeChange()
@@ -3000,12 +3487,24 @@ function initializeAlignmentPanel() {
      */
     function beginSpacingPreview(): SpacingPreviewSession | null {
         if (spacingPreview) return spacingPreview;
-        if (!lastSpacingAlignment) return null;
+        if (!lastSpacingAlignment) {
+            if (!spacingNeedsAlignmentHintShown) {
+                spacingNeedsAlignmentHintShown = true;
+                if (!spacingNeedsAlignmentHint?.isConnected) {
+                    spacingNeedsAlignmentHint = showMessage(
+                        'Choose an alignment first, then adjust spacing.'
+                    );
+                }
+            }
+            return null;
+        }
 
-        // Pinned nodes are excluded here for the same reason alignNodes excludes them: they
-        // must not move, so they must not be captured for restore either.
-        const nodes = movable(selectedNodes);
-        if (nodes.length < 2) return null;
+        const position = collectPositionUnits();
+        if (position.blockedCount) {
+            warnPinnedGroup(position.blockedCount);
+            return null;
+        }
+        if (position.units.length < 2) return null;
 
         // The hover preview draws dashed rectangles where nodes are ABOUT to go, computed
         // from where they are now. Live spacing moves the nodes themselves, which would leave
@@ -3014,10 +3513,18 @@ function initializeAlignmentPanel() {
         hidePreview();
 
         const canvas = getActiveCanvas();
-        const restore = nodes.map(node => ({ node, x: node.pos[0], y: node.pos[1] }));
+        const restore = snapshotPositionTargets(position.units);
+        const groupRestore = snapshotGroupFrames(position.membershipGuards);
         canvas?.emitBeforeChange?.();
 
-        spacingPreview = { alignmentType: lastSpacingAlignment, canvas, restore };
+        spacingPreview = {
+            alignmentType: lastSpacingAlignment,
+            canvas,
+            position,
+            restore,
+            groupRestore,
+            membershipFailed: false
+        };
         return spacingPreview;
     }
 
@@ -3028,19 +3535,25 @@ function initializeAlignmentPanel() {
      * Restoring first is what makes the gesture a single transform of the graph rather than a
      * pile of alignments applied to each other's output: the result of releasing at 90px is
      * the same layout as clicking the alignment once with the setting already at 90px, no
-     * matter what the value passed through on the way. Only positions are restored - every
-     * alignment that reads the gap moves nodes and none of them resizes.
+     * matter what the value passed through on the way. Node positions and any fitted group
+     * frames are restored because member layouts resize those frames after every run.
      */
     function applySpacingPreview(session: SpacingPreviewSession) {
-        for (const entry of session.restore) {
-            if (!entry.node?.pos) continue;
-            entry.node.pos = [entry.x, entry.y];
-            if (typeof entry.node.x === 'number') entry.node.x = entry.x;
-            if (typeof entry.node.y === 'number') entry.node.y = entry.y;
-        }
+        session.membershipFailed = false;
+        restorePositionTargets(session.restore);
+        restoreGroupFrames(session.groupRestore);
+        refreshGroupMembership(session.position.membershipGuards);
 
         // No undo entry and no toasts: this runs up to sixty times a second.
-        alignNodes(session.alignmentType, { captureUndo: false, announce: false });
+        alignNodes(
+            session.alignmentType,
+            {
+                captureUndo: false,
+                announce: false,
+                onMembershipFailure: () => { session.membershipFailed = true; }
+            },
+            session.position
+        );
     }
 
     /**
@@ -3088,11 +3601,17 @@ function initializeAlignmentPanel() {
             applySpacingPreview(session);
         } finally {
             session.canvas?.emitAfterChange?.();
+            if (session.membershipFailed) {
+                showMessage(
+                    'Cannot arrange without changing group membership. Move the nodes away from nearby groups and try again.',
+                    'warning'
+                );
+            }
         }
     }
 
     function calculatePreviewPositions(alignmentType: string, nodes: any[]) {
-        if (nodes.length < 2) return [];
+        if (nodes.length < 1 || (nodes.length < 2 && alignmentType !== 'snap-to-grid')) return [];
 
         const positions: any[] = [];
 
@@ -3123,6 +3642,21 @@ function initializeAlignmentPanel() {
         }));
 
         switch (alignmentType) {
+            case 'snap-to-grid': {
+                const gridSize = snapGridSize();
+                if (gridSize === null) break;
+                const rendererMinWidth = rendererMinNodeWidth();
+                nodes.forEach((unit: any) => {
+                    const [x, y] = snappedPositionForUnit(unit, gridSize);
+                    const sizeTarget = snapSizeTargetForUnit(unit);
+                    const [width, body] = sizeTarget
+                        ? snappedSizeForNode(sizeTarget, gridSize, rendererMinWidth)
+                        : [nodeWidth(unit), Math.max(outerHeight(unit) - NODE_TITLE_HEIGHT, 0)];
+                    positions.push({ x, y, width, height: body + NODE_TITLE_HEIGHT });
+                });
+                break;
+            }
+
             case 'left':
                 const leftSortedNodes = [...nodes].sort((a: any, b: any) => a.pos[1] - b.pos[1]);
                 let currentY = leftSortedNodes[0].pos[1];
@@ -3704,15 +4238,18 @@ function initializeAlignmentPanel() {
         const allGroups = Array.isArray(groupList) ? groupList : [];
         selectedGroups = allGroups.filter((group: any) => group && group.selected);
         
+        const position = collectPositionUnits();
+        const hasPositionUnits = !position.blockedCount && position.units.length > 1;
+        const hasSnapPositionUnits = !position.blockedCount && position.units.length > 0;
         const hasSelectedNodes = selectedNodes.length > 1;
         const totalSelections = selectedNodes.length + selectedGroups.length;
 
-        if (!hasSelectedNodes) {
+        if (!hasSnapPositionUnits && !hasSelectedNodes) {
             hidePreview();
         }
 
         if (wrapper) {
-            wrapper.classList.toggle('hk-has-selection', hasSelectedNodes);
+            wrapper.classList.toggle('hk-has-selection', hasSnapPositionUnits || hasSelectedNodes);
         }
 
         if (infoPanel) {
@@ -3728,7 +4265,7 @@ function initializeAlignmentPanel() {
                 `;
             } else if (selectedNodes.length === 1 && selectedGroups.length === 0) {
                 infoPanel.innerHTML = `
-                    1 node selected · Size-Min available
+                    1 node selected · Snap and Size-Min available
                     <small>Select more nodes for alignment options</small>
                 `;
             } else {
@@ -3741,6 +4278,11 @@ function initializeAlignmentPanel() {
 
         const buttons = panel?.querySelectorAll<HTMLButtonElement>('.hk-button');
         buttons?.forEach(button => {
+            const alignmentType = button.dataset.alignmentType ?? '';
+            if (POSITION_ACTIONS.has(alignmentType)) {
+                button.disabled = alignmentType === 'snap-to-grid' ? !hasSnapPositionUnits : !hasPositionUnits;
+                return;
+            }
             // Size-min can work with 1 node, others need 2+
             const isSizeMin = button.dataset.alignmentType === 'size-min';
             button.disabled = isSizeMin ? selectedNodes.length < 1 : !hasSelectedNodes;
@@ -3953,18 +4495,53 @@ function initializeAlignmentPanel() {
     }
 
     // Align nodes function with advanced options
-    function alignNodes(alignmentType: string, options?: LayoutOptions) {
+    function alignNodes(
+        alignmentType: string,
+        options?: LayoutOptions,
+        positionSelection?: PositionUnitCollection | any[]
+    ) {
         const captureUndo = options?.captureUndo !== false;
         const announce = options?.announce !== false;
 
-        // Pinned nodes take no part in the layout: they are neither moved nor measured, so a
-        // pinned node cannot supply a reference edge either. Treating them instead as fixed
-        // anchors that the rest arranges around is a larger feature - see #58.
-        const movableNodes = movable(selectedNodes);
-        const pinnedCount = selectedNodes.length - movableNodes.length;
+        let movableNodes: any[];
+        let pinnedCount: number;
+        let membershipGuards: GroupMembershipGuard[] = [];
+        if (POSITION_ACTIONS.has(alignmentType)) {
+            const position = Array.isArray(positionSelection)
+                ? { units: positionSelection, pinnedCount: 0, blockedCount: 0, membershipGuards: [] }
+                : positionSelection ?? collectPositionUnits();
+            membershipGuards = position.membershipGuards ?? [];
+            const newlyPinned = new Set<any>();
+            const newlyPinnedStandaloneUnits = new Set<any>();
+            position.units.forEach(unit => {
+                const targets = positionUnitTargets.get(unit) ?? [];
+                const pinnedTargets = targets.filter(entry => isPinned(entry.target));
+                if (alignmentType === 'snap-to-grid' && !targets.some(entry => !entry.isNode)) {
+                    if (pinnedTargets.length) newlyPinnedStandaloneUnits.add(unit);
+                } else {
+                    pinnedTargets.forEach(entry => newlyPinned.add(entry.target));
+                }
+            });
+            const blockedCount = position.blockedCount + newlyPinned.size;
+            if (blockedCount) {
+                if (announce) warnPinnedGroup(blockedCount);
+                return;
+            }
+            movableNodes = position.units.filter(unit => !newlyPinnedStandaloneUnits.has(unit));
+            pinnedCount = position.pinnedCount + newlyPinnedStandaloneUnits.size;
+        } else {
+            // Size actions retain their raw selected-node semantics. Pinned standalone nodes
+            // are skipped exactly as before; selected groups never become resize targets.
+            movableNodes = movable(selectedNodes);
+            pinnedCount = selectedNodes.length - movableNodes.length;
+        }
 
         // Allow size-min with 1 node, others need at least 2
-        if (movableNodes.length < 1 || (movableNodes.length < 2 && alignmentType !== 'size-min')) {
+        if (movableNodes.length < 1 || (
+            movableNodes.length < 2
+            && alignmentType !== 'size-min'
+            && alignmentType !== 'snap-to-grid'
+        )) {
             if (announce) {
                 showMessage(
                     pinnedCount > 0
@@ -3976,9 +4553,29 @@ function initializeAlignmentPanel() {
             return;
         }
 
+        const gridSize = alignmentType === 'snap-to-grid' ? snapGridSize() : null;
+        if (alignmentType === 'snap-to-grid' && gridSize === null) {
+            if (announce) showMessage('Cannot snap positions — active graph grid size is invalid', 'warning');
+            return;
+        }
+
+        const positionRestore = membershipGuards.length
+            ? snapshotPositionTargets(movableNodes)
+            : [];
+        const groupRestore = membershipGuards.length
+            ? snapshotGroupFrames(membershipGuards)
+            : [];
+        const sizeRestore = alignmentType === 'snap-to-grid' && membershipGuards.length
+            ? movableNodes.flatMap(unit => {
+                const node = snapSizeTargetForUnit(unit);
+                return node?.size ? [{ node, width: nodeWidth(node), height: bodyHeight(node) }] : [];
+            })
+            : [];
+
         // What a live spacing drag repeats (#65). Recorded from the alignments the user
         // actually asked for, never from the preview's own re-runs, and only for the ones a
         // different gap would change.
+        const previousSpacingAlignment = lastSpacingAlignment;
         if (captureUndo && SPACING_ALIGNMENTS.has(alignmentType)) {
             lastSpacingAlignment = alignmentType;
         }
@@ -3992,6 +4589,7 @@ function initializeAlignmentPanel() {
         // transaction around the whole gesture - see beginSpacingPreview().
         const undoCanvas = captureUndo ? getActiveCanvas() : null;
         undoCanvas?.emitBeforeChange?.();
+        let layoutCompleted = false;
 
         try {
             // Calculate all reference positions and sizes at the start to avoid drift on consecutive clicks
@@ -4022,6 +4620,16 @@ function initializeAlignmentPanel() {
             let referenceValue: number;
 
             switch (alignmentType) {
+                case 'snap-to-grid':
+                    movableNodes.forEach((unit: any) => {
+                        writeSnappedPositionForUnit(unit, gridSize!);
+                    });
+                    movableNodes.forEach((unit: any) => {
+                        const node = snapSizeTargetForUnit(unit);
+                        if (node) writeSnappedSizeForNode(node, gridSize!, rendererMinWidth);
+                    });
+                    break;
+
                 case 'left':
                     // Align all nodes to the leftmost edge, but maintain vertical spacing
                     referenceValue = originalLeftPos;
@@ -4347,13 +4955,17 @@ function initializeAlignmentPanel() {
                     break;
 
                 case 'horizontal-flow':
-                    alignHorizontalFlow(options);
+                    alignHorizontalFlow(movableNodes, pinnedCount, options);
+                    layoutCompleted = true;
                     return; // Don't continue to the success message at the bottom
 
                 case 'vertical-flow':
-                    alignVerticalFlow(options);
+                    alignVerticalFlow(movableNodes, pinnedCount, options);
+                    layoutCompleted = true;
                     return; // Don't continue to the success message at the bottom
             }
+
+            layoutCompleted = true;
 
             // Mark canvas as dirty to trigger redraw (only for basic alignment)
             markCanvasDirty();
@@ -4371,7 +4983,32 @@ function initializeAlignmentPanel() {
             console.error('[housekeeper] alignment failed:', alignmentType, error);
             if (announce) showMessage('Error during alignment', 'error');
         } finally {
-            undoCanvas?.emitAfterChange?.();
+            try {
+                if (membershipGuards.length) {
+                    const membershipSafe = layoutCompleted && fitMemberGroups(membershipGuards);
+                    if (!membershipSafe) {
+                        restorePositionTargets(positionRestore);
+                        sizeRestore.forEach(({ node, width, height }) => {
+                            writeNodeSize(node, width, height);
+                        });
+                        restoreGroupFrames(groupRestore);
+                        refreshGroupMembership(membershipGuards);
+                        if (layoutCompleted) {
+                            lastSpacingAlignment = previousSpacingAlignment;
+                            options?.onMembershipFailure?.();
+                            if (announce) {
+                                showMessage(
+                                    'Cannot arrange without changing group membership. Move the nodes away from nearby groups and try again.',
+                                    'warning'
+                                );
+                            }
+                        }
+                    }
+                    markCanvasDirty();
+                }
+            } finally {
+                undoCanvas?.emitAfterChange?.();
+            }
         }
     }
     
@@ -4380,20 +5017,13 @@ function initializeAlignmentPanel() {
     }
 
     // Advanced alignment functions
-    function alignHorizontalFlow(options?: LayoutOptions) {
+    function alignHorizontalFlow(units: any[], pinnedCount = 0, options?: LayoutOptions) {
         const announce = options?.announce !== false;
         try {
-            debugNodeStructure(selectedNodes);
-
-            // Pinned nodes are dropped before the dependency graph is built, not after. A pinned
-            // node left in would be assigned a column it then cannot occupy, and everything
-            // downstream of it would be spaced around a gap that stays empty. See #58 for
-            // arranging around them deliberately.
-            const unpinnedNodes = movable(selectedNodes);
-            const pinnedCount = selectedNodes.length - unpinnedNodes.length;
+            debugNodeStructure(units);
 
             // More lenient validation - check for essential properties
-            const validNodes = unpinnedNodes.filter(node => {
+            const validNodes = units.filter(node => {
                 if (!node) return false;
                 
                 // Check for position (might be different property names)
@@ -4415,7 +5045,7 @@ function initializeAlignmentPanel() {
                     showMessage(
                         pinnedCount > 0
                             ? `Select at least 2 unpinned nodes — ${pinnedCount} pinned node${pinnedCount === 1 ? ' is' : 's are'} skipped`
-                            : `Not enough valid nodes: ${validNodes.length}/${selectedNodes.length} nodes are valid`,
+                            : `Not enough valid nodes: ${validNodes.length}/${units.length} nodes are valid`,
                         'warning'
                     );
                 }
@@ -4569,16 +5199,11 @@ function initializeAlignmentPanel() {
         }
     }
     
-    function alignVerticalFlow(options?: LayoutOptions) {
+    function alignVerticalFlow(units: any[], pinnedCount = 0, options?: LayoutOptions) {
         const announce = options?.announce !== false;
         try {
-            // See alignHorizontalFlow: pinned nodes leave the selection before the dependency
-            // graph is built, so no column is reserved for a node that cannot move into it.
-            const unpinnedNodes = movable(selectedNodes);
-            const pinnedCount = selectedNodes.length - unpinnedNodes.length;
-
             // More lenient validation - check for essential properties
-            const validNodes = unpinnedNodes.filter(node => {
+            const validNodes = units.filter(node => {
                 if (!node) return false;
                 
                 // Check for position (might be different property names)
@@ -4597,7 +5222,7 @@ function initializeAlignmentPanel() {
                     showMessage(
                         pinnedCount > 0
                             ? `Select at least 2 unpinned nodes — ${pinnedCount} pinned node${pinnedCount === 1 ? ' is' : 's are'} skipped`
-                            : `Not enough valid nodes: ${validNodes.length}/${selectedNodes.length} nodes are valid`,
+                            : `Not enough valid nodes: ${validNodes.length}/${units.length} nodes are valid`,
                         'warning'
                     );
                 }
@@ -4754,7 +5379,7 @@ function initializeAlignmentPanel() {
     }
 
     // Show message toast
-    function showMessage(text: string, type: string = 'info') {
+    function showMessage(text: string, type: string = 'info'): HTMLElement {
         const toast = document.createElement('div');
         toast.textContent = text;
         toast.style.cssText = `
@@ -4792,6 +5417,8 @@ function initializeAlignmentPanel() {
                 }
             }, 300);
         }, 3000);
+
+        return toast;
     }
 
     // Setup monitoring

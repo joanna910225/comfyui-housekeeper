@@ -29,7 +29,16 @@ export type NodeSnapshot = {
 
 export type Rect = { x: number; y: number; width: number; height: number }
 
-export type GroupSnapshot = { title: string; color?: string; selected: boolean }
+export type GroupSnapshot = {
+  title: string
+  color?: string
+  selected: boolean
+  x: number
+  y: number
+  width: number
+  height: number
+  members: string[]
+}
 
 // ROOT GRAPH vs DISPLAYED GRAPH.
 //
@@ -79,6 +88,9 @@ const UI_STATE_BASELINE: Record<string, unknown> = {
   // Housekeeper's own node spacing is persisted the same way, so a test that changes it
   // would otherwise silently alter every layout assertion that runs after it.
   'Housekeeper.NodeSpacing': 30,
+  // Snap-to-grid reads ComfyUI's own persisted grid size. Keep later tests from inheriting
+  // the odd size used by the setting-specific coverage.
+  'Comfy.SnapToGrid.GridSize': 20,
   // Housekeeper's shortcuts are ComfyUI commands, so a user rebinding is persisted here too.
   // A test that rebinds one would otherwise leave every later test running someone else's
   // keymap.
@@ -301,6 +313,41 @@ export async function selectNodes(page: Page, titles: string[]) {
   await page.waitForTimeout(650)
 }
 
+export async function selectNodesAndGroup(page: Page, titles: string[], groupTitle: string) {
+  await selectNodes(page, titles)
+  const selection = await page.evaluate(
+    ({ titles, groupTitle }) => {
+      const app = (window as any).app
+      const graph = app.canvas?.graph ?? app.graph
+      const groups = graph.groups ?? graph._groups
+      const group = (Array.isArray(groups) ? groups : []).find(
+        (candidate: any) => candidate.title === groupTitle
+      )
+      if (!group) throw new Error(`Missing group ${groupTitle}`)
+
+      if (typeof app.canvas.select === 'function') app.canvas.select(group)
+      else group.selected = true
+      app.canvas.setDirty?.(true, true)
+
+      return {
+        groupSelected: Boolean(group.selected),
+        nodeTitles: graph.nodes
+          .filter((node: any) => node.is_selected)
+          .map((node: any) => String(node.title))
+          .sort(),
+        expectedTitles: [...titles].sort()
+      }
+    },
+    { titles, groupTitle }
+  )
+
+  expect(selection.groupSelected, `group ${groupTitle} was not selected`).toBe(true)
+  expect(selection.nodeTitles, 'mixed selection changed the selected node set').toEqual(
+    selection.expectedTitles
+  )
+  await page.waitForTimeout(650)
+}
+
 /**
  * Convert nodes in the root graph into a subgraph and open it, the way the frontend does when a
  * user picks "Convert to Subgraph" and then clicks into the resulting node. Defaults to every
@@ -371,11 +418,23 @@ export async function groupSnapshots(page: Page): Promise<GroupSnapshot[]> {
   return page.evaluate(() => {
     const app = (window as any).app
     const graph = app.canvas?.graph ?? app.graph
-    return (graph.groups as any[]).map((group) => ({
-      title: group.title,
-      color: group.color,
-      selected: Boolean(group.selected)
-    }))
+    const groups = graph.groups ?? graph._groups
+    return (Array.isArray(groups) ? groups : []).map((group: any) => {
+      group.recomputeInsideNodes?.()
+      const nodes = group.nodes ?? group._nodes
+      return {
+        title: group.title,
+        color: group.color,
+        selected: Boolean(group.selected),
+        x: Number(group.pos[0]),
+        y: Number(group.pos[1]),
+        width: Number(group.size[0]),
+        height: Number(group.size[1]),
+        members: (Array.isArray(nodes) ? nodes : [])
+          .map((node: any) => String(node.title))
+          .sort()
+      }
+    })
   })
 }
 
