@@ -536,7 +536,9 @@ function initializeAlignmentPanel() {
     }
 
     function bodyHeight(node: any): number {
-        return node?.size?.[1] !== undefined ? node.size[1] : Math.max(outerHeight(node) - 30, 0);
+        return node?.size?.[1] !== undefined
+            ? node.size[1]
+            : Math.max(outerHeight(node) - NODE_TITLE_HEIGHT, 0);
     }
 
     // Position layouts see groups as node-shaped atomic units. The existing layout and
@@ -931,7 +933,9 @@ function initializeAlignmentPanel() {
 
     function snapSizeTargetForUnit(unit: any): any | null {
         const targets = positionUnitTargets.get(unit) ?? [{ target: unit, isNode: true }];
-        return targets.length === 1 && targets[0].isNode ? targets[0].target : null;
+        return targets.length === 1 && targets[0].isNode && !targets[0].target?.flags?.collapsed
+            ? targets[0].target
+            : null;
     }
 
     function snappedSizeForNode(
@@ -941,6 +945,7 @@ function initializeAlignmentPanel() {
     ): [number, number] {
         const currentWidth = nodeWidth(node);
         const currentHeight = bodyHeight(node);
+        const titleHeight = Math.max(outerHeight(node) - currentHeight, 0);
         let minWidth = rendererMinWidth ?? 0;
         let minHeight = 0;
         let measuredWidth = false;
@@ -970,7 +975,7 @@ function initializeAlignmentPanel() {
         );
         return [
             snap(currentWidth, minWidth),
-            snap(currentHeight, minHeight)
+            snap(currentHeight + titleHeight, minHeight + titleHeight) - titleHeight
         ];
     }
 

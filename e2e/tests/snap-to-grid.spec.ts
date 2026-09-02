@@ -21,6 +21,10 @@ import {
 const MOD = process.platform === 'darwin' ? 'Meta' : 'Control'
 const SNAP = 'Snap positions and sizes to grid'
 
+async function nodeTitleHeight(page: Page): Promise<number> {
+  return page.evaluate(() => Number((window as any).LiteGraph?.NODE_TITLE_HEIGHT ?? 30))
+}
+
 async function drawnPositions(page: Page): Promise<Record<string, [number, number]>> {
   return page.evaluate(() => {
     const graph = (window as any).app.canvas?.graph ?? (window as any).app.graph
@@ -92,7 +96,7 @@ test.describe('snap positions and sizes to ComfyUI grid', () => {
     expect([byTitle(after, 'selected').x, byTitle(after, 'selected').y]).toEqual([40, -40])
     expect([byTitle(after, 'selected').bodyWidth, byTitle(after, 'selected').bodyHeight]).toEqual([
       260,
-      140
+      150
     ])
     expect(byTitle(after, 'unselected')).toEqual(byTitle(before, 'unselected'))
     expectRectsClose(preview, (await projectedNodeRects(page)).slice(0, 1))
@@ -109,18 +113,38 @@ test.describe('snap positions and sizes to ComfyUI grid', () => {
     expect(await snapshots(page)).toEqual(before)
   })
 
+  test('snaps a collapsed node position without rewriting its expanded size', async ({ page }) => {
+    await installGraph(page, [
+      { title: 'collapsed', x: 31, y: 31, width: 263, height: 147, collapsed: true }
+    ])
+    const before = byTitle(await snapshots(page), 'collapsed')
+    const button = alignmentButton(page, SNAP)
+
+    await button.hover()
+    await page.waitForTimeout(200)
+    const preview = await previewRects(page)
+    await button.click()
+    await page.waitForTimeout(100)
+
+    const after = byTitle(await snapshots(page), 'collapsed')
+    expect([after.x, after.y]).toEqual([40, 40])
+    expect([after.bodyWidth, after.bodyHeight]).toEqual([before.bodyWidth, before.bodyHeight])
+    expectRectsClose(preview, await projectedNodeRects(page))
+  })
+
   test('reads an odd grid, handles negative coordinates, and ceils minimum size', async ({ page }) => {
     await openComfyUI(page, { 'Comfy.SnapToGrid.GridSize': 21 })
     await openHousekeeper(page)
     await installGraph(page, [
-      { title: 'odd-grid', x: 31, y: -11, width: 190, height: 110, minSize: [201, 117] }
+      { title: 'odd-grid', x: 31, y: -11, width: 190, height: 110, minSize: [201, 118] }
     ])
 
     await alignmentButton(page, SNAP).click()
 
     const node = byTitle(await snapshots(page), 'odd-grid')
     expect([node.x, node.y]).toEqual([21, -21])
-    expect([node.bodyWidth, node.bodyHeight]).toEqual([RENDERER === 'vue' ? 231 : 210, 126])
+    expect([node.bodyWidth, node.bodyHeight]).toEqual([RENDERER === 'vue' ? 231 : 210, 138])
+    expect((node.bodyHeight + (await nodeTitleHeight(page))) % 21).toBe(0)
   })
 
   test('keeps a real node grid-sized after serializing and loading the workflow', async ({ page }) => {
@@ -133,8 +157,9 @@ test.describe('snap positions and sizes to ComfyUI grid', () => {
     await alignmentButton(page, SNAP).click()
     await page.waitForTimeout(300)
     const snapped = byTitle(await snapshots(page), 'reload-me')
+    const titleHeight = await nodeTitleHeight(page)
     expect(snapped.bodyWidth % 21).toBe(0)
-    expect(snapped.bodyHeight % 21).toBe(0)
+    expect((snapped.bodyHeight + titleHeight) % 21).toBe(0)
     const saved = await page.evaluate(() => {
       const node = ((window as any).app.graph.serialize().nodes as any[]).find(
         (candidate) => candidate.title === 'reload-me'
@@ -145,7 +170,7 @@ test.describe('snap positions and sizes to ComfyUI grid', () => {
     if (RENDERER === 'vue') {
       expect((await drawnSizes(page))['reload-me']).toEqual([
         snapped.bodyWidth,
-        snapped.bodyHeight + 30
+        snapped.bodyHeight + titleHeight
       ])
     }
 
@@ -163,7 +188,7 @@ test.describe('snap positions and sizes to ComfyUI grid', () => {
     if (RENDERER === 'vue') {
       expect((await drawnSizes(page))['reload-me']).toEqual([
         loaded.bodyWidth,
-        loaded.bodyHeight + 30
+        loaded.bodyHeight + titleHeight
       ])
     }
   })
@@ -292,7 +317,7 @@ test.describe('snap positions and sizes to ComfyUI grid', () => {
     expect([
       byTitle(afterNodes, 'member-a').bodyWidth,
       byTitle(afterNodes, 'member-a').bodyHeight
-    ]).toEqual([RENDERER === 'vue' ? 240 : 180, 100])
+    ]).toEqual([RENDERER === 'vue' ? 240 : 180, 110])
     expect(byTitle(afterNodes, 'member-b')).toEqual(byTitle(beforeNodes, 'member-b'))
     expect(afterGroup.members).toEqual(beforeGroup.members)
     expect(afterGroup.selected).toBe(false)
@@ -381,7 +406,7 @@ test.describe('snap positions and sizes to ComfyUI grid', () => {
     expect([byTitle(after, 'free').x, byTitle(after, 'free').y]).toEqual([60, 60])
     expect([byTitle(after, 'free').bodyWidth, byTitle(after, 'free').bodyHeight]).toEqual([
       RENDERER === 'vue' ? 240 : 180,
-      100
+      110
     ])
   })
 

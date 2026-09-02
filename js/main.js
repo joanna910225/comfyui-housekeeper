@@ -157,22 +157,22 @@ m0.registerExtension({
 });
 function Gt() {
   var de;
-  let d = null, V = null, $ = null, r2 = null, n2 = null, b0 = !1, o2 = [], f2 = [], y0 = [], b2 = 0, J2 = !1, _2 = null;
+  let d = null, V = null, $ = null, r2 = null, n2 = null, b0 = !1, o2 = [], u2 = [], y0 = [], b2 = 0, J2 = !1, _2 = null;
   const P0 = "housekeeper-recent-colors", x0 = "housekeeper-panel-position";
   let X = null;
   const O2 = 48, V0 = 4, Me = 10, Le = 50, z2 = 9, B0 = ["#353535", "#3f5159", "#593930", "#335533", "#333355", "#335555", "#553355", "#665533", "#000000"];
   let y2 = qe(), A2 = null, G = null, W = null, Q2 = !1;
   const I2 = /* @__PURE__ */ new WeakMap();
   let T2 = null, _0 = !1;
-  const c2 = ((de = window.LiteGraph) == null ? void 0 : de.NODE_TITLE_HEIGHT) ?? 30;
-  function u2() {
+  const a2 = ((de = window.LiteGraph) == null ? void 0 : de.NODE_TITLE_HEIGHT) ?? 30;
+  function d2() {
     var t, e;
     return ((t = window.LGraphCanvas) == null ? void 0 : t.active_canvas) ?? ((e = window.app) == null ? void 0 : e.canvas);
   }
   function R2() {
     var t, e;
     try {
-      const r = u2();
+      const r = d2();
       r != null && r.setDirty ? r.setDirty(!0, !0) : (e = (t = window.app) == null ? void 0 : t.graph) != null && e.setDirtyCanvas ? window.app.graph.setDirtyCanvas(!0, !0) : r != null && r.draw && r.draw(!0, !0);
     } catch {
     }
@@ -181,20 +181,20 @@ function Gt() {
     var e;
     return typeof (t == null ? void 0 : t.width) == "number" ? t.width : ((e = t == null ? void 0 : t.size) == null ? void 0 : e[0]) ?? 150;
   }
-  function d2(t) {
+  function h2(t) {
     var e;
     return typeof (t == null ? void 0 : t.height) == "number" ? t.height : ((e = t == null ? void 0 : t.size) == null ? void 0 : e[1]) ?? 100;
   }
   function e0(t) {
     var e;
-    return ((e = t == null ? void 0 : t.size) == null ? void 0 : e[1]) !== void 0 ? t.size[1] : Math.max(d2(t) - 30, 0);
+    return ((e = t == null ? void 0 : t.size) == null ? void 0 : e[1]) !== void 0 ? t.size[1] : Math.max(h2(t) - a2, 0);
   }
   const S2 = /* @__PURE__ */ new WeakMap();
   function N2(t) {
     return t ? Array.isArray(t) ? t : t instanceof Set || t instanceof Map ? [...t.values()] : typeof t == "object" ? Object.values(t) : [] : [];
   }
   function G2(t, e, r, o = /* @__PURE__ */ new Set(), n = !1) {
-    var C;
+    var w;
     const a = r.get(t);
     if (a) return a;
     if (o.has(t)) return { targets: /* @__PURE__ */ new Set(), nodes: /* @__PURE__ */ new Set() };
@@ -203,40 +203,40 @@ function Gt() {
     try {
       if (n && typeof (t == null ? void 0 : t.recomputeInsideNodes) != "function")
         throw new Error("group membership cannot be recomputed");
-      c = (C = t == null ? void 0 : t.recomputeInsideNodes) == null ? void 0 : C.call(t);
-    } catch (w) {
-      if (n) throw w;
+      c = (w = t == null ? void 0 : t.recomputeInsideNodes) == null ? void 0 : w.call(t);
+    } catch (g) {
+      if (n) throw g;
     }
-    const l = /* @__PURE__ */ new Set(), h = /* @__PURE__ */ new Set(), v = [
+    const l = /* @__PURE__ */ new Set(), h = /* @__PURE__ */ new Set(), k = [
       ...N2(c),
       ...N2((t == null ? void 0 : t.nodes) ?? (t == null ? void 0 : t._nodes)),
       ...N2((t == null ? void 0 : t.children) ?? (t == null ? void 0 : t._children))
     ];
-    for (const w of v) {
-      if (!w || w === t) continue;
-      if (l.add(w), e.has(w) || typeof w.recomputeInsideNodes == "function") {
-        const E = G2(w, e, r, o, n);
+    for (const g of k) {
+      if (!g || g === t) continue;
+      if (l.add(g), e.has(g) || typeof g.recomputeInsideNodes == "function") {
+        const E = G2(g, e, r, o, n);
         E.targets.forEach((H) => l.add(H)), E.nodes.forEach((H) => h.add(H));
       } else
-        h.add(w);
+        h.add(g);
     }
     o.delete(t);
     const m = { targets: l, nodes: h };
     return r.set(t, m), m;
   }
   function t0() {
-    var k, z;
-    const t = ((k = u2()) == null ? void 0 : k.graph) ?? ((z = window.app) == null ? void 0 : z.graph), e = N2((t == null ? void 0 : t.groups) ?? (t == null ? void 0 : t._groups)), r = [...new Set([...e, ...f2].filter(Boolean))], o = new Set(r), n = new Set(o2), a = new Set(f2), c = /* @__PURE__ */ new Map(), l = [], h = (g, P) => {
-      for (const S of g) if (P.has(S)) return !0;
+    var v, z;
+    const t = ((v = d2()) == null ? void 0 : v.graph) ?? ((z = window.app) == null ? void 0 : z.graph), e = N2((t == null ? void 0 : t.groups) ?? (t == null ? void 0 : t._groups)), r = [...new Set([...e, ...u2].filter(Boolean))], o = new Set(r), n = new Set(o2), a = new Set(u2), c = /* @__PURE__ */ new Map(), l = [], h = (C, P) => {
+      for (const S of C) if (P.has(S)) return !0;
       return !1;
     };
-    for (const g of r) {
-      const P = G2(g, o, c), S = [...P.nodes].some((u) => n.has(u));
-      if (!a.has(g) && !(K2(g) && S)) continue;
+    for (const C of r) {
+      const P = G2(C, o, c), S = [...P.nodes].some((u) => n.has(u));
+      if (!a.has(C) && !(K2(C) && S)) continue;
       const I = {
-        targets: /* @__PURE__ */ new Set([g, ...P.targets]),
+        targets: /* @__PURE__ */ new Set([C, ...P.targets]),
         nodes: new Set(P.nodes),
-        groups: /* @__PURE__ */ new Set([g])
+        groups: /* @__PURE__ */ new Set([C])
       };
       for (let u = l.length - 1; u >= 0; u--) {
         const M = l[u];
@@ -244,43 +244,43 @@ function Gt() {
       }
       l.push(I);
     }
-    let v;
+    let k;
     do {
-      v = !1;
-      for (const g of r) {
-        const P = G2(g, o, c), S = /* @__PURE__ */ new Set([g, ...P.targets]), I = l.filter(
+      k = !1;
+      for (const C of r) {
+        const P = G2(C, o, c), S = /* @__PURE__ */ new Set([C, ...P.targets]), I = l.filter(
           (L) => h(L.targets, S) || h(L.nodes, P.nodes)
         );
         if (!I.length) continue;
         const [u, ...M] = I;
-        u.groups.has(g) || (S.forEach((L) => u.targets.add(L)), P.nodes.forEach((L) => u.nodes.add(L)), u.groups.add(g), v = !0);
+        u.groups.has(C) || (S.forEach((L) => u.targets.add(L)), P.nodes.forEach((L) => u.nodes.add(L)), u.groups.add(C), k = !0);
         for (const L of M)
-          L.targets.forEach((A) => u.targets.add(A)), L.nodes.forEach((A) => u.nodes.add(A)), L.groups.forEach((A) => u.groups.add(A)), l.splice(l.indexOf(L), 1), v = !0;
+          L.targets.forEach((A) => u.targets.add(A)), L.nodes.forEach((A) => u.nodes.add(A)), L.groups.forEach((A) => u.groups.add(A)), l.splice(l.indexOf(L), 1), k = !0;
       }
-    } while (v);
+    } while (k);
     const m = /* @__PURE__ */ new Set();
-    l.forEach((g) => g.groups.forEach((P) => m.add(P)));
-    const C = r.filter((g) => !m.has(g)).map((g) => ({
-      group: g,
-      nodes: new Set(G2(g, o, c).nodes)
-    })).filter((g) => [...g.nodes].some((P) => n.has(P))), w = [], b = /* @__PURE__ */ new Set(), E = /* @__PURE__ */ new Set();
-    function H(g, P) {
+    l.forEach((C) => C.groups.forEach((P) => m.add(P)));
+    const w = r.filter((C) => !m.has(C)).map((C) => ({
+      group: C,
+      nodes: new Set(G2(C, o, c).nodes)
+    })).filter((C) => [...C.nodes].some((P) => n.has(P))), g = [], b = /* @__PURE__ */ new Set(), E = /* @__PURE__ */ new Set();
+    function H(C, P) {
       var u, M, L, A, _;
-      const S = ((u = g == null ? void 0 : g.pos) == null ? void 0 : u[0]) ?? (g == null ? void 0 : g.x) ?? 0;
+      const S = ((u = C == null ? void 0 : C.pos) == null ? void 0 : u[0]) ?? (C == null ? void 0 : C.x) ?? 0;
       if (P) {
-        const F = (((M = g == null ? void 0 : g.pos) == null ? void 0 : M[1]) ?? (g == null ? void 0 : g.y) ?? 0) - c2;
-        return { x: S, y: F, width: p2(g), height: d2(g) };
+        const F = (((M = C == null ? void 0 : C.pos) == null ? void 0 : M[1]) ?? (C == null ? void 0 : C.y) ?? 0) - a2;
+        return { x: S, y: F, width: p2(C), height: h2(C) };
       }
-      const I = ((L = g == null ? void 0 : g.pos) == null ? void 0 : L[1]) ?? (g == null ? void 0 : g.y) ?? 0;
+      const I = ((L = C == null ? void 0 : C.pos) == null ? void 0 : L[1]) ?? (C == null ? void 0 : C.y) ?? 0;
       return {
         x: S,
         y: I,
-        width: ((A = g == null ? void 0 : g.size) == null ? void 0 : A[0]) ?? (g == null ? void 0 : g.width) ?? 150,
-        height: ((_ = g == null ? void 0 : g.size) == null ? void 0 : _[1]) ?? (g == null ? void 0 : g.height) ?? 100
+        width: ((A = C == null ? void 0 : C.size) == null ? void 0 : A[0]) ?? (C == null ? void 0 : C.width) ?? 150,
+        height: ((_ = C == null ? void 0 : C.size) == null ? void 0 : _[1]) ?? (C == null ? void 0 : C.height) ?? 100
       };
     }
-    function O(g, P, S = g) {
-      const I = [...g].map((F) => ({
+    function O(C, P, S = C) {
+      const I = [...C].map((F) => ({
         target: F,
         isNode: !o.has(F) && typeof (F == null ? void 0 : F.recomputeInsideNodes) != "function"
       })), u = () => {
@@ -290,7 +290,7 @@ function Gt() {
         )), R = Math.min(...F.map((U) => U.x)), Y = Math.min(...F.map((U) => U.y)), j = Math.max(...F.map((U) => U.x + U.width)), s2 = Math.max(...F.map((U) => U.y + U.height));
         return { left: R, top: Y, width: j - R, height: s2 - Y };
       }, M = [...P].flatMap((F) => Array.isArray(F == null ? void 0 : F.inputs) ? F.inputs : []), L = [...P].flatMap((F) => Array.isArray(F == null ? void 0 : F.outputs) ? F.outputs : []), A = {
-        id: `__housekeeper_unit_${w.length}`,
+        id: `__housekeeper_unit_${g.length}`,
         inputs: M,
         outputs: L,
         x: 0,
@@ -301,13 +301,13 @@ function Gt() {
           enumerable: !0,
           get() {
             const F = u();
-            return [F.left, F.top + c2];
+            return [F.left, F.top + a2];
           },
           set(F) {
-            var s2, U, m2, g2, V2, h2;
-            const R = u(), Y = Number(F[0]) - R.left, j = Number(F[1]) - (R.top + c2);
+            var s2, U, m2, g2, V2, f2;
+            const R = u(), Y = Number(F[0]) - R.left, j = Number(F[1]) - (R.top + a2);
             for (const Q of I) {
-              const k2 = ((U = (s2 = Q.target) == null ? void 0 : s2.pos) == null ? void 0 : U[0]) ?? ((m2 = Q.target) == null ? void 0 : m2.x) ?? 0, B2 = ((V2 = (g2 = Q.target) == null ? void 0 : g2.pos) == null ? void 0 : V2[1]) ?? ((h2 = Q.target) == null ? void 0 : h2.y) ?? 0;
+              const k2 = ((U = (s2 = Q.target) == null ? void 0 : s2.pos) == null ? void 0 : U[0]) ?? ((m2 = Q.target) == null ? void 0 : m2.x) ?? 0, B2 = ((V2 = (g2 = Q.target) == null ? void 0 : g2.pos) == null ? void 0 : V2[1]) ?? ((f2 = Q.target) == null ? void 0 : f2.y) ?? 0;
               Q.target.pos = [k2 + Y, B2 + j], Q.isNode && (typeof Q.target.x == "number" && (Q.target.x = k2 + Y), typeof Q.target.y == "number" && (Q.target.y = B2 + j));
             }
             A.x = Number(F[0]), A.y = Number(F[1]);
@@ -317,27 +317,27 @@ function Gt() {
         height: { enumerable: !0, get: () => u().height }
       });
       const _ = A.pos;
-      A.x = _[0], A.y = _[1], S2.set(A, I), w.push(A);
+      A.x = _[0], A.y = _[1], S2.set(A, I), g.push(A);
     }
-    for (const g of l) {
-      g.nodes.forEach((S) => b.add(S));
-      const P = [...g.targets].filter(K2);
+    for (const C of l) {
+      C.nodes.forEach((S) => b.add(S));
+      const P = [...C.targets].filter(K2);
       if (P.length) {
         P.forEach((S) => E.add(S));
         continue;
       }
-      O(g.targets, g.nodes, g.groups);
+      O(C.targets, C.nodes, C.groups);
     }
     let p = 0;
-    for (const g of o2)
-      if (!b.has(g)) {
-        if (K2(g)) {
+    for (const C of o2)
+      if (!b.has(C)) {
+        if (K2(C)) {
           p++;
           continue;
         }
-        O(/* @__PURE__ */ new Set([g]), /* @__PURE__ */ new Set([g]));
+        O(/* @__PURE__ */ new Set([C]), /* @__PURE__ */ new Set([C]));
       }
-    return { units: w, pinnedCount: p, blockedCount: E.size, membershipGuards: C };
+    return { units: g, pinnedCount: p, blockedCount: E.size, membershipGuards: w };
   }
   function O0(t) {
     const e = /* @__PURE__ */ new Map();
@@ -379,7 +379,7 @@ function Gt() {
   }
   function G0() {
     var r;
-    const t = u2(), e = (t == null ? void 0 : t.graph) ?? ((r = window.app) == null ? void 0 : r.graph);
+    const t = d2(), e = (t == null ? void 0 : t.graph) ?? ((r = window.app) == null ? void 0 : r.graph);
     N2((e == null ? void 0 : e.nodes) ?? (e == null ? void 0 : e._nodes)).forEach((o) => {
       var n;
       try {
@@ -396,7 +396,7 @@ function Gt() {
         if (typeof (l == null ? void 0 : l.resizeTo) != "function") return !1;
         l.resizeTo([...h]);
       }
-      const o = ((e = u2()) == null ? void 0 : e.graph) ?? ((r = window.app) == null ? void 0 : r.graph), n = [.../* @__PURE__ */ new Set([
+      const o = ((e = d2()) == null ? void 0 : e.graph) ?? ((r = window.app) == null ? void 0 : r.graph), n = [.../* @__PURE__ */ new Set([
         ...N2((o == null ? void 0 : o.groups) ?? (o == null ? void 0 : o._groups)),
         ...t.map((l) => l.group)
       ])], a = new Set(n), c = /* @__PURE__ */ new Map();
@@ -421,48 +421,49 @@ function Gt() {
   }
   function W0() {
     var r, o, n;
-    const t = ((r = u2()) == null ? void 0 : r.graph) ?? ((o = window.app) == null ? void 0 : o.graph), e = (n = t == null ? void 0 : t.getSnapToGridSize) == null ? void 0 : n.call(t);
+    const t = ((r = d2()) == null ? void 0 : r.graph) ?? ((o = window.app) == null ? void 0 : o.graph), e = (n = t == null ? void 0 : t.getSnapToGridSize) == null ? void 0 : n.call(t);
     return typeof e == "number" && Number.isFinite(e) && e > 0 ? e : null;
   }
   function D0(t, e) {
     const r = t.pos, o = (S2.get(t) ?? []).filter((h) => !h.isNode), n = o.length ? Math.min(...o.map((h) => {
-      var v, m, C;
-      return ((m = (v = h.target) == null ? void 0 : v.pos) == null ? void 0 : m[0]) ?? ((C = h.target) == null ? void 0 : C.x) ?? 0;
+      var k, m, w;
+      return ((m = (k = h.target) == null ? void 0 : k.pos) == null ? void 0 : m[0]) ?? ((w = h.target) == null ? void 0 : w.x) ?? 0;
     })) : Number(r[0]), a = o.length ? Math.min(...o.map((h) => {
-      var v, m, C;
-      return ((m = (v = h.target) == null ? void 0 : v.pos) == null ? void 0 : m[1]) ?? ((C = h.target) == null ? void 0 : C.y) ?? 0;
+      var k, m, w;
+      return ((m = (k = h.target) == null ? void 0 : k.pos) == null ? void 0 : m[1]) ?? ((w = h.target) == null ? void 0 : w.y) ?? 0;
     })) : Number(r[1]), c = e * Math.round(n / e), l = e * Math.round(a / e);
     return [Number(r[0]) + c - n, Number(r[1]) + l - a];
   }
   function Se(t, e) {
     const r = t.pos, o = D0(t, e), n = o[0] - Number(r[0]), a = o[1] - Number(r[1]);
     (S2.get(t) ?? [{ target: t, isNode: !0 }]).forEach((l) => {
-      var m, C, w, b, E, H;
-      const h = ((C = (m = l.target) == null ? void 0 : m.pos) == null ? void 0 : C[0]) ?? ((w = l.target) == null ? void 0 : w.x) ?? 0, v = ((E = (b = l.target) == null ? void 0 : b.pos) == null ? void 0 : E[1]) ?? ((H = l.target) == null ? void 0 : H.y) ?? 0;
-      l.target.pos = [h + n, v + a];
+      var m, w, g, b, E, H;
+      const h = ((w = (m = l.target) == null ? void 0 : m.pos) == null ? void 0 : w[0]) ?? ((g = l.target) == null ? void 0 : g.x) ?? 0, k = ((E = (b = l.target) == null ? void 0 : b.pos) == null ? void 0 : E[1]) ?? ((H = l.target) == null ? void 0 : H.y) ?? 0;
+      l.target.pos = [h + n, k + a];
     });
   }
   function v0(t) {
+    var r, o;
     const e = S2.get(t) ?? [{ target: t, isNode: !0 }];
-    return e.length === 1 && e[0].isNode ? e[0].target : null;
+    return e.length === 1 && e[0].isNode && !((o = (r = e[0].target) == null ? void 0 : r.flags) != null && o.collapsed) ? e[0].target : null;
   }
   function U0(t, e, r) {
-    const o = p2(t), n = e0(t);
-    let a = r ?? 0, c = 0, l = !1, h = !1;
-    const v = I2.get(t) || (t == null ? void 0 : t.computeSize);
+    const o = p2(t), n = e0(t), a = Math.max(h2(t) - n, 0);
+    let c = r ?? 0, l = 0, h = !1, k = !1;
+    const m = I2.get(t) || (t == null ? void 0 : t.computeSize);
     try {
-      const C = v == null ? void 0 : v.call(t);
-      (C == null ? void 0 : C.length) >= 2 && (Number.isFinite(Number(C[0])) && (a = Math.max(a, Number(C[0])), l = !0), Number.isFinite(Number(C[1])) && (c = Math.max(c, Number(C[1])), h = !0));
+      const g = m == null ? void 0 : m.call(t);
+      (g == null ? void 0 : g.length) >= 2 && (Number.isFinite(Number(g[0])) && (c = Math.max(c, Number(g[0])), h = !0), Number.isFinite(Number(g[1])) && (l = Math.max(l, Number(g[1])), k = !0));
     } catch {
     }
-    l || (a = Math.max(a, o)), h || (c = n);
-    const m = (C, w) => e * Math.max(
-      Math.round(C / e),
-      Math.ceil(w / e)
+    h || (c = Math.max(c, o)), k || (l = n);
+    const w = (g, b) => e * Math.max(
+      Math.round(g / e),
+      Math.ceil(b / e)
     );
     return [
-      m(o, a),
-      m(n, c)
+      w(o, c),
+      w(n + a, l + a) - a
     ];
   }
   function $0(t, e, r) {
@@ -497,7 +498,7 @@ function Gt() {
   function X0(t) {
     const e = /* @__PURE__ */ new Map();
     return t.forEach((r) => {
-      r && e.set(r, [p2(r), d2(r)]);
+      r && e.set(r, [p2(r), h2(r)]);
     }), (r) => e.get(r) ?? [150, 100];
   }
   const i0 = 48, He = 24;
@@ -611,23 +612,23 @@ function Gt() {
     let e = null, r = 0, o = 0, n = 0, a = 0, c = !1;
     const l = (m) => {
       if (e === null || m.pointerId !== e || !d) return;
-      const C = m.clientX - r, w = m.clientY - o;
+      const w = m.clientX - r, g = m.clientY - o;
       if (!c) {
-        if (Math.abs(C) < V0 && Math.abs(w) < V0) return;
+        if (Math.abs(w) < V0 && Math.abs(g) < V0) return;
         c = !0, d.classList.add("hk-dragging");
       }
-      m.preventDefault(), X = r0({ top: a + w, right: n - C }), W2();
+      m.preventDefault(), X = r0({ top: a + g, right: n - w }), W2();
     }, h = (m) => {
       m.stopPropagation(), m.preventDefault();
-    }, v = (m) => {
-      e === null || m.pointerId !== e || (e = null, document.removeEventListener("pointermove", l, !0), document.removeEventListener("pointerup", v, !0), document.removeEventListener("pointercancel", v, !0), c && (c = !1, d == null || d.classList.remove("hk-dragging"), o0(X), t.addEventListener("click", h, { capture: !0, once: !0 }), window.setTimeout(() => t.removeEventListener("click", h, !0), 0)));
+    }, k = (m) => {
+      e === null || m.pointerId !== e || (e = null, document.removeEventListener("pointermove", l, !0), document.removeEventListener("pointerup", k, !0), document.removeEventListener("pointercancel", k, !0), c && (c = !1, d == null || d.classList.remove("hk-dragging"), o0(X), t.addEventListener("click", h, { capture: !0, once: !0 }), window.setTimeout(() => t.removeEventListener("click", h, !0), 0)));
     };
     t.addEventListener("pointerdown", (m) => {
       if (m.button !== 0 || !d) return;
-      const C = m.target, w = C == null ? void 0 : C.closest("button");
-      if (w && w !== t) return;
+      const w = m.target, g = w == null ? void 0 : w.closest("button");
+      if (g && g !== t) return;
       const b = d.getBoundingClientRect(), E = window.innerWidth || document.documentElement.clientWidth || 0;
-      e = m.pointerId, r = m.clientX, o = m.clientY, n = E - b.right, a = b.top, c = !1, document.addEventListener("pointermove", l, !0), document.addEventListener("pointerup", v, !0), document.addEventListener("pointercancel", v, !0);
+      e = m.pointerId, r = m.clientX, o = m.clientY, n = E - b.right, a = b.top, c = !1, document.addEventListener("pointermove", l, !0), document.addEventListener("pointerup", k, !0), document.addEventListener("pointercancel", k, !0);
     });
   }
   function C2() {
@@ -1442,16 +1443,16 @@ function Gt() {
       const m = String(D());
       e.value = m, r.value = m;
     }, a = (m) => {
-      const C = Number(m);
-      if (!Number.isFinite(C)) {
+      const w = Number(m);
+      if (!Number.isFinite(w)) {
         n();
         return;
       }
-      ve(C), n();
+      ve(w), n();
     }, c = () => {
-      var m, C, w;
+      var m, w, g;
       try {
-        (w = (C = (m = window.app) == null ? void 0 : m.extensionManager) == null ? void 0 : C.setting) == null || w.set(be, D());
+        (g = (w = (m = window.app) == null ? void 0 : m.extensionManager) == null ? void 0 : w.setting) == null || g.set(be, D());
       } catch (b) {
         console.error("[housekeeper] could not persist node spacing:", b);
       }
@@ -1459,7 +1460,7 @@ function Gt() {
       a(m), c();
     };
     e.addEventListener("input", () => {
-      pe(), a(e.value), nt(), a2 && at();
+      pe(), a(e.value), nt(), l2 && at();
     }), e.addEventListener("change", () => {
       l(e.value), P2();
     }), e.addEventListener("keyup", P2), e.addEventListener("blur", P2), e.addEventListener("focus", () => {
@@ -1469,10 +1470,10 @@ function Gt() {
     e.addEventListener("pointerdown", () => {
       h = !0, X2 = !1;
     });
-    const v = () => {
+    const k = () => {
       P2(), h && (h = !1, e.blur());
     };
-    return window.addEventListener("pointerup", v), window.addEventListener("pointercancel", v), r.addEventListener("change", () => {
+    return window.addEventListener("pointerup", k), window.addEventListener("pointercancel", k), r.addEventListener("change", () => {
       l(r.value), pe() && P2();
     }), r.addEventListener("focus", () => {
       X2 = !1;
@@ -1512,8 +1513,8 @@ function Gt() {
     const r = e.r / 255, o = e.g / 255, n = e.b / 255, a = Math.max(r, o, n), c = Math.min(r, o, n), l = a - c;
     let h = 0;
     l !== 0 && (a === r ? h = (o - n) / l % 6 : a === o ? h = (n - r) / l + 2 : h = (r - o) / l + 4), h = Math.round(h * 60), h < 0 && (h += 360);
-    const v = (a + c) / 2, m = l === 0 ? 0 : l / (1 - Math.abs(2 * v - 1));
-    return { h, s: m, l: v };
+    const k = (a + c) / 2, m = l === 0 ? 0 : l / (1 - Math.abs(2 * k - 1));
+    return { h, s: m, l: k };
   }
   function ee(t, e, r) {
     const o = (1 - Math.abs(2 * r - 1)) * e, n = o * (1 - Math.abs(t / 60 % 2 - 1)), a = r - o / 2;
@@ -1610,12 +1611,12 @@ function Gt() {
     const n = L0(t);
     if (!n) return t;
     const a = e > r ? -1 : 1;
-    let c = n.l, l = a > 0 ? 0.98 : 0.02, h = t, v = o;
+    let c = n.l, l = a > 0 ? 0.98 : 0.02, h = t, k = o;
     for (let m = 0; m < 12; m++) {
-      const C = c + (l - c) * 0.5, w = ee(n.h, n.s, Math.max(0.02, Math.min(0.98, C))), b = $2(w), E = te(b, r);
-      E >= E0 ? (h = w, v = E, a > 0 ? c = C : l = C) : a > 0 ? l = C : c = C;
+      const w = c + (l - c) * 0.5, g = ee(n.h, n.s, Math.max(0.02, Math.min(0.98, w))), b = $2(g), E = te(b, r);
+      E >= E0 ? (h = g, k = E, a > 0 ? c = w : l = w) : a > 0 ? l = w : c = w;
     }
-    return v >= E0 ? h : t;
+    return k >= E0 ? h : t;
   }
   function se(t, e, r, o = 6) {
     let n = e, a = 0;
@@ -1641,14 +1642,14 @@ function Gt() {
   }
   function ne(t) {
     var n, a;
-    if (![...o2, ...f2].length) {
+    if (![...o2, ...u2].length) {
       J("Select nodes or groups to apply color", "warning");
       return;
     }
-    const r = H2(t), o = u2();
+    const r = H2(t), o = d2();
     (n = o == null ? void 0 : o.emitBeforeChange) == null || n.call(o);
     try {
-      o2.forEach((c) => n0(c, r, J2)), f2.forEach((c) => n0(c, r));
+      o2.forEach((c) => n0(c, r, J2)), u2.forEach((c) => n0(c, r));
     } finally {
       (a = o == null ? void 0 : o.emitAfterChange) == null || a.call(o);
     }
@@ -1673,7 +1674,7 @@ function Gt() {
         bgcolor: r.bgcolor,
         groupcolor: r.groupcolor
       });
-    }), f2.forEach((r) => {
+    }), u2.forEach((r) => {
       q.groups.set(r, {
         color: r.color
       });
@@ -1681,7 +1682,7 @@ function Gt() {
   }
   function A0(t) {
     var r, o, n;
-    o2.forEach((a) => n0(a, t, J2)), f2.forEach((a) => n0(a, t));
+    o2.forEach((a) => n0(a, t, J2)), u2.forEach((a) => n0(a, t));
     const e = ((r = window.LGraphCanvas) == null ? void 0 : r.active_canvas) ?? ((o = window.app) == null ? void 0 : o.canvas);
     (n = e == null ? void 0 : e.setDirty) == null || n.call(e, !0, !0);
   }
@@ -1780,49 +1781,49 @@ function Gt() {
     l.type = "button", l.className = "housekeeper-close", l.setAttribute("aria-label", "Hide Housekeeper panel");
     const h = document.createElement("img");
     h.src = wt, h.alt = "", h.draggable = !1, l.appendChild(h), l.addEventListener("click", () => S0(!1)), r2 = document.createElement("button"), r2.type = "button", r2.className = "housekeeper-reset-position", r2.textContent = "Reset position", r2.title = "Return the panel to its default position", r2.setAttribute("aria-label", "Reset Housekeeper panel position"), r2.addEventListener("click", () => Ie()), o.appendChild(n), o.appendChild(l), n2 = document.createElement("div"), n2.className = "housekeeper-position-row", n2.hidden = !0, n2.appendChild(r2), K0(o);
-    const v = document.createElement("div");
-    v.className = "housekeeper-divider";
+    const k = document.createElement("div");
+    k.className = "housekeeper-divider";
     const m = J0();
     m.classList.add("housekeeper-section-primary"), m.appendChild(U2("Basic Alignment")), m.appendChild(M0(Ge, "basic")), m.appendChild(U2("Size Adjustment")), m.appendChild(M0(Ze, "size")), m.appendChild(U2("Flow Alignment")), m.appendChild(M0(We, "flow")), m.appendChild(U2("Spacing")), m.appendChild($e());
-    const C = J0(), w = document.createElement("div");
-    w.className = "housekeeper-palette-header", w.classList.add("housekeeper-color-section-title");
+    const w = J0(), g = document.createElement("div");
+    g.className = "housekeeper-palette-header", g.classList.add("housekeeper-color-section-title");
     const b = document.createElement("span");
-    b.textContent = "Preset palettes", w.appendChild(b);
+    b.textContent = "Preset palettes", g.appendChild(b);
     const E = document.createElement("label");
     E.className = "hk-title-only";
     const H = document.createElement("input");
     H.type = "checkbox", H.checked = J2, H.addEventListener("change", () => {
       x2(), J2 = H.checked;
-    }), E.appendChild(H), E.append("Title only"), w.appendChild(E), C.appendChild(w);
+    }), E.appendChild(H), E.append("Title only"), g.appendChild(E), w.appendChild(g);
     const O = document.createElement("div");
     O.className = "housekeeper-palette-row";
     const p = document.createElement("button");
     p.type = "button", p.className = "hk-palette-arrow hk-palette-arrow-prev", p.innerHTML = "&#9664;", O.appendChild(p);
-    const k = document.createElement("div");
-    k.className = "housekeeper-color-strip", k.setAttribute("role", "group"), O.appendChild(k);
+    const v = document.createElement("div");
+    v.className = "housekeeper-color-strip", v.setAttribute("role", "group"), O.appendChild(v);
     const z = document.createElement("button");
-    z.type = "button", z.className = "hk-palette-arrow hk-palette-arrow-next", z.innerHTML = "&#9654;", O.appendChild(z), C.appendChild(O);
-    const g = () => {
+    z.type = "button", z.className = "hk-palette-arrow hk-palette-arrow-next", z.innerHTML = "&#9654;", O.appendChild(z), w.appendChild(O);
+    const C = () => {
       const R = D2.length, Y = (b2 - 1 + R) % R, j = (b2 + 1) % R;
       p.setAttribute("aria-label", `Show color set ${Y + 1} of ${R}`), z.setAttribute("aria-label", `Show color set ${j + 1} of ${R}`);
     }, P = (R) => {
       const Y = D2.length;
-      Y && (b2 = (b2 + R + Y) % Y, le(k, b2), g());
+      Y && (b2 = (b2 + R + Y) % Y, le(v, b2), C());
     };
-    p.addEventListener("click", () => P(-1)), z.addEventListener("click", () => P(1)), le(k, b2), g();
+    p.addEventListener("click", () => P(-1)), z.addEventListener("click", () => P(1)), le(v, b2), C();
     const S = document.createElement("div");
     S.className = "housekeeper-custom-inline";
     const I = document.createElement("span");
     I.textContent = "Custom", S.appendChild(I), G = document.createElement("input"), G.type = "color", G.className = "hk-custom-inline-picker", S.appendChild(G), W = document.createElement("input"), W.type = "text", W.placeholder = "#RRGGBB", W.maxLength = 7, W.className = "hk-custom-hex-inline", S.appendChild(W);
     const u = document.createElement("button");
-    u.type = "button", u.className = "hk-custom-apply-inline", u.textContent = "✓", u.setAttribute("aria-label", "Apply custom color"), u.title = "Apply custom color", S.appendChild(u), C.appendChild(S);
+    u.type = "button", u.className = "hk-custom-apply-inline", u.textContent = "✓", u.setAttribute("aria-label", "Apply custom color"), u.title = "Apply custom color", S.appendChild(u), w.appendChild(S);
     const M = U2("Recent colors");
-    M.classList.add("housekeeper-color-section-title"), C.appendChild(M), A2 = document.createElement("div"), A2.className = "housekeeper-color-recent", ie(), C.appendChild(A2);
+    M.classList.add("housekeeper-color-section-title"), w.appendChild(M), A2 = document.createElement("div"), A2.className = "housekeeper-color-recent", ie(), w.appendChild(A2);
     const L = y2[0] || B0[0];
     oe(L);
     const A = (R, Y) => {
       const j = w2(R);
-      if (!j || (Y === "color" && W && (W.value = j.toUpperCase()), Y === "text" && G && (G.value = j), re(j), !o2.length && !f2.length)) return;
+      if (!j || (Y === "color" && W && (W.value = j.toUpperCase()), Y === "text" && G && (G.value = j), re(j), !o2.length && !u2.length)) return;
       const s2 = H2(j);
       a0(s2), A0(s2);
     };
@@ -1832,13 +1833,13 @@ function Gt() {
     const _ = () => z0((W == null ? void 0 : W.value) || (G == null ? void 0 : G.value) || L);
     u.addEventListener("click", () => _()), S.addEventListener("keydown", (R) => {
       (R.metaKey || R.ctrlKey) && R.key.toLowerCase() === "enter" && (R.preventDefault(), _());
-    }), S.addEventListener("dblclick", () => _()), r.appendChild(o), r.appendChild(n2), r.appendChild(v), r.appendChild(m);
+    }), S.addEventListener("dblclick", () => _()), r.appendChild(o), r.appendChild(n2), r.appendChild(k), r.appendChild(m);
     const F = document.createElement("div");
-    F.className = "housekeeper-divider", F.style.marginTop = "10px", r.appendChild(F), r.appendChild(C), V.appendChild(r), d.appendChild($), d.appendChild(V), document.body.appendChild(d), K0($), Re($), X = Oe(), W2(), q0(), C2();
+    F.className = "housekeeper-divider", F.style.marginTop = "10px", r.appendChild(F), r.appendChild(w), V.appendChild(r), d.appendChild($), d.appendChild(V), document.body.appendChild(d), K0($), Re($), X = Oe(), W2(), q0(), C2();
   }
   function ce(t) {
     var a;
-    if (a2) return;
+    if (l2) return;
     const e = F0.has(t) ? t0() : null;
     if (e != null && e.blockedCount) return;
     const r = (e == null ? void 0 : e.units) ?? Ce(o2);
@@ -1858,8 +1859,8 @@ function Gt() {
                     pointer-events: none;
                     transition: all 0.2s ease;
                 `;
-        const v = (c.x + o.ds.offset[0]) * o.ds.scale, m = (c.y + o.ds.offset[1]) * o.ds.scale, C = o.canvas.getBoundingClientRect(), w = C.left + v, b = C.top + m - c2 * o.ds.scale, E = c.width * o.ds.scale, H = c.height * o.ds.scale;
-        h.style.left = w + "px", h.style.top = b + "px", h.style.width = E + "px", h.style.height = H + "px", document.body.appendChild(h), y0.push(h);
+        const k = (c.x + o.ds.offset[0]) * o.ds.scale, m = (c.y + o.ds.offset[1]) * o.ds.scale, w = o.canvas.getBoundingClientRect(), g = w.left + k, b = w.top + m - a2 * o.ds.scale, E = c.width * o.ds.scale, H = c.height * o.ds.scale;
+        h.style.left = g + "px", h.style.top = b + "px", h.style.width = E + "px", h.style.height = H + "px", document.body.appendChild(h), y0.push(h);
       }
     });
   }
@@ -1868,11 +1869,11 @@ function Gt() {
       t.parentNode && t.parentNode.removeChild(t);
     }), y0 = [];
   }
-  let a2 = null, v2 = null, F2 = null, X2 = !1, l0 = null;
+  let l2 = null, v2 = null, F2 = null, X2 = !1, l0 = null;
   const st = 1200;
   function pe() {
     var n;
-    if (a2) return a2;
+    if (l2) return l2;
     if (!_2)
       return X2 || (X2 = !0, l0 != null && l0.isConnected || (l0 = J(
         "Choose an alignment first, then adjust spacing."
@@ -1882,15 +1883,15 @@ function Gt() {
       return Y0(t.blockedCount), null;
     if (t.units.length < 2) return null;
     Y2();
-    const e = u2(), r = O0(t.units), o = I0(t.membershipGuards);
-    return (n = e == null ? void 0 : e.emitBeforeChange) == null || n.call(e), a2 = {
+    const e = d2(), r = O0(t.units), o = I0(t.membershipGuards);
+    return (n = e == null ? void 0 : e.emitBeforeChange) == null || n.call(e), l2 = {
       alignmentType: _2,
       canvas: e,
       position: t,
       restore: r,
       groupRestore: o,
       membershipFailed: !1
-    }, a2;
+    }, l2;
   }
   function he(t) {
     t.membershipFailed = !1, T0(t.restore), R0(t.groupRestore), Z0(t.position.membershipGuards), N0(
@@ -1906,8 +1907,8 @@ function Gt() {
     );
   }
   function nt() {
-    a2 && (v2 !== null && cancelAnimationFrame(v2), v2 = requestAnimationFrame(() => {
-      v2 = null, a2 && he(a2);
+    l2 && (v2 !== null && cancelAnimationFrame(v2), v2 = requestAnimationFrame(() => {
+      v2 = null, l2 && he(l2);
     }));
   }
   function at() {
@@ -1915,9 +1916,9 @@ function Gt() {
   }
   function P2() {
     var e, r;
-    const t = a2;
+    const t = l2;
     if (t) {
-      v2 !== null && (cancelAnimationFrame(v2), v2 = null), F2 !== null && (clearTimeout(F2), F2 = null), a2 = null;
+      v2 !== null && (cancelAnimationFrame(v2), v2 = null), F2 !== null && (clearTimeout(F2), F2 = null), l2 = null;
       try {
         he(t);
       } finally {
@@ -1943,41 +1944,41 @@ function Gt() {
         if (i === null) break;
         const f = k0();
         e.forEach((y) => {
-          const [e2, t2] = D0(y, i), x = v0(y), [T, i2] = x ? U0(x, i, f) : [p2(y), Math.max(d2(y) - c2, 0)];
-          r.push({ x: e2, y: t2, width: T, height: i2 + c2 });
+          const [e2, t2] = D0(y, i), x = v0(y), [T, i2] = x ? U0(x, i, f) : [p2(y), Math.max(h2(y) - a2, 0)];
+          r.push({ x: e2, y: t2, width: T, height: i2 + a2 });
         });
         break;
       }
       case "left":
         const l = [...e].sort((i, f) => i.pos[1] - f.pos[1]);
         let h = l[0].pos[1];
-        const v = /* @__PURE__ */ new Map();
+        const k = /* @__PURE__ */ new Map();
         l.forEach((i) => {
           let f = 100, y = 150;
-          i.size && Array.isArray(i.size) ? (i.size[1] && (f = i.size[1]), i.size[0] && (y = i.size[0])) : (typeof i.height == "number" && (f = i.height), typeof i.width == "number" && (y = i.width), i.properties && (typeof i.properties.height == "number" && (f = i.properties.height), typeof i.properties.width == "number" && (y = i.properties.width))), v.set(i.id, {
+          i.size && Array.isArray(i.size) ? (i.size[1] && (f = i.size[1]), i.size[0] && (y = i.size[0])) : (typeof i.height == "number" && (f = i.height), typeof i.width == "number" && (y = i.width), i.properties && (typeof i.properties.height == "number" && (f = i.properties.height), typeof i.properties.width == "number" && (y = i.properties.width))), k.set(i.id, {
             x: o,
             y: h,
             width: y,
             height: f
           }), h += f + D();
         }), e.forEach((i) => {
-          r.push(v.get(i.id));
+          r.push(k.get(i.id));
         });
         break;
       case "right":
         const m = [...e].sort((i, f) => i.pos[1] - f.pos[1]);
-        let C = m[0].pos[1];
-        const w = /* @__PURE__ */ new Map();
+        let w = m[0].pos[1];
+        const g = /* @__PURE__ */ new Map();
         m.forEach((i) => {
           let f = 100, y = 150;
-          i.size && Array.isArray(i.size) ? (i.size[1] && (f = i.size[1]), i.size[0] && (y = i.size[0])) : (typeof i.height == "number" && (f = i.height), typeof i.width == "number" && (y = i.width), i.properties && (typeof i.properties.height == "number" && (f = i.properties.height), typeof i.properties.width == "number" && (y = i.properties.width))), w.set(i.id, {
+          i.size && Array.isArray(i.size) ? (i.size[1] && (f = i.size[1]), i.size[0] && (y = i.size[0])) : (typeof i.height == "number" && (f = i.height), typeof i.width == "number" && (y = i.width), i.properties && (typeof i.properties.height == "number" && (f = i.properties.height), typeof i.properties.width == "number" && (y = i.properties.width))), g.set(i.id, {
             x: n - y,
-            y: C,
+            y: w,
             width: y,
             height: f
-          }), C += f + D();
+          }), w += f + D();
         }), e.forEach((i) => {
-          r.push(w.get(i.id));
+          r.push(g.get(i.id));
         });
         break;
       case "top":
@@ -1999,24 +2000,24 @@ function Gt() {
       case "bottom":
         const O = [...e].sort((i, f) => i.pos[0] - f.pos[0]);
         let p = o;
-        const k = /* @__PURE__ */ new Map();
+        const v = /* @__PURE__ */ new Map();
         O.forEach((i) => {
           let f = 100, y = 150;
-          i.size && Array.isArray(i.size) ? (i.size[1] && (f = i.size[1]), i.size[0] && (y = i.size[0])) : (typeof i.height == "number" && (f = i.height), typeof i.width == "number" && (y = i.width), i.properties && (typeof i.properties.height == "number" && (f = i.properties.height), typeof i.properties.width == "number" && (y = i.properties.width))), k.set(i.id, {
+          i.size && Array.isArray(i.size) ? (i.size[1] && (f = i.size[1]), i.size[0] && (y = i.size[0])) : (typeof i.height == "number" && (f = i.height), typeof i.width == "number" && (y = i.width), i.properties && (typeof i.properties.height == "number" && (f = i.properties.height), typeof i.properties.width == "number" && (y = i.properties.width))), v.set(i.id, {
             x: p,
             y: c - f,
             width: y,
             height: f
           }), p += y + D();
         }), e.forEach((i) => {
-          r.push(k.get(i.id));
+          r.push(v.get(i.id));
         });
         break;
       case "height-center":
-        const z = Math.min(...e.map((i) => i.pos[0])), g = Math.max(...e.map((i) => {
+        const z = Math.min(...e.map((i) => i.pos[0])), C = Math.max(...e.map((i) => {
           let f = 150;
           return i.size && Array.isArray(i.size) && i.size[0] ? f = i.size[0] : typeof i.width == "number" ? f = i.width : i.properties && typeof i.properties.width == "number" && (f = i.properties.width), i.pos[0] + f;
-        })), P = (z + g) / 2, S = [...e].sort((i, f) => i.pos[1] - f.pos[1]);
+        })), P = (z + C) / 2, S = [...e].sort((i, f) => i.pos[1] - f.pos[1]);
         let I = S[0].pos[1];
         const u = /* @__PURE__ */ new Map();
         S.forEach((i) => {
@@ -2062,12 +2063,12 @@ function Gt() {
             ...i,
             pos: i.pos ? [...i.pos] : [i.x || 0, i.y || 0]
           };
-          return U.set(f, [p2(i), d2(i)]), f;
-        }), g2 = (i) => U.get(i) ?? [150, 100], V2 = p0(m2), h2 = h0(m2, V2), Q = D(), k2 = D(), B2 = 0, E2 = {};
+          return U.set(f, [p2(i), h2(i)]), f;
+        }), g2 = (i) => U.get(i) ?? [150, 100], V2 = p0(m2), f2 = h0(m2, V2), Q = D(), k2 = D(), B2 = 0, E2 = {};
         m2.forEach((i) => {
           var f;
           if (i && i.id != null) {
-            const y = ((f = h2[i.id]) == null ? void 0 : f.level) ?? 0;
+            const y = ((f = f2[i.id]) == null ? void 0 : f.level) ?? 0;
             E2[y] || (E2[y] = []), E2[y].push(i);
           }
         });
@@ -2076,7 +2077,7 @@ function Gt() {
           const y = parseInt(i);
           if (f && f.length > 0) {
             f.sort((x, T) => {
-              const i2 = x && x.id != null && h2[x.id] ? h2[x.id].order : 0, K = T && T.id != null && h2[T.id] ? h2[T.id].order : 0;
+              const i2 = x && x.id != null && f2[x.id] ? f2[x.id].order : 0, K = T && T.id != null && f2[T.id] ? f2[T.id].order : 0;
               return i2 - K;
             });
             let e2 = j;
@@ -2112,8 +2113,8 @@ function Gt() {
             ...i,
             pos: i.pos ? [...i.pos] : [i.x || 0, i.y || 0]
           };
-          return N.set(f, [p2(i), d2(i)]), f;
-        }), B = (i) => N.get(i) ?? [150, 100], l2 = p0(Z), L2 = h0(Z, l2), H0 = D(), dt = D(), mt = 0, j2 = {};
+          return N.set(f, [p2(i), h2(i)]), f;
+        }), B = (i) => N.get(i) ?? [150, 100], c2 = p0(Z), L2 = h0(Z, c2), H0 = D(), dt = D(), mt = 0, j2 = {};
         Z.forEach((i) => {
           var f;
           if (i && i.id != null) {
@@ -2170,20 +2171,20 @@ function Gt() {
             if (x)
               try {
                 const T = x.call(i);
-                T && T.length >= 2 && T[0] !== void 0 && T[1] !== void 0 ? (e2 = T[0], t2 = T[1] + c2) : typeof T == "number" ? (e2 = f, t2 = T + c2) : (e2 = f, t2 = y);
+                T && T.length >= 2 && T[0] !== void 0 && T[1] !== void 0 ? (e2 = T[0], t2 = T[1] + a2) : typeof T == "number" ? (e2 = f, t2 = T + a2) : (e2 = f, t2 = y);
               } catch {
                 e2 = f, t2 = y;
               }
           }
           if (t === "height-max" || t === "size-max")
-            t2 = Math.max(...e.map((x) => d2(x)));
+            t2 = Math.max(...e.map((x) => h2(x)));
           else if (t === "height-min") {
-            const x = Math.min(...e.map((K) => d2(K))), T = I2.get(i) || i.computeSize;
+            const x = Math.min(...e.map((K) => h2(K))), T = I2.get(i) || i.computeSize;
             let i2 = null;
             if (T)
               try {
                 const K = T.call(i);
-                K && K.length >= 2 && K[1] !== void 0 ? i2 = K[1] + c2 : typeof K == "number" && (i2 = K + c2);
+                K && K.length >= 2 && K[1] !== void 0 ? i2 = K[1] + a2 : typeof K == "number" && (i2 = K + a2);
               } catch {
               }
             t2 = i2 && i2 > x ? i2 : x;
@@ -2200,23 +2201,23 @@ function Gt() {
     return r;
   }
   function c0() {
-    var v, m;
-    const t = ((v = u2()) == null ? void 0 : v.graph) ?? ((m = window.app) == null ? void 0 : m.graph);
+    var k, m;
+    const t = ((k = d2()) == null ? void 0 : k.graph) ?? ((m = window.app) == null ? void 0 : m.graph);
     if (!t) return;
-    o2 = Object.values(t.nodes ?? t._nodes ?? {}).filter((C) => C && C.is_selected);
+    o2 = Object.values(t.nodes ?? t._nodes ?? {}).filter((w) => w && w.is_selected);
     const r = t.groups ?? t._groups;
-    f2 = (Array.isArray(r) ? r : []).filter((C) => C && C.selected);
+    u2 = (Array.isArray(r) ? r : []).filter((w) => w && w.selected);
     const n = t0(), a = !n.blockedCount && n.units.length > 1, c = !n.blockedCount && n.units.length > 0, l = o2.length > 1;
-    o2.length + f2.length, !c && !l && Y2(), d && d.classList.toggle("hk-has-selection", c || l);
+    o2.length + u2.length, !c && !l && Y2(), d && d.classList.toggle("hk-has-selection", c || l);
     const h = V == null ? void 0 : V.querySelectorAll(".hk-button");
-    h == null || h.forEach((C) => {
-      const w = C.dataset.alignmentType ?? "";
-      if (F0.has(w)) {
-        C.disabled = w === "snap-to-grid" ? !c : !a;
+    h == null || h.forEach((w) => {
+      const g = w.dataset.alignmentType ?? "";
+      if (F0.has(g)) {
+        w.disabled = g === "snap-to-grid" ? !c : !a;
         return;
       }
-      const b = C.dataset.alignmentType === "size-min";
-      C.disabled = b ? o2.length < 1 : !l;
+      const b = w.dataset.alignmentType === "size-min";
+      w.disabled = b ? o2.length < 1 : !l;
     });
   }
   function p0(t) {
@@ -2231,11 +2232,11 @@ function Gt() {
         });
       }), o.outputs && Array.isArray(o.outputs) && o.outputs.forEach((c, l) => {
         c && c.links && Array.isArray(c.links) && c.links.length > 0 && c.links.forEach((h) => {
-          const v = pt(h, r);
-          v && e[a].outputs.push({
+          const k = pt(h, r);
+          k && e[a].outputs.push({
             index: l,
             link: h,
-            targetNode: v
+            targetNode: k
           });
         });
       });
@@ -2260,46 +2261,46 @@ function Gt() {
     return null;
   }
   function h0(t, e) {
-    const r = {}, o = /* @__PURE__ */ new Set(), n = t.filter((w) => w && w.id != null), a = (w) => String(w.id), c = /* @__PURE__ */ new Map(), l = /* @__PURE__ */ new Map(), h = /* @__PURE__ */ new Map();
-    n.forEach((w) => {
-      c.set(a(w), /* @__PURE__ */ new Set()), l.set(a(w), 0), h.set(a(w), 0);
-    }), n.forEach((w) => {
+    const r = {}, o = /* @__PURE__ */ new Set(), n = t.filter((g) => g && g.id != null), a = (g) => String(g.id), c = /* @__PURE__ */ new Map(), l = /* @__PURE__ */ new Map(), h = /* @__PURE__ */ new Map();
+    n.forEach((g) => {
+      c.set(a(g), /* @__PURE__ */ new Set()), l.set(a(g), 0), h.set(a(g), 0);
+    }), n.forEach((g) => {
       var H;
-      const b = a(w);
-      (((H = e[w.id]) == null ? void 0 : H.outputs) ?? []).forEach((O) => {
+      const b = a(g);
+      (((H = e[g.id]) == null ? void 0 : H.outputs) ?? []).forEach((O) => {
         const p = O == null ? void 0 : O.targetNode;
         if (!p || p.id == null) return;
-        const k = String(p.id);
-        k === b || !c.has(k) || c.get(b).has(k) || (c.get(b).add(k), l.set(k, l.get(k) + 1));
+        const v = String(p.id);
+        v === b || !c.has(v) || c.get(b).has(v) || (c.get(b).add(v), l.set(v, l.get(v) + 1));
       });
     });
-    const v = n.map(a).filter((w) => l.get(w) === 0);
+    const k = n.map(a).filter((g) => l.get(g) === 0);
     for (; o.size < n.length; ) {
-      if (v.length === 0) {
+      if (k.length === 0) {
         let b = null;
         for (const E of n) {
           const H = a(E);
           o.has(H) || (b === null || h.get(H) < h.get(b)) && (b = H);
         }
         if (b === null) break;
-        l.set(b, 0), v.push(b);
+        l.set(b, 0), k.push(b);
       }
-      const w = v.shift();
-      o.has(w) || (o.add(w), c.get(w).forEach((b) => {
-        !o.has(b) && h.get(b) < h.get(w) + 1 && h.set(b, h.get(w) + 1);
+      const g = k.shift();
+      o.has(g) || (o.add(g), c.get(g).forEach((b) => {
+        !o.has(b) && h.get(b) < h.get(g) + 1 && h.set(b, h.get(g) + 1);
         const E = l.get(b) - 1;
-        l.set(b, E), E <= 0 && !o.has(b) && v.push(b);
+        l.set(b, E), E <= 0 && !o.has(b) && k.push(b);
       }));
     }
-    n.forEach((w) => {
-      r[w.id] = { level: h.get(a(w)) ?? 0, order: 0 };
+    n.forEach((g) => {
+      r[g.id] = { level: h.get(a(g)) ?? 0, order: 0 };
     });
-    const m = {}, C = new Map(n.map((w) => [String(w.id), w]));
-    return Object.entries(r).forEach(([w, b]) => {
+    const m = {}, w = new Map(n.map((g) => [String(g.id), g]));
+    return Object.entries(r).forEach(([g, b]) => {
       m[b.level] || (m[b.level] = []);
-      const E = C.get(w);
+      const E = w.get(g);
       E && m[b.level].push(E);
-    }), Object.entries(m).forEach(([w, b]) => {
+    }), Object.entries(m).forEach(([g, b]) => {
       b && b.length > 0 && (b.sort((E, H) => {
         const O = E && E.pos && E.pos[1] ? E.pos[1] : 0, p = H && H.pos && H.pos[1] ? H.pos[1] : 0;
         return O - p;
@@ -2313,19 +2314,19 @@ function Gt() {
     const o = (e == null ? void 0 : e.captureUndo) !== !1, n = (e == null ? void 0 : e.announce) !== !1;
     let a, c, l = [];
     if (F0.has(t)) {
-      const k = Array.isArray(r) ? { units: r, pinnedCount: 0, blockedCount: 0, membershipGuards: [] } : r ?? t0();
-      l = k.membershipGuards ?? [];
-      const z = /* @__PURE__ */ new Set(), g = /* @__PURE__ */ new Set();
-      k.units.forEach((S) => {
+      const v = Array.isArray(r) ? { units: r, pinnedCount: 0, blockedCount: 0, membershipGuards: [] } : r ?? t0();
+      l = v.membershipGuards ?? [];
+      const z = /* @__PURE__ */ new Set(), C = /* @__PURE__ */ new Set();
+      v.units.forEach((S) => {
         const I = S2.get(S) ?? [], u = I.filter((M) => K2(M.target));
-        t === "snap-to-grid" && !I.some((M) => !M.isNode) ? u.length && g.add(S) : u.forEach((M) => z.add(M.target));
+        t === "snap-to-grid" && !I.some((M) => !M.isNode) ? u.length && C.add(S) : u.forEach((M) => z.add(M.target));
       });
-      const P = k.blockedCount + z.size;
+      const P = v.blockedCount + z.size;
       if (P) {
         n && Y0(P);
         return;
       }
-      a = k.units.filter((S) => !g.has(S)), c = k.pinnedCount + g.size;
+      a = v.units.filter((S) => !C.has(S)), c = v.pinnedCount + C.size;
     } else
       a = Ce(o2), c = o2.length - a.length;
     if (a.length < 1 || a.length < 2 && t !== "size-min" && t !== "snap-to-grid") {
@@ -2340,16 +2341,16 @@ function Gt() {
       n && J("Cannot snap positions — active graph grid size is invalid", "warning");
       return;
     }
-    const v = l.length ? O0(a) : [], m = l.length ? I0(l) : [], C = t === "snap-to-grid" && l.length ? a.flatMap((k) => {
-      const z = v0(k);
+    const k = l.length ? O0(a) : [], m = l.length ? I0(l) : [], w = t === "snap-to-grid" && l.length ? a.flatMap((v) => {
+      const z = v0(v);
       return z != null && z.size ? [{ node: z, width: p2(z), height: e0(z) }] : [];
-    }) : [], w = _2;
+    }) : [], g = _2;
     o && ke.has(t) && (_2 = t);
-    const b = o ? u2() : null;
+    const b = o ? d2() : null;
     (H = b == null ? void 0 : b.emitBeforeChange) == null || H.call(b);
     let E = !1;
     try {
-      const k = Math.min(...a.map((_) => _.pos[0])), z = Math.max(...a.map((_) => _.pos[0] + p2(_))), g = Math.min(...a.map((_) => _.pos[1])), P = Math.max(...a.map((_) => _.pos[1] + d2(_))), S = Math.max(...a.map((_) => p2(_))), I = Math.min(...a.map((_) => p2(_))), u = Math.max(...a.map((_) => e0(_))), M = Math.min(...a.map((_) => e0(_))), L = k0();
+      const v = Math.min(...a.map((_) => _.pos[0])), z = Math.max(...a.map((_) => _.pos[0] + p2(_))), C = Math.min(...a.map((_) => _.pos[1])), P = Math.max(...a.map((_) => _.pos[1] + h2(_))), S = Math.max(...a.map((_) => p2(_))), I = Math.min(...a.map((_) => p2(_))), u = Math.max(...a.map((_) => e0(_))), M = Math.min(...a.map((_) => e0(_))), L = k0();
       let A;
       switch (t) {
         case "snap-to-grid":
@@ -2361,7 +2362,7 @@ function Gt() {
           });
           break;
         case "left":
-          A = k;
+          A = v;
           const _ = [...a].sort((s, N) => s.pos[1] - N.pos[1]);
           let F = _[0].pos[1];
           _.forEach((s, N) => {
@@ -2376,12 +2377,12 @@ function Gt() {
           let Y = R[0].pos[1];
           R.forEach((s, N) => {
             const Z = D();
-            let B = 100, l2 = 150;
-            s.size && Array.isArray(s.size) ? (s.size[1] && (B = s.size[1]), s.size[0] && (l2 = s.size[0])) : (typeof s.height == "number" && (B = s.height), typeof s.width == "number" && (l2 = s.width), s.properties && (typeof s.properties.height == "number" && (B = s.properties.height), typeof s.properties.width == "number" && (l2 = s.properties.width))), s.pos = [A - l2, Y], typeof s.x == "number" && (s.x = s.pos[0]), typeof s.y == "number" && (s.y = s.pos[1]), Y += B + Z;
+            let B = 100, c2 = 150;
+            s.size && Array.isArray(s.size) ? (s.size[1] && (B = s.size[1]), s.size[0] && (c2 = s.size[0])) : (typeof s.height == "number" && (B = s.height), typeof s.width == "number" && (c2 = s.width), s.properties && (typeof s.properties.height == "number" && (B = s.properties.height), typeof s.properties.width == "number" && (c2 = s.properties.width))), s.pos = [A - c2, Y], typeof s.x == "number" && (s.x = s.pos[0]), typeof s.y == "number" && (s.y = s.pos[1]), Y += B + Z;
           });
           break;
         case "top":
-          A = g;
+          A = C;
           const j = [...a].sort((s, N) => s.pos[0] - N.pos[0]);
           let s2 = j[0].pos[0];
           j.forEach((s, N) => {
@@ -2393,12 +2394,12 @@ function Gt() {
         case "bottom":
           A = P;
           const U = [...a].sort((s, N) => s.pos[0] - N.pos[0]);
-          let m2 = k;
+          let m2 = v;
           U.forEach((s, N) => {
             const Z = D();
-            let B = 150, l2 = 100;
-            s.size && Array.isArray(s.size) ? (s.size[0] && (B = s.size[0]), s.size[1] && (l2 = s.size[1])) : (typeof s.width == "number" && (B = s.width), typeof s.height == "number" && (l2 = s.height), s.properties && (typeof s.properties.width == "number" && (B = s.properties.width), typeof s.properties.height == "number" && (l2 = s.properties.height)));
-            const L2 = A - l2, H0 = m2;
+            let B = 150, c2 = 100;
+            s.size && Array.isArray(s.size) ? (s.size[0] && (B = s.size[0]), s.size[1] && (c2 = s.size[1])) : (typeof s.width == "number" && (B = s.width), typeof s.height == "number" && (c2 = s.height), s.properties && (typeof s.properties.width == "number" && (B = s.properties.width), typeof s.properties.height == "number" && (c2 = s.properties.height)));
+            const L2 = A - c2, H0 = m2;
             s.pos = [H0, L2], typeof s.x == "number" && (s.x = s.pos[0]), typeof s.y == "number" && (s.y = s.pos[1]), m2 += B + Z;
           });
           break;
@@ -2406,12 +2407,12 @@ function Gt() {
           const g2 = Math.min(...a.map((s) => s.pos[0])), V2 = Math.max(...a.map((s) => {
             let N = 150;
             return s.size && Array.isArray(s.size) && s.size[0] ? N = s.size[0] : typeof s.width == "number" ? N = s.width : s.properties && typeof s.properties.width == "number" && (N = s.properties.width), s.pos[0] + N;
-          })), h2 = (g2 + V2) / 2, Q = [...a].sort((s, N) => s.pos[1] - N.pos[1]);
+          })), f2 = (g2 + V2) / 2, Q = [...a].sort((s, N) => s.pos[1] - N.pos[1]);
           let k2 = Q[0].pos[1];
           Q.forEach((s) => {
             const N = D();
             let Z = 150, B = 100;
-            s.size && Array.isArray(s.size) ? (s.size[0] && (Z = s.size[0]), s.size[1] && (B = s.size[1])) : (typeof s.width == "number" && (Z = s.width), typeof s.height == "number" && (B = s.height), s.properties && (typeof s.properties.width == "number" && (Z = s.properties.width), typeof s.properties.height == "number" && (B = s.properties.height))), s.pos = [h2 - Z / 2, k2], typeof s.x == "number" && (s.x = s.pos[0]), typeof s.y == "number" && (s.y = s.pos[1]), k2 += B + N;
+            s.size && Array.isArray(s.size) ? (s.size[0] && (Z = s.size[0]), s.size[1] && (B = s.size[1])) : (typeof s.width == "number" && (Z = s.width), typeof s.height == "number" && (B = s.height), s.properties && (typeof s.properties.width == "number" && (Z = s.properties.width), typeof s.properties.height == "number" && (B = s.properties.height))), s.pos = [f2 - Z / 2, k2], typeof s.x == "number" && (s.x = s.pos[0]), typeof s.y == "number" && (s.y = s.pos[1]), k2 += B + N;
           });
           break;
         case "width-center":
@@ -2480,13 +2481,13 @@ function Gt() {
         `${c} pinned node${c === 1 ? "" : "s"} left in place`,
         "info"
       );
-    } catch (k) {
-      console.error("[housekeeper] alignment failed:", t, k), n && J("Error during alignment", "error");
+    } catch (v) {
+      console.error("[housekeeper] alignment failed:", t, v), n && J("Error during alignment", "error");
     } finally {
       try {
-        l.length && (E && Ae(l) || (T0(v), C.forEach(({ node: z, width: g, height: P }) => {
-          $0(z, g, P);
-        }), R0(m), Z0(l), E && (_2 = w, (O = e == null ? void 0 : e.onMembershipFailure) == null || O.call(e), n && J(
+        l.length && (E && Ae(l) || (T0(k), w.forEach(({ node: z, width: C, height: P }) => {
+          $0(z, C, P);
+        }), R0(m), Z0(l), E && (_2 = g, (O = e == null ? void 0 : e.onMembershipFailure) == null || O.call(e), n && J(
           "Cannot arrange without changing group membership. Move the nodes away from nearby groups and try again.",
           "warning"
         ))), R2());
@@ -2502,8 +2503,8 @@ function Gt() {
     try {
       const n = t.filter((p) => {
         if (!p) return !1;
-        const k = p.pos || p.position || typeof p.x == "number" && typeof p.y == "number", z = p.size || p.width || p.height || typeof p.width == "number" && typeof p.height == "number";
-        return !!k && !!z;
+        const v = p.pos || p.position || typeof p.x == "number" && typeof p.y == "number", z = p.size || p.width || p.height || typeof p.width == "number" && typeof p.height == "number";
+        return !!v && !!z;
       });
       if (n.length < 2) {
         o && J(
@@ -2516,37 +2517,37 @@ function Gt() {
       n.forEach((p) => {
         p.pos || (p.position && Array.isArray(p.position) ? p.pos = p.position : typeof p.x == "number" && typeof p.y == "number" ? p.pos = [p.x, p.y] : p.pos = [0, 0]);
       });
-      const v = p0(n), m = h0(n, v), C = X0(n), w = D(), b = D(), E = D(), H = 0, O = {};
+      const k = p0(n), m = h0(n, k), w = X0(n), g = D(), b = D(), E = D(), H = 0, O = {};
       n.forEach((p) => {
-        var k;
+        var v;
         if (p && p.id != null) {
-          const z = ((k = m[p.id]) == null ? void 0 : k.level) ?? 0;
+          const z = ((v = m[p.id]) == null ? void 0 : v.level) ?? 0;
           O[z] || (O[z] = []), O[z].push(p);
         }
-      }), Object.entries(O).forEach(([p, k]) => {
+      }), Object.entries(O).forEach(([p, v]) => {
         const z = parseInt(p);
-        if (k && k.length > 0) {
-          k.sort((u, M) => {
+        if (v && v.length > 0) {
+          v.sort((u, M) => {
             const L = u && u.id != null && m[u.id] ? m[u.id].order : 0, A = M && M.id != null && m[M.id] ? m[M.id].order : 0;
             return L - A;
           });
-          const g = k.reduce((u, M, L) => {
-            const A = C(M)[1];
-            return u + A + (L < k.length - 1 ? E : 0);
-          }, 0), P = Math.max(...k.map(
-            (u) => C(u)[0]
+          const C = v.reduce((u, M, L) => {
+            const A = w(M)[1];
+            return u + A + (L < v.length - 1 ? E : 0);
+          }, 0), P = Math.max(...v.map(
+            (u) => w(u)[0]
           ));
           let S = l;
           if (z > 0)
             for (let u = 0; u < z; u++) {
-              const M = O[u] || [], L = M.length ? Math.max(...M.map((A) => C(A)[0])) : 0;
-              S += L + w + H;
+              const M = O[u] || [], L = M.length ? Math.max(...M.map((A) => w(A)[0])) : 0;
+              S += L + g + H;
             }
           let I = h;
-          k.forEach((u, M) => {
+          v.forEach((u, M) => {
             if (u && u.pos) {
               const L = [u.pos[0], u.pos[1]];
-              u.pos = [S, I], I += C(u)[1] + E, typeof u.x == "number" && (u.x = u.pos[0]), typeof u.y == "number" && (u.y = u.pos[1]);
+              u.pos = [S, I], I += w(u)[1] + E, typeof u.x == "number" && (u.x = u.pos[0]), typeof u.y == "number" && (u.y = u.pos[1]);
             }
           });
         }
@@ -2563,8 +2564,8 @@ function Gt() {
     try {
       const n = t.filter((p) => {
         if (!p) return !1;
-        const k = p.pos || p.position || typeof p.x == "number" && typeof p.y == "number", z = p.size || p.width || p.height || typeof p.width == "number" && typeof p.height == "number";
-        return !!k && !!z;
+        const v = p.pos || p.position || typeof p.x == "number" && typeof p.y == "number", z = p.size || p.width || p.height || typeof p.width == "number" && typeof p.height == "number";
+        return !!v && !!z;
       });
       if (n.length < 2) {
         o && J(
@@ -2577,37 +2578,37 @@ function Gt() {
       n.forEach((p) => {
         p.pos || (p.position && Array.isArray(p.position) ? p.pos = p.position : typeof p.x == "number" && typeof p.y == "number" ? p.pos = [p.x, p.y] : p.pos = [0, 0]);
       });
-      const v = p0(n), m = h0(n, v), C = X0(n), w = D(), b = D(), E = D(), H = 0, O = {};
+      const k = p0(n), m = h0(n, k), w = X0(n), g = D(), b = D(), E = D(), H = 0, O = {};
       n.forEach((p) => {
-        var k;
+        var v;
         if (p && p.id != null) {
-          const z = ((k = m[p.id]) == null ? void 0 : k.level) ?? 0;
+          const z = ((v = m[p.id]) == null ? void 0 : v.level) ?? 0;
           O[z] || (O[z] = []), O[z].push(p);
         }
-      }), Object.entries(O).forEach(([p, k]) => {
+      }), Object.entries(O).forEach(([p, v]) => {
         const z = parseInt(p);
-        if (k && k.length > 0) {
-          k.sort((u, M) => {
+        if (v && v.length > 0) {
+          v.sort((u, M) => {
             const L = u && u.id != null && m[u.id] ? m[u.id].order : 0, A = M && M.id != null && m[M.id] ? m[M.id].order : 0;
             return L - A;
           });
-          const g = k.reduce((u, M, L) => {
-            const A = C(M)[0];
+          const C = v.reduce((u, M, L) => {
+            const A = w(M)[0];
             return u + A + b;
-          }, 0), P = Math.max(...k.map(
-            (u) => C(u)[1]
+          }, 0), P = Math.max(...v.map(
+            (u) => w(u)[1]
           ));
           let S = h;
           if (z > 0)
             for (let u = 0; u < z; u++) {
-              const M = O[u] || [], L = M.length ? Math.max(...M.map((A) => C(A)[1])) : 0;
-              S += L + w + H;
+              const M = O[u] || [], L = M.length ? Math.max(...M.map((A) => w(A)[1])) : 0;
+              S += L + g + H;
             }
           let I = l;
-          k.forEach((u, M) => {
+          v.forEach((u, M) => {
             if (u && u.pos) {
               const L = [u.pos[0], u.pos[1]];
-              u.pos = [I, S], I += C(u)[0] + b, typeof u.x == "number" && (u.x = u.pos[0]), typeof u.y == "number" && (u.y = u.pos[1]);
+              u.pos = [I, S], I += w(u)[0] + b, typeof u.x == "number" && (u.x = u.pos[0]), typeof u.y == "number" && (u.y = u.pos[1]);
             }
           });
         }
