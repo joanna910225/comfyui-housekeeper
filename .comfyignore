@@ -1,0 +1,12 @@
+.github/
+doc/
+e2e/
+src/
+tests/
+.editorconfig
+.gitignore
+.pre-commit-config.yaml
+package.json
+package-lock.json
+tsconfig.json
+vite.config.mts

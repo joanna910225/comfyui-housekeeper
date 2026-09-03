@@ -5,14 +5,14 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "housekeeper"
 version = "0.9.1"
-description = "A tool that organizes workflow nodes into clean, user-friendly layouts"
+description = "A browser-only ComfyUI extension for aligning, arranging, resizing, and coloring workflow nodes"
 authors = [
   {name = "Feifei Rong", email = "feifei.rong2@gmail.com"}
 ]
 readme = "README.md"
-license = {text = "MIT license"}
+license = {file = "LICENSE"}
 requires-python = ">=3.10"
-classifiers = []
+classifiers = ["Operating System :: OS Independent"]
 dependencies = [
 
 ]
@@ -37,10 +37,8 @@ Documentation = "https://github.com/joanna910225/comfyui-housekeeper/wiki"
 
 [tool.comfy]
 PublisherId = "joanna910225"
-DisplayName = "HouseKeeper"
-Icon = ""
-Tags = []
-Repository = "https://github.com/joanna910225/comfyui-housekeeper"
+DisplayName = "Housekeeper"
+Icon = "https://raw.githubusercontent.com/joanna910225/comfyui-housekeeper/main/icons/housekeeper.svg"
 includes = ["js"]
 
 [tool.setuptools]
