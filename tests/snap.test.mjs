@@ -43,6 +43,7 @@ function load({ gridSize, units, rendererMinWidth = null }) {
   const shim = `
     ${spacingActions}
     ${positionActions}
+    const NODE_TITLE_HEIGHT = 30;
     const positionUnitTargets = new WeakMap();
     let selectedNodes = [];
     let lastSpacingAlignment = null;
@@ -52,7 +53,11 @@ function load({ gridSize, units, rendererMinWidth = null }) {
     function isPinned(node) { return !!(node?.pinned ?? node?.flags?.pinned); }
     function movable(nodes) { return nodes.filter(node => !isPinned(node)); }
     function nodeWidth(node) { return node?.size?.[0] ?? 150; }
-    function outerHeight(node) { return node?.size?.[1] ?? 100; }
+    function outerHeight(node) {
+      return node?.flags?.collapsed
+        ? NODE_TITLE_HEIGHT
+        : (node?.size?.[1] ?? 100) + NODE_TITLE_HEIGHT;
+    }
     function bodyHeight(node) { return node?.size?.[1] ?? 100; }
     function rendererMinNodeWidth() { return __rendererMinWidth; }
     function clampWidthToRenderer(width) { return width; }
@@ -120,7 +125,8 @@ test('snap-to-grid rounds node size to a non-default 21px grid without writing x
   alignNodes('snap-to-grid', undefined, [a]);
 
   assert.deepEqual(positionOf(a), [21, 42]);
-  assert.deepEqual(sizeOf(a), [210, 126]);
+  assert.deepEqual(sizeOf(a), [210, 117]);
+  assert.equal((sizeOf(a)[1] + 30) % 21, 0, 'visible height must follow the grid');
   assert.deepEqual([a.x, a.y], [900, 901], 'snap must only write the Vue-safe pos tuple');
 });
 
@@ -135,27 +141,27 @@ test('snap-to-grid writes every position before resizing any node', () => {
 
   alignNodes('snap-to-grid', undefined, [first, second]);
 
-  assert.deepEqual(sizeOf(first), [180, 100]);
-  assert.deepEqual(sizeOf(second), [180, 100]);
+  assert.deepEqual(sizeOf(first), [180, 90]);
+  assert.deepEqual(sizeOf(second), [180, 90]);
 });
 
 test('snap-to-grid ceils renderer and node minimums to the next grid multiple', () => {
-  const a = node(9, 29, 190, 110, false, [201, 117]);
+  const a = node(9, 29, 190, 110, false, [201, 118]);
   const { alignNodes } = load({ gridSize: 21, units: [a], rendererMinWidth: 225 });
 
   alignNodes('snap-to-grid', undefined, [a]);
 
-  assert.deepEqual(sizeOf(a), [231, 126]);
+  assert.deepEqual(sizeOf(a), [231, 138]);
 });
 
 test('snap-to-grid never shrinks a node whose minimum size cannot be measured', () => {
-  const a = node(9, 29, 169, 89);
+  const a = node(9, 29, 169, 99);
   a.computeSize = () => { throw new Error('cannot measure'); };
   const { alignNodes } = load({ gridSize: 20, units: [a] });
 
   alignNodes('snap-to-grid', undefined, [a]);
 
-  assert.deepEqual(sizeOf(a), [180, 100]);
+  assert.deepEqual(sizeOf(a), [180, 110]);
 });
 
 test('one unpinned node can snap, while a pinned standalone node is left in place and announced', () => {
@@ -166,11 +172,22 @@ test('one unpinned node can snap, while a pinned standalone node is left in plac
   alignNodes('snap-to-grid', undefined, [free, pinned]);
 
   assert.deepEqual(positionOf(free), [0, 20]);
-  assert.deepEqual(sizeOf(free), [180, 100]);
+  assert.deepEqual(sizeOf(free), [180, 90]);
   assert.deepEqual(positionOf(pinned), [31, 31]);
   assert.deepEqual(sizeOf(pinned), [173, 91]);
   assert.ok(messages.some(message => /1 pinned node left in place/.test(message.text)),
     `expected pinned-node notice, got ${JSON.stringify(messages)}`);
+});
+
+test('a collapsed node snaps its position without rewriting its hidden expanded size', () => {
+  const collapsed = node(31, 31, 263, 147);
+  collapsed.flags.collapsed = true;
+  const { alignNodes } = load({ gridSize: 20, units: [collapsed] });
+
+  alignNodes('snap-to-grid', undefined, [collapsed]);
+
+  assert.deepEqual(positionOf(collapsed), [40, 40]);
+  assert.deepEqual(sizeOf(collapsed), [263, 147]);
 });
 
 test('an invalid active graph grid leaves position and undo untouched', () => {
