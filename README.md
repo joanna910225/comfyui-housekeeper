@@ -9,6 +9,8 @@ A ComfyUI extension for aligning, arranging and colouring the nodes in a workflo
 
 ## What's new
 
+**v0.9.1** — grid snapping now aligns the full visible node height in both Nodes 1.0 and Nodes 2.0, including the title bar.
+
 **v0.9.0** — keep groups intact during layout, arrange selected members inside a group, and snap node positions and sizes to ComfyUI's grid.
 
 **v0.8.0** — preview **Spacing** changes directly on the graph, align reliably under **Nodes 2.0**, and use **Title only** when you want colour without replacing node bodies.

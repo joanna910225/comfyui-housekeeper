@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented here.
 
+## [0.9.1] - 2026-09-03
+
+### Fixed
+
+- **Grid snapping now aligns the node users actually see.** Height snapping includes the title
+  bar instead of rounding only the stored body height, so it no longer fixes one axis while
+  pushing the other off-grid. Minimum sizes remain protected in both Nodes 1.0 and Nodes 2.0;
+  collapsed nodes keep their saved expanded size. Fixes the follow-up on #74.
+
 ## [0.9.0] - 2026-09-02
 
 Group-aware layouts, clearer dependency directions, and position-and-size grid snapping.
