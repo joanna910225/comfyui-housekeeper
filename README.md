@@ -7,6 +7,8 @@
 
 A ComfyUI extension for aligning, arranging and colouring the nodes in a workflow. It runs entirely in the browser and adds nothing to your node menu.
 
+[View Housekeeper on the Comfy Registry](https://registry.comfy.org/nodes/housekeeper)
+
 ## What's new
 
 **v0.9.1** — grid snapping now aligns the full visible node height in both Nodes 1.0 and Nodes 2.0, including the title bar.
@@ -64,7 +66,15 @@ Full detail in [CHANGELOG.md](CHANGELOG.md), or on the
 
 ## Installation
 
-Clone into your ComfyUI custom nodes directory:
+In ComfyUI Manager, search for **Housekeeper** and click **Install**.
+
+Or install it with the Comfy CLI:
+
+```bash
+comfy node install housekeeper
+```
+
+For a manual install, clone it into your ComfyUI custom nodes directory:
 
 ```bash
 cd ComfyUI/custom_nodes/
